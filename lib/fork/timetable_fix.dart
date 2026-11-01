@@ -40,7 +40,10 @@ TimeTable parseTimetableKeepingFirstRow(
   // Tabellen, Zeilen, Einträge im HTML, eingefügte Leerzeilen. Keine Inhalte.
   int entries(List<TimetableDay>? d) =>
       d?.fold<int>(0, (a, x) => a + x.length) ?? 0;
-  if (entries(tt.planForOwn) == 0 && entries(tt.planForAll) == 0) {
+  final kind = emptyTimetablePageKind(document);
+  if (entries(tt.planForOwn) == 0 &&
+      entries(tt.planForAll) == 0 &&
+      !isSessionEndPage(document, kind)) {
     ErrorLog.instance.notice('stundenplan.php', 'EmptyTimetable', {
       'all': document.querySelector('#all') == null ? 0 : 1,
       'own': document.querySelector('#own') == null ? 0 : 1,
@@ -48,7 +51,7 @@ TimeTable parseTimetableKeepingFirstRow(
       'stunden': document.querySelectorAll('.stunde').length,
       'vonbis': document.querySelectorAll('.VonBis').length,
       'inserted': inserted,
-      ...emptyTimetablePageKind(document),
+      ...kind,
       // Kontoart (0 unbekannt, 1 Schüler, 2 Eltern, 3 Lehrkraft) und
       // Hinweiskästen der Seite. Ursache (Fehlerbericht 28.10.26, 9435:
       // „… login=0 wartung=0 text=5“): Eine kurze Seite ohne Plantabelle
@@ -133,4 +136,30 @@ Map<String, int> emptyTimetablePageKind(Document document) {
         ? 1
         : 0,
   };
+}
+
+/// Seite ohne Plantabelle, die nur das Sitzungsende meldet: kein Eintrag
+/// „EmptyTimetable“ im Fehlerprotokoll.
+///
+/// Ursache (Fehlerbericht Nr. 7): Die Merkmale aus
+/// [emptyTimetablePageKind] (anmeld gesetzt, login und weiter nicht)
+/// bestätigen eine kurze Sitzungsende-Seite ohne
+/// Passwortfeld und ohne Weiterleitung. Die App fängt sie schon richtig ab
+/// (ForkTimetableParser.parseDocument wirft, AppletParser.fetchData meldet
+/// sich neu an, der zweite Versuch fand den Plan – daher nur 1×). Der
+/// Eintrag war also nur Rauschen und löste bei jedem Sitzungsende einen
+/// Fehlerbericht aus.
+///
+/// Grenze: Nur Seiten OHNE `#all` und `#own`, die eine Anmeldung nennen oder
+/// ein Passwortfeld zeigen, und nicht Wartung nennen. Scheitert auch der
+/// zweite Versuch, bleibt das sichtbar: liblanis meldet die
+/// UnknownException über onUnexpectedError (lanis_bootstrap.dart). Leere
+/// Pläne MIT Tabelle und andere Seiten ohne Tabelle werden weiter gemeldet.
+bool isSessionEndPage(Document document, [Map<String, int>? kind]) {
+  if (document.querySelector('#all') != null ||
+      document.querySelector('#own') != null) {
+    return false;
+  }
+  final k = kind ?? emptyTimetablePageKind(document);
+  return k['wartung'] == 0 && (k['login'] == 1 || k['anmeld'] == 1);
 }
