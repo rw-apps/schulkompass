@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:liblanis/liblanis.dart';
 import 'package:html/parser.dart' show parse;
+import 'package:lanis/fork/error_log.dart';
 import 'package:lanis/fork/timetable_fix.dart';
 import 'package:lanis/fork/ui/live/live_data.dart';
 
@@ -127,5 +128,57 @@ void main() {
     expect(gone['weiter'], 1);
     expect(down['anmeld'], 0);
     expect(down['weiter'], 0);
+  });
+
+  // Fehlerbericht Nr. 7: Sitzungsende-Seite ohne Plan ist kein Fehlereintrag.
+  test('Sitzungsende-Seite: kein EmptyTimetable im Fehlerprotokoll', () {
+    final log = ErrorLog.instance;
+    log.clear();
+    addTearDown(log.clear);
+    int count() =>
+        log.records.where((r) => r.type.startsWith('EmptyTimetable')).length;
+
+    // Erfundene kurze Seite: nennt die Anmeldung, kein Passwortfeld.
+    final ended = parse(
+      '<html><body><p>Ihre Sitzung ist abgelaufen. Bitte erneut '
+      'anmelden.</p></body></html>',
+    );
+    expect(isSessionEndPage(ended), isTrue);
+    parseTimetableKeepingFirstRow(ended);
+    expect(count(), 0);
+
+    // Anmeldeformular: ebenfalls Sitzungsende.
+    final form = parse(
+      '<html><body><form><input type="password"></form></body></html>',
+    );
+    expect(isSessionEndPage(form), isTrue);
+
+    // Wartung bleibt gemeldet, auch wenn „anmelden“ im Text steht.
+    final down = parse(
+      '<html><body><p>Wartung – Anmeldung später wieder möglich.</p>'
+      '</body></html>',
+    );
+    expect(isSessionEndPage(down), isFalse);
+    parseTimetableKeepingFirstRow(down);
+    expect(count(), 1);
+
+    // Unbekannte Seite ohne Tabelle bleibt gemeldet.
+    log.clear();
+    final other = parse(
+      '<html><body><p>Unerwarteter Inhalt.</p></body></html>',
+    );
+    expect(isSessionEndPage(other), isFalse);
+    parseTimetableKeepingFirstRow(other);
+    expect(count(), 1);
+
+    // Leerer Plan MIT Tabelle bleibt gemeldet, auch mit „Anmeldung“ im Text.
+    log.clear();
+    final table = parse(
+      '<div id="all"><table><tbody><tr><td>Anmeldung</td></tr></tbody>'
+      '</table></div>',
+    );
+    expect(isSessionEndPage(table), isFalse);
+    parseTimetableKeepingFirstRow(table);
+    expect(count(), 1);
   });
 }
