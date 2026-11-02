@@ -3,7 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:liblanis/liblanis.dart' show sharedOverAccountSettingsProvider;
 
 import '../../l10n/l10n.dart';
-import '../../mensa.dart' show isoWeek, mensaUrlForWeek, mensaWeekUrl;
+import '../../mensa.dart'
+    show isoWeek, mensaSameSite, mensaUrlForWeek, mensaWeekUrl;
 import '../../mensa_store.dart';
 import '../../mensa_week.dart';
 import '../kit.dart';
@@ -75,7 +76,12 @@ class _MealWeekPageState extends ConsumerState<MealWeekPage> {
   DateTime get _thisWeek => schoolWeek(_now).first;
 
   /// Zuletzt gelesene Wochenseite statt Startseite (mealBaseUrl).
-  String get _base => mealBaseUrl(widget.url, _cache.of(widget.owner));
+  String get _base => mealBaseUrl(widget.url, _entry);
+
+  /// Nur Wochen der eingetragenen Seite (mealEntryFor, Rückmeldung
+  /// 01.11.26): Sonst stand nach dem Korrigieren einer falsch eingetragenen
+  /// Adresse weiter die Übersicht des Geschwisters hier.
+  MealEntry? get _entry => _cache.ofSite(widget.owner, widget.url);
 
   @override
   void initState() {
@@ -97,7 +103,7 @@ class _MealWeekPageState extends ConsumerState<MealWeekPage> {
     _count = 2;
   });
 
-  List<MealWeek> get _weeks => _cache.of(widget.owner)?.weeks ?? const [];
+  List<MealWeek> get _weeks => _entry?.weeks ?? const [];
 
   MealWeek? get _week {
     final want = _shown ?? _thisWeek;
@@ -153,9 +159,13 @@ class _MealWeekPageState extends ConsumerState<MealWeekPage> {
     if (blockedInDemo(context)) return;
     if (!await confirmMealChange(context, day: d, option: o)) return;
     if (!mounted || _job != null || _fetch != null) return;
+    final url = mealWeekPageUrl(w, d.day, _base);
+    // Nie auf einer anderen Seite als der eingetragenen bestellen
+    // (mealEntryFor, Rückmeldung 01.11.26).
+    if (!mensaSameSite(widget.url, url)) return;
     setState(() {
       _jobRound++;
-      _job = (day: d, option: o, url: mealWeekPageUrl(w, d.day, _base));
+      _job = (day: d, option: o, url: url);
     });
   }
 

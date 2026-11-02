@@ -669,7 +669,8 @@ Future<void> showForkSummary(
       for (final e in meals.entries) {
         if (!e.key.startsWith('$id:')) continue;
         final kid = e.key.substring('$id:'.length);
-        if (mensa.of(kid) == null) continue;
+        final address = mensa.of(kid);
+        if (address == null) continue;
         // Alter prüft mealReminderDays selbst (MealEntry.readAt).
         items.addAll(
           mealSummaryItems(
@@ -680,7 +681,7 @@ Future<void> showForkSummary(
             ),
             owner: e.key,
             days: mealReminderDays(
-              e.value,
+              mealEntryFor(e.value, address),
               now,
               weekdays: mealRemindDays(shared, e.key),
             ),

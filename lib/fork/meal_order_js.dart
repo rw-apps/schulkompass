@@ -45,14 +45,19 @@ String _week(DateTime d) {
 
 /// Vor jedem Klick (Prüfung 27.10.26):
 /// - genau EINE Rückfrage (window.confirm) bestätigen, weitere ablehnen;
-/// - schon offene Fenster markieren (mealModalJs wertet nur neue);
+/// - schon offene Fenster markieren (mealModalJs wertet nur neue). Nur
+///   sichtbare: Ursache (Rückmeldung 01.11.26, nachgestellt mit dem echten
+///   Bestellskript eines Caterers der Familie): Dessen Bestätigungsfenster
+///   („Gesamtpreis … Bestellen“) liegt verborgen schon in der Seite. Es
+///   wurde mitmarkiert, nach dem Klick auf „+“ übersehen, und die Seite
+///   schickte nur die alte Menge 0 – die Bestellung kam nie an;
 /// - laufende Anfragen zählen (XHR/fetch), damit „Ruhe“ erst gilt, wenn
 ///   die Seite fertig ist.
 const _prepare = '''
   var used = false;
   window.confirm = function () { if (used) return false; used = true; return true; };
   window.alert = function () {};
-  document.querySelectorAll('.modal, .bootbox').forEach(function (m) { m.setAttribute('data-fork-pre', '1'); });
+  document.querySelectorAll('.bootbox, .modal.in, .modal.show').forEach(function (m) { m.setAttribute('data-fork-pre', '1'); });
   if (!window.__mealXhr) {
     window.__mealXhr = { n: 0 };
     var send = XMLHttpRequest.prototype.send;
@@ -156,7 +161,8 @@ $_prepare
 
 /// Zustand nach dem Klick: neues Fenster der Seite (Bootstrap/Bootbox) und
 /// laufende Anfragen. Ein Fenster wird nur mit „Bestätigen/OK“ der Bootbox
-/// geschlossen; hat es Eingabefelder oder keinen solchen Knopf, bleibt es
+/// bzw. dem Bestätigungsknopf im Fuß des Fensters (`.btn-confirm`, siehe
+/// _prepare) geschlossen; hat es Eingabefelder oder keinen solchen Knopf, bleibt es
 /// offen („open“) und die App meldet seinen Text. Ergebnis JSON
 /// {"s":"none"|"clicked"|"open","t":"…","p":Anzahl laufender Anfragen}.
 const mealModalJs = r'''
@@ -171,7 +177,8 @@ const mealModalJs = r'''
   if (m.querySelector('input:not([type=hidden]), select, textarea')) {
     return JSON.stringify({ s: 'open', t: text, p: p });
   }
-  var b = m.querySelector('[data-bb-handler=confirm]') || m.querySelector('[data-bb-handler=ok]');
+  var b = m.querySelector('[data-bb-handler=confirm]') || m.querySelector('[data-bb-handler=ok]') ||
+    m.querySelector('.modal-footer .btn-confirm');
   if (b && !m.getAttribute('data-fork-clicked')) {
     m.setAttribute('data-fork-clicked', '1');
     b.click();

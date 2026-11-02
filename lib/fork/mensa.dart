@@ -141,6 +141,22 @@ bool mensaAllows(Uri home, Uri target) {
   return h == base || h.endsWith('.$base');
 }
 
+/// Dieselbe Seite eines Caterers? Gleiche Hauptdomain wie bei [mensaAllows]
+/// („www.“ und Unterdomains zählen nicht als Wechsel).
+///
+/// Ursache (Rückmeldung 01.11.26, Tablet): Gemerkte Wochen, Anmeldung und
+/// Bestellung eines Kindes gehören zur Seite, auf der sie gelesen bzw.
+/// eingegeben wurden. War für ein Kind kurz die Adresse des Geschwisters
+/// eingetragen, blieben dessen Wochen auch nach dem Korrigieren unter dem
+/// Kind stehen – „Essen“ zeigte die Übersicht des Geschwisters, und
+/// Bestellen lief gegen dessen Seite ins Leere. Grenze: Teilen sich zwei
+/// Caterer eine Plattform unter derselben Domain, gelten sie als eine Seite.
+bool mensaSameSite(String? a, String? b) {
+  final x = Uri.tryParse(a?.trim() ?? '')?.host ?? '';
+  final y = Uri.tryParse(b?.trim() ?? '')?.host ?? '';
+  return x.isNotEmpty && y.isNotEmpty && _registrable(x) == _registrable(y);
+}
+
 /// Hauptdomain aus den letzten zwei Teilen („www.bestellung.example.de“ →
 /// „example.de“). Grenze: zweiteilige Endungen (co.uk) gelten als Domain –
 /// für deutsche Caterer ohne Belang, dann nur strenger.

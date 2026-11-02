@@ -170,9 +170,7 @@ Map<String, Object?>? liveKidEntry(
   );
   // Essen: dieselbe Quelle und Erinnerungstage wie die Kinderkarte
   // (live_today_page.dart, mealUnordered/lowBalance).
-  final meals = s.mensaUrl == null
-      ? null
-      : MealCache.instance.of(s.mensaOwner(s.mensaKid));
+  final meals = MealCache.instance.ofSite(s.mensaOwner(s.mensaKid), s.mensaUrl);
   final name = s.firstName.trim();
   return widgetKidEntry(
     account: m.accountId,

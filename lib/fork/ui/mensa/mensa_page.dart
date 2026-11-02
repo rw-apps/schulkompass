@@ -161,6 +161,7 @@ class _MensaPageState extends ConsumerState<MensaPage> {
         _triedLogin = true;
         _afterLogin = true;
         _fillStarts = _starts;
+        _claim();
       }
     } catch (_) {
     } finally {
@@ -184,6 +185,8 @@ class _MensaPageState extends ConsumerState<MensaPage> {
     final h = v['h'], u = v['u'], p = v['p'];
     if (h is! String || u is! String || p is! String || u.isEmpty) return;
     if (!mensaAllows(_home, Uri(scheme: 'https', host: h))) return;
+    // Selbst angemeldet: ab jetzt die Sitzung dieses Kindes.
+    _claim();
     if (_asked) return;
     final old = await readMensaLogin(widget.owner);
     if (old != null && old.user == u && old.pass == p && old.host == h) {
@@ -226,6 +229,8 @@ class _MensaPageState extends ConsumerState<MensaPage> {
     if (!mounted) return;
     if (w == null) return _hop(url);
     _hopDone = true;
+    // Noch die Sitzung des anderen Kindes (_checkOwner): nicht merken.
+    if (_otherName != null) return;
     try {
       MealCache.instance
         ..attach(ref.read(sharedOverAccountSettingsProvider))
@@ -251,24 +256,42 @@ class _MensaPageState extends ConsumerState<MensaPage> {
     } catch (_) {}
   }
 
+  /// War zuletzt ein anderes Kind auf dieser Seite, gilt noch dessen
+  /// Sitzung: Hinweis mit „Abmelden“, und die Seite zählt erst als die
+  /// dieses Kindes, wenn man sich abmeldet, selbst anmeldet (auch mit der
+  /// gemerkten Anmeldung) oder den Hinweis schließt ([_claim]).
+  ///
+  /// Ursache (Rückmeldung 01.11.26): Bis 9463 zählte die Seite schon beim
+  /// Öffnen als die dieses Kindes. Mit der (versehentlich eingetragenen)
+  /// Adresse des Geschwisters las die App dessen angemeldete Woche als die
+  /// dieses Kindes ([_remember]) und hätte unsichtbar auf dessen Konto
+  /// bestellt (MealOrderRunner prüft mensaLastOwner).
   void _checkOwner() {
     final shared = ref.read(sharedOverAccountSettingsProvider);
     final prev = mensaLastOwner(shared, _home.host);
     if (prev != null && prev != widget.owner) {
       _otherName = mensaLastName(shared, _home.host);
+      return;
     }
-    setMensaLastOwner(
-      shared,
-      _home.host,
-      widget.owner,
-      name: widget.childName ?? '',
-    );
+    _claim();
+  }
+
+  void _claim() {
+    try {
+      setMensaLastOwner(
+        ref.read(sharedOverAccountSettingsProvider),
+        _home.host,
+        widget.owner,
+        name: widget.childName ?? '',
+      );
+    } catch (_) {}
+    if (_otherName != null && mounted) setState(() => _otherName = null);
   }
 
   Future<void> _logout() async {
     await WebViewCookieManager().clearCookies();
     if (!mounted) return;
-    setState(() => _otherName = null);
+    _claim();
     _triedLogin = false;
     await _c.loadRequest(Uri.parse(_start));
   }
@@ -344,7 +367,9 @@ class _MensaPageState extends ConsumerState<MensaPage> {
                     IconButton(
                       tooltip: t.close,
                       icon: Icon(Icons.close, color: k.p.change.ink),
-                      onPressed: () => setState(() => _otherName = null),
+                      // Geschwister teilen ein Konto beim Caterer: Seite
+                      // gilt ab jetzt als die dieses Kindes.
+                      onPressed: _claim,
                     ),
                   ],
                 ),

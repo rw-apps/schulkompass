@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:liblanis/liblanis.dart' show SecretStore;
 
 import '../bridge/flutter_secret_store.dart';
+import 'mensa.dart' show mensaSameSite;
 
 /// Gemerkte Anmeldung beim Caterer je Kind (`konto:kind`, MensaPage.owner).
 ///
@@ -40,13 +41,20 @@ SecretStore mensaSecrets = FlutterSecretStore();
 String _key(String owner) => 'fork-mensa-login/$owner';
 
 /// Gemerkte Anmeldung; null = keine bzw. abgelehnt.
-Future<MensaLogin?> readMensaLogin(String owner) async {
+///
+/// Mit [site]: nur eine Anmeldung derselben Seite (mensaSameSite). Ursache
+/// (Rückmeldung 01.11.26): Nach einer versehentlich eingetragenen Adresse
+/// des Geschwisters lag dessen Anmeldung unter dem Kind; der Abruf der
+/// richtigen Seite löschte deshalb alle Cookies (anderes Kind angemeldet)
+/// und konnte sich trotzdem nicht anmelden.
+Future<MensaLogin?> readMensaLogin(String owner, {String? site}) async {
   try {
     final raw = await mensaSecrets.read(_key(owner));
     final v = raw == null ? null : jsonDecode(raw);
     if (v is! Map || v['never'] == true) return null;
     final h = v['h'], u = v['u'], p = v['p'];
     if (h is! String || u is! String || p is! String) return null;
+    if (site != null && !mensaSameSite('https://$h', site)) return null;
     return MensaLogin(host: h, user: u, pass: p);
   } catch (_) {
     return null;

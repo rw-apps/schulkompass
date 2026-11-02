@@ -152,9 +152,10 @@ class _LiveTodayPageState extends State<LiveTodayPage> {
     );
     if (live == null) return null;
     final className = liveClassName(s);
-    final meals = s.mensaUrl == null
-        ? null
-        : MealCache.instance.of(s.mensaOwner(s.mensaKid));
+    final meals = MealCache.instance.ofSite(
+      s.mensaOwner(s.mensaKid),
+      s.mensaUrl,
+    );
     final courses = s.courseNames;
     final events = s.calendar.content ?? const [];
     return childTodayFromLanis(
@@ -450,7 +451,7 @@ class _LiveTodayPageState extends State<LiveTodayPage> {
                 name: name,
                 owner: owner,
                 days: mealReminderDays(
-                  MealCache.instance.of(owner),
+                  MealCache.instance.ofSite(owner, s.mensaUrl),
                   now,
                   weekdays: mealRemindDays(shared, owner),
                 ),

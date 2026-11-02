@@ -37,8 +37,14 @@ class MealRefresh extends ConsumerStatefulWidget {
 class _MealRefreshState extends ConsumerState<MealRefresh> {
   final _cache = MealCache.instance;
 
-  /// In dieser Sitzung schon versucht (auch ohne Ergebnis).
-  final _tried = <String>{};
+  /// In dieser Sitzung schon versucht (auch ohne Ergebnis), je Kind und
+  /// Adresse.
+  ///
+  /// Ursache (Rückmeldung 01.11.26): Bis 9463 nur je Kind gemerkt – nach dem
+  /// Korrigieren der Adresse las Heute die neue Seite erst nach einem
+  /// Neustart der App, und ein laufender Abruf der alten Seite schrieb
+  /// danach noch deren Woche unter das Kind.
+  final _tried = <({String owner, String url})>{};
   ({String owner, String url})? _current;
 
   @override
@@ -53,6 +59,10 @@ class _MealRefreshState extends ConsumerState<MealRefresh> {
   @override
   void didUpdateWidget(MealRefresh old) {
     super.didUpdateWidget(old);
+    // Adresse geändert bzw. Kind entfernt: laufenden Abruf verwerfen.
+    if (_current case final c? when !widget.targets.contains(c)) {
+      _current = null;
+    }
     if (_current == null) {
       WidgetsBinding.instance.addPostFrameCallback((_) => _pick());
     }
@@ -67,12 +77,12 @@ class _MealRefreshState extends ConsumerState<MealRefresh> {
     // Sitzung beim Caterer. Danach holt didUpdateWidget es nach.
     if (MealOrderRunner.running > 0) return;
     for (final t in widget.targets) {
-      if (_tried.contains(t.owner)) continue;
-      final e = _cache.of(t.owner);
+      if (_tried.contains(t)) continue;
+      final e = _cache.ofSite(t.owner, t.url);
       if (e != null && widget.now.difference(e.at) < mealRefreshEvery) {
         continue;
       }
-      _tried.add(t.owner);
+      _tried.add(t);
       setState(() => _current = t);
       return;
     }
@@ -89,17 +99,22 @@ class _MealRefreshState extends ConsumerState<MealRefresh> {
         if (c != null)
           Positioned.fill(
             child: MealFetcher(
-              key: ValueKey(c.owner),
+              key: ValueKey(c),
               url: mensaUrlForWeek(
-                mealBaseUrl(c.url, _cache.of(c.owner)),
+                mealBaseUrl(c.url, _cache.ofSite(c.owner, c.url)),
                 isoWeek(schoolWeek(widget.now).first),
               ),
               owner: c.owner,
               want: schoolWeek(widget.now).first,
-              onWeek: (w) => _cache.put(c.owner, [w]),
-              onUnreadable: () => _cache.markUnreadable(c.owner),
+              // Nur solange der Abruf noch zur eingetragenen Adresse gehört.
+              onWeek: (w) {
+                if (_current == c) _cache.put(c.owner, [w]);
+              },
+              onUnreadable: () {
+                if (_current == c) _cache.markUnreadable(c.owner);
+              },
               onDone: () {
-                if (!mounted) return;
+                if (!mounted || _current != c) return;
                 setState(() => _current = null);
                 WidgetsBinding.instance.addPostFrameCallback((_) => _pick());
               },

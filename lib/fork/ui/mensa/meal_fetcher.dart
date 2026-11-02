@@ -204,7 +204,7 @@ class _MealFetcherState extends State<MealFetcher> {
     final owner = widget.owner;
     final last = mensaLastOwner(MealCache.instance.settings, _home.host);
     if (owner != null && last != null && last != owner) {
-      final l = await readMensaLogin(owner);
+      final l = await readMensaLogin(owner, site: widget.url);
       if (_done || !mounted) return;
       if (l == null || MealOrderRunner.running > 0) {
         _trace('other child logged in, not reading');

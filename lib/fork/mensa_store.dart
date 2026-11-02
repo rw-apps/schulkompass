@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:liblanis/liblanis.dart' show TypedSettings;
 
+import 'mensa.dart' show mensaSameSite;
 import 'mensa_week.dart';
 
 /// Zuletzt gelesene Essenswochen je Kind (`konto:kind`, MensaPage.owner),
@@ -192,6 +193,34 @@ List<DateTime> mealReminderDays(
 }
 
 /// Adresse, von der aus die App die Wochen liest: die zuletzt gelesene
+/// Gemerkter Stand eines Kindes, soweit er zur eingetragenen Adresse
+/// [address] gehört (mensaSameSite); null ohne Adresse oder wenn alle
+/// gemerkten Wochen von einer anderen Seite stammen.
+///
+/// Ursache (Rückmeldung 01.11.26, Tablet): Eine kurz falsch eingetragene
+/// Adresse (die des Geschwisters) hinterließ dessen Wochen unter dem Kind.
+/// Das Löschen beim Ändern der Adresse (live_data.setMensaUrl, seit 9422)
+/// erfasste Einträge aus älteren Versionen nicht, und „Essen“ zeigte die
+/// Wochen ohne Prüfung der Seite. Jetzt zählen beim Anzeigen, Erinnern und
+/// Bestellen nur Wochen der eingetragenen Seite. Grenze: Wochen ohne
+/// Adresse (vor 9400 gelesen) gelten weiter.
+MealEntry? mealEntryFor(MealEntry? e, String? address) {
+  if (e == null || address == null) return null;
+  final keep = [
+    for (final w in e.weeks)
+      if (w.url == null || mensaSameSite(address, w.url)) w,
+  ];
+  if (keep.length == e.weeks.length) return e;
+  if (keep.isEmpty) return null;
+  return MealEntry(
+    at: e.at,
+    weeks: keep,
+    unreadable: e.unreadable,
+    balance: e.balance,
+    readAt: e.readAt,
+  );
+}
+
 /// Wochenseite (MealWeek.url), sonst die eingetragene Adresse.
 ///
 /// Ursache (Bildschirmfoto 27.10.26): Eingetragen ist oft die Startseite
@@ -377,12 +406,29 @@ class MealCache {
 
   MealEntry? of(String owner) => demo?.call(owner) ?? notifier.value[owner];
 
+  /// Wie [of], aber nur Wochen der eingetragenen Seite [address]
+  /// (mealEntryFor). Demo: unverändert (erfundene Adressen).
+  MealEntry? ofSite(String owner, String? address) => address == null
+      ? null
+      : demo != null
+      ? of(owner)
+      : mealEntryFor(of(owner), address);
+
   /// Neue Wochen übernehmen: gleiche Woche ersetzt, höchstens drei Wochen
   /// (die jüngsten) je Kind.
+  ///
+  /// Stammen die neuen Wochen von einer anderen Seite als die gemerkten
+  /// (mensaSameSite), ersetzen sie diese samt Guthaben, statt sich mit ihnen
+  /// zu mischen (Rückmeldung 01.11.26, siehe mealEntryFor).
   void put(String owner, List<MealWeek> weeks, {DateTime? at}) {
     final old = of(owner);
+    final site = weeks.map((w) => w.url).nonNulls.firstOrNull;
+    bool same(MealWeek w) =>
+        site == null || w.url == null || mensaSameSite(site, w.url);
+    final foreign = old?.weeks.any((w) => !same(w)) ?? false;
     final byStart = <DateTime, MealWeek>{
-      for (final w in old?.weeks ?? const <MealWeek>[]) w.start: w,
+      for (final w in old?.weeks ?? const <MealWeek>[])
+        if (same(w)) w.start: w,
       for (final w in weeks) w.start: w,
     };
     final keep = byStart.values.toList()
@@ -398,7 +444,7 @@ class MealCache {
               for (final w in weeks)
                 if (w.balance != null) w.balance!,
             ].lastOrNull ??
-            old?.balance,
+            (foreign ? null : old?.balance),
         weeks: (keep.take(3).toList()
           ..sort((a, b) => a.start.compareTo(b.start))),
       ),

@@ -466,4 +466,96 @@ void main() {
     );
     expect(mealBaseUrl('https://neu.example/', null), 'https://neu.example/');
   });
+
+  // Rückmeldung 01.11.26 (Tablet): Kurz die Adresse des Geschwisters
+  // eingetragen – nach dem Korrigieren zeigte „Essen“ weiter dessen Wochen.
+  group('Wochen nur von der eingetragenen Seite', () {
+    MealWeek week(String? url, int day, {String? balance}) => MealWeek(
+      label: 'KW',
+      url: url,
+      balance: balance,
+      days: [
+        MealDay(day: DateTime(2026, 11, day), state: MealState.values.first),
+      ],
+    );
+
+    test('mensaSameSite: Hauptdomain zählt', () {
+      expect(
+        mensaSameSite(
+          'https://bestellen.example/',
+          'https://www.bestellen.example/a/2026/45/',
+        ),
+        isTrue,
+      );
+      expect(
+        mensaSameSite(
+          'https://bestellen.example/',
+          'https://plan.anders.example/',
+        ),
+        isFalse,
+      );
+      expect(mensaSameSite(null, 'https://a.example/'), isFalse);
+      expect(mensaSameSite('kaputt', 'https://a.example/'), isFalse);
+    });
+
+    test('mealEntryFor verwirft Wochen einer anderen Seite', () {
+      final e = MealEntry(
+        at: DateTime(2026, 11, 1),
+        balance: '9,00',
+        weeks: [week('https://geschwister.example/w/2026/45/', 2)],
+      );
+      expect(mealEntryFor(e, 'https://eigen.example/'), isNull);
+      expect(mealEntryFor(e, null), isNull);
+      expect(mealEntryFor(e, 'https://geschwister.example/login'), same(e));
+      final mixed = MealEntry(
+        at: DateTime(2026, 11, 1),
+        weeks: [
+          week('https://geschwister.example/w/2026/45/', 2),
+          week('https://eigen.example/k/2026/46/', 9),
+          week(null, 16),
+        ],
+      );
+      final kept = mealEntryFor(mixed, 'https://www.eigen.example/')!;
+      expect(kept.weeks.map((w) => w.url), [
+        'https://eigen.example/k/2026/46/',
+        null,
+      ]);
+      // Ohne Wochen (nur „nicht lesbar“) bleibt der Eintrag.
+      final bare = MealEntry(at: DateTime(2026, 11, 1), unreadable: true);
+      expect(mealEntryFor(bare, 'https://eigen.example/'), same(bare));
+    });
+
+    test('put ersetzt Wochen und Guthaben einer anderen Seite', () {
+      final c = MealCache.instance..reset();
+      c.put('k', [
+        week('https://geschwister.example/w/2026/45/', 2, balance: '9,00'),
+      ]);
+      c.put('k', [week('https://eigen.example/k/2026/46/', 9)]);
+      expect(c.of('k')!.weeks.map((w) => w.url), [
+        'https://eigen.example/k/2026/46/',
+      ]);
+      expect(c.of('k')!.balance, isNull);
+      // Gleiche Seite: wie bisher zusammenführen.
+      c.put('k', [
+        week('https://eigen.example/k/2026/47/', 16, balance: '4,00'),
+      ]);
+      c.put('k', [week('https://eigen.example/k/2026/45/', 2)]);
+      expect(c.of('k')!.weeks, hasLength(3));
+      expect(c.of('k')!.balance, '4,00');
+      expect(c.ofSite('k', 'https://geschwister.example/'), isNull);
+      expect(c.ofSite('k', 'https://eigen.example/')!.weeks, hasLength(3));
+      c.reset();
+    });
+
+    test('Bestätigungsfenster wird nicht vorab markiert', () {
+      final js = mealOrderJs(
+        MealLayout.dayList,
+        DateTime(2026, 11, 3),
+        const MealOption(line: 'A', name: 'x', id: '1-2', orderable: true),
+      );
+      expect(js, contains(".bootbox, .modal.in, .modal.show"));
+      expect(js, isNot(contains("querySelectorAll('.modal, .bootbox')")));
+      expect(mealModalJs, contains('.modal-footer .btn-confirm'));
+    });
+  });
 }
