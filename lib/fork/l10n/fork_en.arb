@@ -755,12 +755,16 @@
   "mensaNoneKnown": "No caterer is known for your school yet – please choose one or enter an address.",
   "mensaTwoKnown": "Two caterers are known for your school (one per site) – please choose.",
   "mensaOwnItem": "Enter another address …",
-  "mensaLoginAdd": "Add caterer login (optional)",
   "mensaLoginUser": "Username or email",
   "mensaLoginPass": "Password",
   "mensaLoginShow": "Show password",
   "mensaLoginHide": "Hide password",
   "mensaLoginLocal": "Stays only on this device in protected storage. The app uses it to sign in to the caterer by itself.",
-  "mensaLoginSaved": "Login saved: {user}",
-  "mensaLoginChange": "Change"
+  "mensaLoginChange": "Change",
+  "mensaLoginTitle": "Caterer login",
+  "mensaLoginSavedTitle": "Login saved",
+  "mensaLoginWhy": "Optional – the app then signs in by itself and shows meals on Today.",
+  "mensaLoginAddShort": "Add",
+  "mealRemindDaysHint": "Remind on these days if nothing is ordered",
+  "mealRemindNone": "Off – no reminder"
 }

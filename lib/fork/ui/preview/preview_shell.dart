@@ -6,7 +6,10 @@ import 'package:flutter/services.dart' show SystemNavigator;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:liblanis/liblanis.dart'
-    show activeAccountProvider, sharedOverAccountSettingsProvider;
+    show
+        activeAccountProvider,
+        sharedOverAccountSettingsProvider,
+        TypedSettings;
 
 import 'package:lanis/applets/external_definitions.dart';
 import 'package:lanis/fork/start.dart';
@@ -16,6 +19,8 @@ import '../../l10n/l10n.dart';
 import '../../report_relay.dart';
 import '../today/auto_report_prompt.dart' show reportOs;
 import '../../mensa_login.dart';
+import '../../mensa_store.dart'
+    show MealCache, mealRemindDays, setMealRemindDays;
 import '../../school_links.dart';
 import '../courses/grades_request.dart';
 import '../courses/course_detail_page.dart';
@@ -72,6 +77,20 @@ class PreviewShell extends StatefulWidget {
 }
 
 class _PreviewShellState extends State<PreviewShell> {
+  /// Geräteweite Einstellungen für die Essens-Erinnerung (mealRemindDays);
+  /// bindet MealCache, falls Heute es noch nicht getan hat.
+  TypedSettings? get _mealSettings {
+    try {
+      final s = ProviderScope.containerOf(
+        context,
+      ).read(sharedOverAccountSettingsProvider);
+      MealCache.instance.attach(s);
+      return s;
+    } catch (_) {
+      return MealCache.instance.settings;
+    }
+  }
+
   ShellTab _tab = ShellTab.today;
 
   @override
@@ -279,6 +298,11 @@ class _PreviewShellState extends State<PreviewShell> {
     if (raw.trim().isEmpty || url != null) {
       await s.setMensaUrl(kid, raw);
       final owner = s.mensaOwner(kid);
+      final shared = _mealSettings;
+      if (r.remind case final days? when shared != null && url != null) {
+        setMealRemindDays(shared, owner, days);
+        MealCache.instance.touch();
+      }
       if (r.user case final user? when url != null) {
         await saveMensaLogin(
           owner,
@@ -371,6 +395,7 @@ class _PreviewShellState extends State<PreviewShell> {
               school: shortSchoolName(s.schoolName),
               schoolId: s.schoolId,
               suggestion: mensaSuggestion(s.session.travelMenu),
+              remindDays: mealRemindDays(_mealSettings, s.mensaOwner(kid)),
             );
             if (r != null && mounted) await _saveMensa(s, kid, r);
           },
@@ -390,6 +415,7 @@ class _PreviewShellState extends State<PreviewShell> {
               this.context,
               current: s.mensa.of(pick.$1),
               savedUser: saved?.user,
+              remindDays: mealRemindDays(_mealSettings, s.mensaOwner(pick.$1)),
               childName: pick.$2,
               school: shortSchoolName(s.schoolName),
               schoolId: s.schoolId,

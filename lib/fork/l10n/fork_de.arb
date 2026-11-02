@@ -1967,19 +1967,16 @@
   "mensaNoneKnown": "Für deine Schule ist noch kein Caterer hinterlegt – bitte wählen oder Adresse eingeben.",
   "mensaTwoKnown": "Für deine Schule sind zwei Caterer hinterlegt (je Standort) – bitte wählen.",
   "mensaOwnItem": "Andere Adresse eingeben …",
-  "mensaLoginAdd": "Zugang beim Caterer hinterlegen (optional)",
   "mensaLoginUser": "Benutzername oder E-Mail",
   "mensaLoginPass": "Passwort",
   "mensaLoginShow": "Passwort zeigen",
   "mensaLoginHide": "Passwort verbergen",
   "mensaLoginLocal": "Bleibt nur auf diesem Gerät im geschützten Speicher. Damit meldet sich die App beim Caterer selbst an.",
-  "mensaLoginSaved": "Zugang gespeichert: {user}",
-  "@mensaLoginSaved": {
-    "placeholders": {
-      "user": {
-        "type": "String"
-      }
-    }
-  },
-  "mensaLoginChange": "Ändern"
+  "mensaLoginChange": "Ändern",
+  "mensaLoginTitle": "Zugang beim Caterer",
+  "mensaLoginSavedTitle": "Zugang gespeichert",
+  "mensaLoginWhy": "Optional – dann meldet sich die App selbst an und zeigt das Essen auf Heute.",
+  "mensaLoginAddShort": "Hinterlegen",
+  "mealRemindDaysHint": "An diesen Tagen erinnern, wenn nichts bestellt ist",
+  "mealRemindNone": "Aus – keine Erinnerung"
 }

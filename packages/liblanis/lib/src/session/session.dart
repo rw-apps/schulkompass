@@ -160,13 +160,7 @@ class LanisSession {
     } on LanisException {
       rethrow;
     } on DioException catch (e) {
-      if (e.type == DioExceptionType.connectionTimeout ||
-          e.type == DioExceptionType.receiveTimeout ||
-          // Fork: Die Login-Anfrage hat seit Befund 2 auch ein Sende-Limit.
-          e.type == DioExceptionType.sendTimeout ||
-          e.type == DioExceptionType.connectionError) {
-        throw NoConnectionException();
-      }
+      if (dioMeansOffline(e)) throw NoConnectionException();
       throw UnknownException(e.message ?? e.toString());
     }
   }
@@ -458,5 +452,35 @@ class LanisSession {
       dio.httpClientAdapter = IOHttpClientAdapter();
     }
     dio.close(force: true);
+  }
+}
+
+/// Netz nicht erreichbar statt unbekannter Fehler?
+///
+/// Ursache (Fehlerberichte 02.11.26, 9463, 03:13 und 07:31 Uhr, Anmeldung
+/// beim App-Start im Hintergrund): Hinter DioExceptionType.unknown steckte
+/// ein Netzfehler (Ruhemodus des Handys: Namensauflösung bzw. Verbindung
+/// scheitert, obwohl der connectionChecker vorher „verbunden“ meldete). Er
+/// landete als UnknownException im Bericht statt als „keine Verbindung“.
+/// Jetzt zählen auch SocketException, HttpException (Verbindung mitten im
+/// Lesen abgebrochen) und HandshakeException (WLAN-Anmeldeseite) als
+/// offline. Grenze: Ein echtes Zertifikatsproblem des Portals sähe genauso
+/// aus wie eine WLAN-Anmeldeseite – beides ist für die Familie „gerade kein
+/// Netz“.
+bool dioMeansOffline(DioException e) {
+  switch (e.type) {
+    case DioExceptionType.connectionTimeout ||
+        DioExceptionType.receiveTimeout ||
+        // Fork: Die Login-Anfrage hat seit Befund 2 auch ein Sende-Limit.
+        DioExceptionType.sendTimeout ||
+        DioExceptionType.connectionError:
+      return true;
+    case DioExceptionType.unknown:
+      final x = e.error;
+      return x is SocketException ||
+          x is HttpException ||
+          x is HandshakeException;
+    default:
+      return false;
   }
 }

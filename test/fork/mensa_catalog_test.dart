@@ -72,6 +72,7 @@ void main() {
       user: null,
       pass: null,
       forgetLogin: false,
+      remind: null,
     );
     await t.pumpWidget(
       MaterialApp(
@@ -149,7 +150,7 @@ void main() {
       t,
       const MensaSheet(schoolId: '1001', catalog: _cat),
       act: () async {
-        await t.tap(find.text('Zugang beim Caterer hinterlegen (optional)'));
+        await t.tap(find.text('Hinterlegen'));
         await t.pumpAndSettle();
         await t.enterText(find.byType(TextField).at(0), 'eltern@example.de');
         await t.pump();
@@ -175,12 +176,29 @@ void main() {
         catalog: _cat,
       ),
       act: () async {
-        expect(find.text('Zugang gespeichert: eltern@example.de'), findsOne);
+        expect(find.text('Zugang gespeichert'), findsOne);
+        expect(find.text('eltern@example.de'), findsOne);
         await t.tap(find.text('Löschen'));
         await t.pump();
       },
     );
     expect(r?.forgetLogin, isTrue);
     expect(r?.user, isNull);
+  });
+
+  testWidgets('Erinnerung je Wochentag', (t) async {
+    final r = await open(
+      t,
+      const MensaSheet(
+        schoolId: '1001',
+        remindDays: {1, 2, 3, 4, 5},
+        catalog: _cat,
+      ),
+      act: () async {
+        await t.tap(find.text('Mi'));
+        await t.pump();
+      },
+    );
+    expect(r?.remind, {1, 2, 4, 5});
   });
 }

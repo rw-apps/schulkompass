@@ -29,6 +29,10 @@ typedef MensaSheetResult = ({
   String? user,
   String? pass,
   bool forgetLogin,
+
+  /// Wochentage (1 = Montag) der Erinnerung an fehlende Bestellungen;
+  /// null = unverändert.
+  Set<int>? remind,
 });
 
 Future<MensaSheetResult?> showMensaSheet(
@@ -39,6 +43,7 @@ Future<MensaSheetResult?> showMensaSheet(
   String schoolId = '',
   String? suggestion,
   String? savedUser,
+  Set<int>? remindDays,
   List<MensaCaterer> catalog = mensaCatalog,
 }) => showModalBottomSheet<MensaSheetResult>(
   context: context,
@@ -53,6 +58,7 @@ Future<MensaSheetResult?> showMensaSheet(
     schoolId: schoolId,
     suggestion: suggestion,
     savedUser: savedUser,
+    remindDays: remindDays,
     catalog: catalog,
   ),
 );
@@ -66,11 +72,15 @@ class MensaSheet extends StatefulWidget {
     this.schoolId = '',
     this.suggestion,
     this.savedUser,
+    this.remindDays,
     this.catalog = mensaCatalog,
   });
 
   /// Benutzername einer schon gemerkten Anmeldung (readMensaLogin).
   final String? savedUser;
+
+  /// Erinnerungstage (mealRemindDays); null = Abschnitt nicht zeigen.
+  final Set<int>? remindDays;
 
   final String? current;
   final String? childName;
@@ -95,6 +105,9 @@ class _MensaSheetState extends State<MensaSheet> {
   bool _login = false;
   bool _forget = false;
   bool _show = false;
+  late Set<int>? _remind = widget.remindDays == null
+      ? null
+      : {...widget.remindDays!};
 
   List<MensaCaterer> get _forSchool =>
       mensaCaterersForSchool(widget.schoolId, widget.catalog);
@@ -156,6 +169,51 @@ class _MensaSheetState extends State<MensaSheet> {
   }
 
   static const _ownKey = '_own';
+
+  /// Wochentag zum Antippen (wie ClassSheet, class_sheet.dart).
+  Widget _dayChip(Kit k, String label, bool sel, VoidCallback onTap) =>
+      Semantics(
+        selected: sel,
+        button: true,
+        child: Material(
+          color: sel ? k.p.strong : k.p.card,
+          borderRadius: BorderRadius.circular(Rad.buttonSmall),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(Rad.buttonSmall),
+            onTap: onTap,
+            child: SizedBox(
+              height: Sz.buttonSmall,
+              child: Center(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    label,
+                    style: k.tileTitle.copyWith(
+                      color: sel ? k.p.onStrong : k.p.ink,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+  /// Umrandeter kleiner Knopf wie „Bestellen“ (meal_week_page).
+  Widget _smallButton(Kit k, String label, Color c, VoidCallback onTap) =>
+      OutlinedButton(
+        style: OutlinedButton.styleFrom(
+          minimumSize: const Size(0, Sz.buttonTiny),
+          padding: const EdgeInsets.symmetric(
+            horizontal: Sp.l,
+            vertical: Sp.xs,
+          ),
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          side: BorderSide(color: c),
+        ),
+        onPressed: onTap,
+        child: Text(label, style: k.link.copyWith(color: c)),
+      );
 
   @override
   Widget build(BuildContext context) {
@@ -269,99 +327,238 @@ class _MensaSheetState extends State<MensaSheet> {
                 ),
             ],
             const SizedBox(height: Sp.l),
-            if (saved)
-              Row(
-                children: [
-                  Icon(Icons.key_outlined, size: Sz.icon, color: k.p.muted),
-                  const SizedBox(width: Sp.s),
-                  Expanded(
-                    child: Text(
-                      t.mensaLoginSaved(widget.savedUser!),
-                      style: k.planMeta(k.p.ink),
-                      overflow: TextOverflow.ellipsis,
+            // Erinnerung je Wochentag gleich hier (Wunsch 02.11.26) – bisher
+            // nur über die Glocke auf „Essen“ (meal_remind_sheet.dart), die
+            // kaum jemand fand. Gleicher Speicher (mealRemindDays).
+            if (_remind case final days?) ...[
+              Container(
+                padding: const EdgeInsets.all(Sp.l),
+                decoration: BoxDecoration(
+                  color: k.p.inset,
+                  borderRadius: BorderRadius.circular(Rad.panel),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          width: Sz.hintBadge,
+                          height: Sz.hintBadge,
+                          decoration: BoxDecoration(
+                            color: k.p.card,
+                            borderRadius: BorderRadius.circular(Rad.badge),
+                          ),
+                          child: Icon(
+                            Icons.notifications_active_outlined,
+                            size: Sz.hintBadgeIcon,
+                            color: k.p.ink,
+                          ),
+                        ),
+                        const SizedBox(width: Sp.m),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                t.mealRemindTitle,
+                                style: k.planSubject(k.p.ink),
+                              ),
+                              Text(
+                                days.isEmpty
+                                    ? t.mealRemindNone
+                                    : t.mealRemindDaysHint,
+                                style: k.planMeta(k.p.muted),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                  TextButton(
-                    onPressed: () => setState(() => _login = true),
-                    child: Text(t.mensaLoginChange, style: k.link),
-                  ),
-                  TextButton(
-                    onPressed: () => setState(() => _forget = true),
-                    child: Text(t.delete, style: k.link),
-                  ),
-                ],
-              )
-            else if (!_login)
-              Align(
-                alignment: Alignment.centerLeft,
-                child: TextButton.icon(
-                  onPressed: () => setState(() => _login = true),
-                  icon: Icon(Icons.key_outlined, size: Sz.icon),
-                  label: Text(t.mensaLoginAdd, style: k.link),
+                    const SizedBox(height: Sp.m),
+                    Row(
+                      children: [
+                        for (var i = 1; i <= 5; i++) ...[
+                          if (i > 1) const SizedBox(width: Sp.xs + Sp.xxs),
+                          Expanded(
+                            child: _dayChip(
+                              k,
+                              formatDate(
+                                t,
+                                'EEE',
+                                DateTime(2026, 10, 25 + i),
+                              ).replaceAll('.', ''),
+                              days.contains(i),
+                              () => setState(
+                                () => days.contains(i)
+                                    ? days.remove(i)
+                                    : days.add(i),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ],
                 ),
-              )
-            else ...[
-              TextField(
-                controller: _user,
-                autocorrect: false,
-                autofillHints: const [AutofillHints.username],
-                style: k.body,
-                decoration: onbInput(
-                  k,
-                  label: t.mensaLoginUser,
-                  icon: Icons.person_outline,
-                ),
-                onChanged: (_) => setState(() {}),
               ),
               const SizedBox(height: Sp.m),
-              TextField(
-                controller: _pass,
-                obscureText: !_show,
-                autocorrect: false,
-                enableSuggestions: false,
-                autofillHints: const [AutofillHints.password],
-                style: k.body,
-                decoration:
-                    onbInput(
-                      k,
-                      label: t.mensaLoginPass,
-                      icon: Icons.lock_outline,
-                    ).copyWith(
-                      suffixIcon: IconButton(
-                        tooltip: _show ? t.mensaLoginHide : t.mensaLoginShow,
-                        icon: Icon(
-                          _show
-                              ? Icons.visibility_off_outlined
-                              : Icons.visibility_outlined,
-                        ),
-                        onPressed: () => setState(() => _show = !_show),
-                      ),
-                    ),
-                onChanged: (_) => setState(() {}),
-              ),
-              Padding(
-                padding: const EdgeInsets.only(top: Sp.xs),
-                child: Text(t.mensaLoginLocal, style: k.planMeta(k.p.muted)),
-              ),
             ],
+            // Zugang als eigene Fläche (Rückmeldung 02.11.26: „optisch
+            // aufwerten“) – vorher nur eine Textzeile unter dem Auswahlfeld.
+            Container(
+              padding: const EdgeInsets.all(Sp.l),
+              decoration: BoxDecoration(
+                color: k.p.inset,
+                borderRadius: BorderRadius.circular(Rad.panel),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: Sz.hintBadge,
+                        height: Sz.hintBadge,
+                        decoration: BoxDecoration(
+                          color: k.p.card,
+                          borderRadius: BorderRadius.circular(Rad.badge),
+                        ),
+                        child: Icon(
+                          saved
+                              ? Icons.verified_user_outlined
+                              : Icons.key_outlined,
+                          size: Sz.hintBadgeIcon,
+                          color: k.p.ink,
+                        ),
+                      ),
+                      const SizedBox(width: Sp.m),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              saved
+                                  ? t.mensaLoginSavedTitle
+                                  : t.mensaLoginTitle,
+                              style: k.planSubject(k.p.ink),
+                            ),
+                            Text(
+                              saved
+                                  ? widget.savedUser!
+                                  : _login
+                                  ? t.mensaLoginLocal
+                                  : t.mensaLoginWhy,
+                              style: k.planMeta(k.p.muted),
+                              maxLines: saved ? 1 : 3,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (!saved && !_login) ...[
+                        const SizedBox(width: Sp.s),
+                        _smallButton(
+                          k,
+                          t.mensaLoginAddShort,
+                          k.p.onNavSelected,
+                          () => setState(() => _login = true),
+                        ),
+                      ],
+                    ],
+                  ),
+                  if (saved) ...[
+                    const SizedBox(height: Sp.m),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        _smallButton(
+                          k,
+                          t.mensaLoginChange,
+                          k.p.onNavSelected,
+                          () => setState(() => _login = true),
+                        ),
+                        const SizedBox(width: Sp.s),
+                        _smallButton(
+                          k,
+                          t.delete,
+                          k.p.cancel.ink,
+                          () => setState(() => _forget = true),
+                        ),
+                      ],
+                    ),
+                  ],
+                  if (_login) ...[
+                    const SizedBox(height: Sp.m),
+                    TextField(
+                      controller: _user,
+                      autocorrect: false,
+                      autofillHints: const [AutofillHints.username],
+                      style: k.body,
+                      decoration: onbInput(
+                        k,
+                        label: t.mensaLoginUser,
+                        icon: Icons.person_outline,
+                      ).copyWith(filled: true, fillColor: k.p.card),
+                      onChanged: (_) => setState(() {}),
+                    ),
+                    const SizedBox(height: Sp.m),
+                    TextField(
+                      controller: _pass,
+                      obscureText: !_show,
+                      autocorrect: false,
+                      enableSuggestions: false,
+                      autofillHints: const [AutofillHints.password],
+                      style: k.body,
+                      decoration:
+                          onbInput(
+                            k,
+                            label: t.mensaLoginPass,
+                            icon: Icons.lock_outline,
+                          ).copyWith(
+                            filled: true,
+                            fillColor: k.p.card,
+                            suffixIcon: IconButton(
+                              tooltip: _show
+                                  ? t.mensaLoginHide
+                                  : t.mensaLoginShow,
+                              icon: Icon(
+                                _show
+                                    ? Icons.visibility_off_outlined
+                                    : Icons.visibility_outlined,
+                              ),
+                              onPressed: () => setState(() => _show = !_show),
+                            ),
+                          ),
+                      onChanged: (_) => setState(() {}),
+                    ),
+                  ],
+                ],
+              ),
+            ),
             const SizedBox(height: Sp.l),
             OnbButton(
               label: t.save,
               onPressed: result == null || !loginOk
                   ? null
-                  : () => Navigator.of(context).pop((
+                  : () => Navigator.of(context).pop<MensaSheetResult>((
                       url: result,
                       user: _login && user.isNotEmpty ? user : null,
                       pass: _login && user.isNotEmpty ? pass : null,
                       forgetLogin: _forget,
+                      remind: _remind,
                     )),
             ),
             if (widget.current != null)
               Center(
                 child: TextButton(
-                  onPressed: () => Navigator.of(
-                    context,
-                  ).pop((url: '', user: null, pass: null, forgetLogin: true)),
+                  onPressed: () => Navigator.of(context).pop<MensaSheetResult>((
+                    url: '',
+                    user: null,
+                    pass: null,
+                    forgetLogin: true,
+                    remind: null,
+                  )),
                   child: Text(t.mensaRemove, style: k.link),
                 ),
               ),

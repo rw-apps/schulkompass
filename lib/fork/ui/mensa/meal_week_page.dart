@@ -667,14 +667,21 @@ class _MealRowState extends State<_MealRow> {
         content = [
           Text(o.name, style: k.planSubject(k.p.ink)),
           for (final l in lines) Text(l, style: k.planMeta(k.p.muted)),
-          if (d.canCancel && widget.onCancel != null)
+          // Umrandet wie „Bestellen“ (Rückmeldung 02.11.26: vorher nur
+          // roter Text, als Befehl kaum erkennbar); Rahmen in Ausfallfarbe.
+          if (d.canCancel && widget.onCancel != null) ...[
+            const SizedBox(height: Sp.s),
             Align(
               alignment: Alignment.centerLeft,
-              child: TextButton(
-                style: TextButton.styleFrom(
-                  padding: EdgeInsets.zero,
+              child: OutlinedButton(
+                style: OutlinedButton.styleFrom(
                   minimumSize: const Size(0, Sz.buttonTiny),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: Sp.l,
+                    vertical: Sp.xs,
+                  ),
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  side: BorderSide(color: k.p.cancel.ink),
                 ),
                 onPressed: () => widget.onCancel!(d),
                 child: Text(
@@ -683,6 +690,7 @@ class _MealRowState extends State<_MealRow> {
                 ),
               ),
             ),
+          ],
         ];
       case MealState.open:
         content = [

@@ -755,12 +755,16 @@
   "mensaNoneKnown": "Okulun için henüz yemek firması kayıtlı değil – lütfen seç veya adres gir.",
   "mensaTwoKnown": "Okulun için iki yemek firması kayıtlı (her bina için) – lütfen seç.",
   "mensaOwnItem": "Başka adres gir …",
-  "mensaLoginAdd": "Yemek firması girişini kaydet (isteğe bağlı)",
   "mensaLoginUser": "Kullanıcı adı veya e-posta",
   "mensaLoginPass": "Şifre",
   "mensaLoginShow": "Şifreyi göster",
   "mensaLoginHide": "Şifreyi gizle",
   "mensaLoginLocal": "Yalnızca bu cihazda korumalı depolamada kalır. Uygulama yemek firmasına kendisi giriş yapar.",
-  "mensaLoginSaved": "Giriş kayıtlı: {user}",
-  "mensaLoginChange": "Değiştir"
+  "mensaLoginChange": "Değiştir",
+  "mensaLoginTitle": "Yemek firması girişi",
+  "mensaLoginSavedTitle": "Giriş kayıtlı",
+  "mensaLoginWhy": "İsteğe bağlı – uygulama kendisi giriş yapar ve yemeği Bugün'de gösterir.",
+  "mensaLoginAddShort": "Kaydet",
+  "mealRemindDaysHint": "Sipariş yoksa bu günlerde hatırlat",
+  "mealRemindNone": "Kapalı – hatırlatma yok"
 }
