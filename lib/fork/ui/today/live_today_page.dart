@@ -28,6 +28,7 @@ import '../../demo/demo_mode.dart' show demoActive;
 import '../../notify/summary.dart';
 import '../mensa/meal_refresh.dart';
 import '../courses/homework_due.dart' show liveOpenHomework;
+import '../mensa/meal_hub_page.dart' show editMensa;
 import '../mensa/meal_week_page.dart';
 import 'kid_hints.dart' show nextSchoolDay;
 import 'today_page.dart';
@@ -48,6 +49,7 @@ Future<void> openMensa(
   String kid, {
   String? name,
   int colorIndex = 0,
+  Future<bool> Function()? onSettings,
 }) async {
   final url = s.mensa.of(kid);
   if (url == null) return;
@@ -59,6 +61,8 @@ Future<void> openMensa(
       owner: owner,
       childName: name,
       colorIndex: colorIndex,
+      // Zahnrad: Blatt dieses Kindes (meal_hub_page.dart, editMensa).
+      onSettings: onSettings ?? () => editMensa(context, s, kid, name: name),
     ),
   );
 }

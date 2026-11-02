@@ -6,10 +6,7 @@ import 'package:flutter/services.dart' show SystemNavigator;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:liblanis/liblanis.dart'
-    show
-        activeAccountProvider,
-        sharedOverAccountSettingsProvider,
-        TypedSettings;
+    show activeAccountProvider, sharedOverAccountSettingsProvider;
 
 import 'package:lanis/applets/external_definitions.dart';
 import 'package:lanis/fork/start.dart';
@@ -18,9 +15,6 @@ import 'package:lanis/utils/deep_link.dart';
 import '../../l10n/l10n.dart';
 import '../../report_relay.dart';
 import '../today/auto_report_prompt.dart' show reportOs;
-import '../../mensa_login.dart';
-import '../../mensa_store.dart'
-    show MealCache, mealRemindDays, setMealRemindDays;
 import '../../school_links.dart';
 import '../courses/grades_request.dart';
 import '../courses/course_detail_page.dart';
@@ -34,7 +28,7 @@ import '../../widget/widget_launch.dart';
 import '../live/live_data.dart';
 import '../messages/live_messages_page.dart';
 import '../messages/messages_page.dart';
-import '../mensa/mensa_sheet.dart';
+import '../mensa/meal_hub_page.dart';
 import '../more/more_page.dart';
 import '../plan/live_plan_page.dart';
 import '../settings/settings_page.dart';
@@ -77,20 +71,6 @@ class PreviewShell extends StatefulWidget {
 }
 
 class _PreviewShellState extends State<PreviewShell> {
-  /// Geräteweite Einstellungen für die Essens-Erinnerung (mealRemindDays);
-  /// bindet MealCache, falls Heute es noch nicht getan hat.
-  TypedSettings? get _mealSettings {
-    try {
-      final s = ProviderScope.containerOf(
-        context,
-      ).read(sharedOverAccountSettingsProvider);
-      MealCache.instance.attach(s);
-      return s;
-    } catch (_) {
-      return MealCache.instance.settings;
-    }
-  }
-
   ShellTab _tab = ShellTab.today;
 
   @override
@@ -285,94 +265,17 @@ class _PreviewShellState extends State<PreviewShell> {
     NavDest(Icons.more_horiz, Icons.more_horiz, t.navMore),
   ];
 
-  /// Adresse speichern, danach ggf. den Zugang (MensaSheet): erst wenn
-  /// setMensaUrl die Anmeldung des alten Caterers gelöscht hat, sonst
-  /// könnte das Löschen die neue treffen.
-  Future<void> _saveMensa(
-    LiveSnapshot s,
-    String kid,
-    MensaSheetResult r,
-  ) async {
-    final raw = r.url;
-    final url = normalizeMensaUrl(raw);
-    if (raw.trim().isEmpty || url != null) {
-      await s.setMensaUrl(kid, raw);
-      final owner = s.mensaOwner(kid);
-      final shared = _mealSettings;
-      if (r.remind case final days? when shared != null && url != null) {
-        setMealRemindDays(shared, owner, days);
-        MealCache.instance.touch();
-      }
-      if (r.user case final user? when url != null) {
-        await saveMensaLogin(
-          owner,
-          MensaLogin(host: Uri.parse(url).host, user: user, pass: r.pass ?? ''),
-        );
-        // Heute gleich mit dem neuen Zugang lesen (MealRefresh).
-        MealCache.instance.requestRefresh(owner);
-      } else if (r.forgetLogin) {
-        await forgetMensaLogin(owner);
-      }
-      return;
-    }
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(context.t.invalidUrl)));
-  }
-
-  String _mensaDetail(
-    ForkL10n t,
-    LiveSnapshot s,
-    String kid, {
-    required bool several,
-  }) {
-    final url = s.mensa.of(kid);
-    if (url == null) return t.orderMealSetup;
-    final host = Uri.parse(url).host;
-    return several && !s.mensa.ownFor(kid)
-        ? '$host · ${t.mensaInherited}'
-        : host;
-  }
-
-  Future<(String, String?)?> _chooseKid(
-    BuildContext context,
-    List<(String, String?)> kids,
-  ) {
-    final k = Kit.of(context);
-    return showModalBottomSheet<(String, String?)>(
-      context: context,
-      useRootNavigator: true,
-      showDragHandle: true,
-      backgroundColor: k.p.card,
-      builder: (context) => SafeArea(
-        child: ListView(
-          shrinkWrap: true,
-          padding: const EdgeInsets.fromLTRB(Sp.xl, 0, Sp.xl, Sp.l),
-          children: [
-            Text(context.t.chooseChild, style: k.sheetTitle),
-            const SizedBox(height: Sp.m),
-            for (final x in kids)
-              ListTile(
-                title: Text(x.$2 ?? '', style: k.planSubject(k.p.ink)),
-                onTap: () => Navigator.of(context).pop(x),
-              ),
-          ],
-        ),
-      ),
-    );
+  /// Familie für „Essen und Caterer“; ohne FamilyData das aktive Konto.
+  List<FamilyMember> _familyOr(BuildContext context, LiveSnapshot s) {
+    final f = FamilyData.of(context);
+    return f.isNotEmpty
+        ? f
+        : [FamilyMember(accountId: -1, snapshot: s, colorIndex: 0)];
   }
 
   List<MoreEntry> _liveEntries(BuildContext context, LiveSnapshot? s) {
     if (s == null) return const [];
     final t = context.t;
-    // Ein Eintrag je Kind (Wunsch 17.10.26); Schülerkonto bzw. Kinder noch
-    // nicht geladen: ein Eintrag ohne Namen.
-    final kids = <(String, String?)>[
-      if (s.kids.isEmpty) ('', null),
-      for (final k in s.kids)
-        (k.pupilId, s.kids.length > 1 ? k.firstName : null),
-    ];
-    final anyMensa = kids.any((k) => s.mensa.of(k.$1) != null);
     return [
       if (s.offers('abwesenheitsmeldung.php'))
         MoreEntry(
@@ -381,56 +284,19 @@ class _PreviewShellState extends State<PreviewShell> {
           detail: t.reportSickDetail,
           onTap: () => openAbsence(context),
         ),
-      for (final (kid, name) in kids)
-        MoreEntry(
-          icon: Icons.restaurant_menu,
-          label: name == null ? t.orderMeal : t.orderMealFor(name),
-          detail: _mensaDetail(t, s, kid, several: kids.length > 1),
-          onTap: () async {
-            if (s.mensa.of(kid) != null) {
-              await openMensa(context, s, kid, name: name);
-              return;
-            }
-            final r = await showMensaSheet(
-              context,
-              childName: name,
-              school: shortSchoolName(s.schoolName),
-              schoolId: s.schoolId,
-              suggestion: mensaSuggestion(s.session.travelMenu),
-              remindDays: mealRemindDays(_mealSettings, s.mensaOwner(kid)),
-            );
-            if (r != null && mounted) await _saveMensa(s, kid, r);
-          },
+      // Alles zum Essen an einer Stelle (meal_hub_page.dart, Entwurf
+      // 02.11.26 abgenommen) statt je Kind „Essen bestellen“ und „Mensa-
+      // Adresse ändern“.
+      MoreEntry(
+        icon: Icons.restaurant_menu,
+        label: t.mealHubTitle,
+        detail: mealHubSummary(
+          t,
+          mealKids(_familyOr(context, s)),
+          DateTime.now(),
         ),
-      if (anyMensa)
-        MoreEntry(
-          icon: Icons.edit_outlined,
-          label: t.mensaChange,
-          onTap: () async {
-            final pick = kids.length == 1
-                ? kids.single
-                : await _chooseKid(context, kids);
-            if (pick == null || !mounted) return;
-            final cur = s.mensa.of(pick.$1);
-            // Nur ein Zugang derselben Seite gilt als hinterlegt (Altlast
-            // einer früher falsch eingetragenen Adresse sonst sichtbar).
-            final saved = await readMensaLogin(
-              s.mensaOwner(pick.$1),
-              site: cur,
-            );
-            if (!mounted) return;
-            final r = await showMensaSheet(
-              this.context,
-              current: s.mensa.of(pick.$1),
-              savedUser: saved?.user,
-              remindDays: mealRemindDays(_mealSettings, s.mensaOwner(pick.$1)),
-              childName: pick.$2,
-              school: shortSchoolName(s.schoolName),
-              schoolId: s.schoolId,
-            );
-            if (r != null && mounted) await _saveMensa(s, pick.$1, r);
-          },
-        ),
+        onTap: () => pushInTab<void>(context, (_) => const MealHubPage()),
+      ),
       // Dateispeicher der Schule (data_storage.dart); öffnet im Rahmen des
       // gewählten Kontos (pushInTab), also auch für weitere Kinder.
       if (offersStorage(s.session.travelMenu))

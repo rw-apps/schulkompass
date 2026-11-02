@@ -1980,5 +1980,46 @@
   "mealRemindDaysHint": "An diesen Tagen erinnern, wenn nichts bestellt ist",
   "mealRemindNone": "Aus – keine Erinnerung",
   "mensaSameAccount": "Gleiches Konto",
-  "mealBusy": "Die Woche wird gerade neu gelesen – bitte gleich noch einmal."
+  "mealBusy": "Die Woche wird gerade neu gelesen – bitte gleich noch einmal.",
+  "mealHubTitle": "Essen und Caterer",
+  "mealHubSetupShort": "einrichten",
+  "mealHubOpen": "{day} noch nicht bestellt",
+  "mealHubOpenLong": "{day} noch nicht bestellt",
+  "mealHubSetup": "Noch nicht eingerichtet.",
+  "mealHubSetupKnown": "Noch nicht eingerichtet. Für die Schule ist {name} bekannt.",
+  "mealHubSetupAction": "Einrichten",
+  "mealHubThisWeek": "Diese Woche",
+  "mealHubUnreadable": "Die Seite des Caterers ließ sich zuletzt nicht lesen.",
+  "mealHubWeek": "Wochenplan & bestellen",
+  "mealHubBalance": "Guthaben",
+  "mealHubCaterer": "Caterer",
+  "mealHubLogin": "Zugang",
+  "mealHubLoginSaved": "gespeichert",
+  "mealHubLoginNone": "nicht hinterlegt",
+  "mealHubPage": "Seite des Caterers",
+  "mealHubPageOpen": "öffnen",
+  "mealHubRemindOff": "aus",
+  "mealHubRemindAll": "Mo–Fr",
+  "mealHubSettings": "Einstellungen zum Essen",
+  "@mealHubOpen": {
+    "placeholders": {
+      "day": {
+        "type": "String"
+      }
+    }
+  },
+  "@mealHubOpenLong": {
+    "placeholders": {
+      "day": {
+        "type": "String"
+      }
+    }
+  },
+  "@mealHubSetupKnown": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  }
 }

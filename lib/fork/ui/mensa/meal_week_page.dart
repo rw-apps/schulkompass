@@ -50,7 +50,14 @@ class MealWeekPage extends ConsumerStatefulWidget {
     this.childName,
     this.colorIndex = 0,
     this.now,
+    this.onSettings,
   });
+
+  /// Zahnrad oben rechts: Caterer, Zugang und Erinnerung dieses Kindes
+  /// (editMensa). true = Adresse geändert – dann passt diese Woche nicht
+  /// mehr und die Seite schließt sich. null = nur die Erinnerung (Glocke,
+  /// wie bis 9467).
+  final Future<bool> Function()? onSettings;
 
   final String url;
   final String owner;
@@ -248,14 +255,31 @@ class _MealWeekPageState extends ConsumerState<MealWeekPage> {
             overflow: TextOverflow.ellipsis,
           ),
           actions: [
-            IconButton(
-              tooltip: t.mealRemindTitle,
-              icon: const Icon(Icons.notifications_outlined),
-              onPressed: () async {
-                await showMealRemindSheet(context, widget.owner);
-                if (mounted) setState(() {});
-              },
-            ),
+            if (widget.onSettings case final open?)
+              IconButton(
+                tooltip: t.mealHubSettings,
+                icon: const Icon(Icons.settings_outlined),
+                onPressed: _job != null
+                    ? null
+                    : () async {
+                        final changed = await open();
+                        if (!mounted) return;
+                        if (changed) {
+                          Navigator.of(context).maybePop();
+                        } else {
+                          setState(() {});
+                        }
+                      },
+              )
+            else
+              IconButton(
+                tooltip: t.mealRemindTitle,
+                icon: const Icon(Icons.notifications_outlined),
+                onPressed: () async {
+                  await showMealRemindSheet(context, widget.owner);
+                  if (mounted) setState(() {});
+                },
+              ),
           ],
           bottom: fetch == null && _job == null
               ? null
