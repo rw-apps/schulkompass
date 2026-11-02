@@ -155,7 +155,11 @@ class _MensaPageState extends ConsumerState<MensaPage> {
     try {
       final l = await readMensaLogin(widget.owner);
       final host = Uri.tryParse(await _c.currentUrl() ?? '')?.host;
-      if (l == null || host != l.host || !mounted) return;
+      if (l == null ||
+          !mensaSameSite('https://$host', 'https://${l.host}') ||
+          !mounted) {
+        return;
+      }
       final r = await _c.runJavaScriptReturningResult(mensaLoginFillJs(l));
       if ('$r'.contains('filled')) {
         _triedLogin = true;

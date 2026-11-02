@@ -17,9 +17,11 @@ import 'mensa.dart' show mensaSameSite;
 /// Sicherheit:
 /// - Benutzername und Passwort liegen nur im geschützten Speicher des
 ///   Geräts (Android Keystore, wie das Schulportal-Passwort).
-/// - Eingesetzt nur auf genau dem Host, auf dem sie eingegeben wurden
-///   ([MensaLogin.host]); die eingebettete Seite lässt ohnehin nur die
-///   eingetragene Seite zu (mensaAllows).
+/// - Eingesetzt nur auf derselben Seite, auf der sie eingegeben wurden
+///   ([MensaLogin.host], gleiche Hauptdomain – mensaSameSite; seit 9465,
+///   weil im Blatt eingetragene Zugänge den Host der Adresse tragen und der
+///   Caterer z. B. auf „www.“ umleitet); die eingebettete Seite lässt ohnehin
+///   nur die eingetragene Seite zu (mensaAllows).
 /// - Je Seitenaufruf höchstens ein Versuch: Schlägt er fehl (Passwort
 ///   geändert), zeigt die App die Anmeldeseite wie bisher.
 /// Grenze: Mit Captcha oder Bestätigungscode geht es nicht.

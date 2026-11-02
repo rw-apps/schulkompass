@@ -22,6 +22,7 @@ import '../kit.dart';
 import 'feed_source.dart';
 import 'serial_loader.dart';
 import '../../mensa.dart';
+import '../../mensa_catalog.dart' show mensaCatererForUrl;
 import '../../mensa_login.dart' show forgetMensaLogin;
 import '../../mensa_store.dart' show MealCache;
 import '../plan/lesson_times.dart';
@@ -264,7 +265,10 @@ class LiveSnapshot {
 
   /// Selbst eingetragene Mensa-Bestellseiten je Kind.
   final MensaAddresses mensa;
-  final void Function(MensaKidKey kid, String? url) setMensaUrl;
+
+  /// Fertig, wenn auch die alte Anmeldung gelöscht ist – danach darf
+  /// MensaSheet eine neue speichern (sonst könnte das Löschen sie treffen).
+  final FutureOr<void> Function(MensaKidKey kid, String? url) setMensaUrl;
 
   /// Lokale Kontonummer (für die Zuordnung der Mensa-Anmeldung).
   final String accountKey;
@@ -771,23 +775,30 @@ class _LiveDataScopeState extends ConsumerState<LiveDataScope>
         if (st != null) storeCourseScan(st, v);
       },
       accountKey: '${account.localId}',
-      setMensaUrl: (kid, u) {
+      setMensaUrl: (kid, u) async {
         // Andere oder keine Adresse: gemerkte Anmeldung beim Caterer gehört
-        // zur alten Seite und wird gelöscht (mensa_login.dart).
+        // zur alten Seite und wird gelöscht (mensa_login.dart). Auch ein
+        // anderer Mandant derselben Plattform zählt als Wechsel
+        // (mensaCatererForUrl; Plattform mit getrennten Kundenkonten je
+        // Mandant, mensa_catalog.dart).
         final before = _mensa.of(kid);
         final next = _mensa.withUrl(kid, u);
-        if (Uri.tryParse(before ?? '')?.host !=
-            Uri.tryParse(next.of(kid) ?? '')?.host) {
-          forgetMensaLogin('${account.localId}:$kid');
-          // Auch die gemerkten Wochen samt Wochenseite des alten Caterers
-          // (MealCache.forget, mealBaseUrl – Rückmeldung 28.10.26).
-          MealCache.instance.forget('${account.localId}:$kid');
-        }
+        final after = next.of(kid);
+        final changed =
+            Uri.tryParse(before ?? '')?.host !=
+                Uri.tryParse(after ?? '')?.host ||
+            mensaCatererForUrl(before) != mensaCatererForUrl(after);
         setState(() => _mensa = next);
         final s = ref.read(accountSpecificSettingsProvider);
         s?.setString('fork/$mensaUrlsSetting', next.encode());
         // Alte Kontoadresse nur löschen, wenn MensaAddresses sie verwirft.
         if (next.legacy == null) s?.setString('fork/$mensaUrlSetting', null);
+        if (changed) {
+          // Auch die gemerkten Wochen samt Wochenseite des alten Caterers
+          // (MealCache.forget, mealBaseUrl – Rückmeldung 28.10.26).
+          MealCache.instance.forget('${account.localId}:$kid');
+          await forgetMensaLogin('${account.localId}:$kid');
+        }
       },
       refreshMessages: () =>
           _loader.run(force: true, only: const {'nachrichten.php'}),

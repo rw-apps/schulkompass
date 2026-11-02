@@ -15,6 +15,7 @@ import 'package:lanis/utils/deep_link.dart';
 import '../../l10n/l10n.dart';
 import '../../report_relay.dart';
 import '../today/auto_report_prompt.dart' show reportOs;
+import '../../mensa_login.dart';
 import '../../school_links.dart';
 import '../courses/grades_request.dart';
 import '../courses/course_detail_page.dart';
@@ -28,6 +29,7 @@ import '../../widget/widget_launch.dart';
 import '../live/live_data.dart';
 import '../messages/live_messages_page.dart';
 import '../messages/messages_page.dart';
+import '../mensa/mensa_sheet.dart';
 import '../more/more_page.dart';
 import '../plan/live_plan_page.dart';
 import '../settings/settings_page.dart';
@@ -264,10 +266,27 @@ class _PreviewShellState extends State<PreviewShell> {
     NavDest(Icons.more_horiz, Icons.more_horiz, t.navMore),
   ];
 
-  void _saveMensa(LiveSnapshot s, String kid, String raw) {
-    final ok = raw.trim().isEmpty || normalizeMensaUrl(raw) != null;
-    if (ok) {
-      s.setMensaUrl(kid, raw);
+  /// Adresse speichern, danach ggf. den Zugang (MensaSheet): erst wenn
+  /// setMensaUrl die Anmeldung des alten Caterers gelöscht hat, sonst
+  /// könnte das Löschen die neue treffen.
+  Future<void> _saveMensa(
+    LiveSnapshot s,
+    String kid,
+    MensaSheetResult r,
+  ) async {
+    final raw = r.url;
+    final url = normalizeMensaUrl(raw);
+    if (raw.trim().isEmpty || url != null) {
+      await s.setMensaUrl(kid, raw);
+      final owner = s.mensaOwner(kid);
+      if (r.user case final user? when url != null) {
+        await saveMensaLogin(
+          owner,
+          MensaLogin(host: Uri.parse(url).host, user: user, pass: r.pass ?? ''),
+        );
+      } else if (r.forgetLogin) {
+        await forgetMensaLogin(owner);
+      }
       return;
     }
     ScaffoldMessenger.of(
@@ -346,13 +365,14 @@ class _PreviewShellState extends State<PreviewShell> {
               await openMensa(context, s, kid, name: name);
               return;
             }
-            final url = await askMensaUrl(
+            final r = await showMensaSheet(
               context,
-              null,
               childName: name,
+              school: shortSchoolName(s.schoolName),
+              schoolId: s.schoolId,
               suggestion: mensaSuggestion(s.session.travelMenu),
             );
-            if (url != null && mounted) _saveMensa(s, kid, url);
+            if (r != null && mounted) await _saveMensa(s, kid, r);
           },
         ),
       if (anyMensa)
@@ -364,12 +384,17 @@ class _PreviewShellState extends State<PreviewShell> {
                 ? kids.single
                 : await _chooseKid(context, kids);
             if (pick == null || !mounted) return;
-            final url = await askMensaUrl(
+            final saved = await readMensaLogin(s.mensaOwner(pick.$1));
+            if (!mounted) return;
+            final r = await showMensaSheet(
               this.context,
-              s.mensa.of(pick.$1),
+              current: s.mensa.of(pick.$1),
+              savedUser: saved?.user,
               childName: pick.$2,
+              school: shortSchoolName(s.schoolName),
+              schoolId: s.schoolId,
             );
-            if (url != null && mounted) _saveMensa(s, pick.$1, url);
+            if (r != null && mounted) await _saveMensa(s, pick.$1, r);
           },
         ),
       // Dateispeicher der Schule (data_storage.dart); öffnet im Rahmen des
