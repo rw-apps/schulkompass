@@ -766,5 +766,7 @@
   "mensaLoginWhy": "Optional – the app then signs in by itself and shows meals on Today.",
   "mensaLoginAddShort": "Add",
   "mealRemindDaysHint": "Remind on these days if nothing is ordered",
-  "mealRemindNone": "Off – no reminder"
+  "mealRemindNone": "Off – no reminder",
+  "mensaSameAccount": "Same account",
+  "mealBusy": "The week is being refreshed – please try again in a moment."
 }

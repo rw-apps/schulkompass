@@ -766,5 +766,7 @@
   "mensaLoginWhy": "İsteğe bağlı – uygulama kendisi giriş yapar ve yemeği Bugün'de gösterir.",
   "mensaLoginAddShort": "Kaydet",
   "mealRemindDaysHint": "Sipariş yoksa bu günlerde hatırlat",
-  "mealRemindNone": "Kapalı – hatırlatma yok"
+  "mealRemindNone": "Kapalı – hatırlatma yok",
+  "mensaSameAccount": "Aynı hesap",
+  "mealBusy": "Hafta şu anda yenileniyor – lütfen birazdan tekrar deneyin."
 }

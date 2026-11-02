@@ -53,7 +53,23 @@ class _MealRefreshState extends ConsumerState<MealRefresh> {
     try {
       _cache.attach(ref.read(sharedOverAccountSettingsProvider));
     } catch (_) {}
+    _cache.refreshRequests.addListener(_onRequest);
     WidgetsBinding.instance.addPostFrameCallback((_) => _pick());
+  }
+
+  @override
+  void dispose() {
+    _cache.refreshRequests.removeListener(_onRequest);
+    super.dispose();
+  }
+
+  /// Neu lesen erbeten (MealCache.requestRefresh): „schon versucht“ vergessen.
+  void _onRequest() {
+    final want = _cache.refreshRequests.value;
+    _tried.removeWhere((t) => want.contains(t.owner));
+    if (_current == null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _pick());
+    }
   }
 
   @override
@@ -79,9 +95,13 @@ class _MealRefreshState extends ConsumerState<MealRefresh> {
     for (final t in widget.targets) {
       if (_tried.contains(t)) continue;
       final e = _cache.ofSite(t.owner, t.url);
-      if (e != null && widget.now.difference(e.at) < mealRefreshEvery) {
+      final asked = _cache.refreshRequests.value.contains(t.owner);
+      if (!asked &&
+          e != null &&
+          widget.now.difference(e.at) < mealRefreshEvery) {
         continue;
       }
+      if (asked) _cache.takeRefresh(t.owner);
       _tried.add(t);
       setState(() => _current = t);
       return;

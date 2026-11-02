@@ -155,14 +155,22 @@ class _MealWeekPageState extends ConsumerState<MealWeekPage> {
     // Nicht parallel zu einem Abruf: Beide Ansichten teilen die Anmeldung
     // beim Caterer, und ein Wochenwechsel dort könnte das Speichern in eine
     // andere Woche lenken (Prüfung 27.10.26).
-    if (_job != null || _fetch != null) return;
+    // Nicht still abbrechen (unabhängige Prüfung 02.11.26): Sonst sah ein
+    // Antippen während des Lesens aus wie eine Bestellung ohne Wirkung.
+    void tell(String text) => ScaffoldMessenger.maybeOf(
+      context,
+    )?.showSnackBar(SnackBar(content: Text(text)));
+    if (_job != null || _fetch != null) return tell(context.t.mealBusy);
     if (blockedInDemo(context)) return;
     if (!await confirmMealChange(context, day: d, option: o)) return;
-    if (!mounted || _job != null || _fetch != null) return;
+    if (!mounted) return;
+    if (_job != null || _fetch != null) return tell(context.t.mealBusy);
     final url = mealWeekPageUrl(w, d.day, _base);
     // Nie auf einer anderen Seite als der eingetragenen bestellen
     // (mealEntryFor, Rückmeldung 01.11.26).
-    if (!mensaSameSite(widget.url, url)) return;
+    if (!mensaSameSite(widget.url, url)) {
+      return tell(context.t.mealChangeNotDone);
+    }
     setState(() {
       _jobRound++;
       _job = (day: d, option: o, url: url);

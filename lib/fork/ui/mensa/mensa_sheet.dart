@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../../l10n/l10n.dart';
+import '../../mensa.dart' show mensaSameHost;
 import '../../mensa_catalog.dart';
+import '../../school_links.dart' show normalizeMensaUrl;
 import '../../onboarding/onboarding_kit.dart';
 import '../kit.dart';
 
@@ -49,6 +51,7 @@ Future<MensaSheetResult?> showMensaSheet(
   context: context,
   useRootNavigator: true,
   isScrollControlled: true,
+  useSafeArea: true,
   showDragHandle: true,
   backgroundColor: Kit.of(context).p.card,
   builder: (_) => MensaSheet(
@@ -130,18 +133,18 @@ class _MensaSheetState extends State<MensaSheet> {
     }
     final s = _forSchool;
     final portal = widget.suggestion;
-    if (s.length == 1) {
+    // Verlinkt die Schule selbst einen bekannten Caterer (App-Liste im
+    // Portal), gilt das vor dem Katalog – die Schule weiß es am besten.
+    final fromPortal = mensaCatererForUrl(portal, widget.catalog);
+    if (fromPortal != null) {
+      _pick = fromPortal.key;
+    } else if (s.length == 1) {
       _pick = s.single.key;
     } else if (s.isNotEmpty) {
       // Zwei Standorte mit verschiedenen Caterern: keine Vorauswahl.
     } else if (portal != null) {
-      final c = mensaCatererForUrl(portal, widget.catalog);
-      if (c != null) {
-        _pick = c.key;
-      } else {
-        _own = true;
-        _text.text = portal;
-      }
+      _own = true;
+      _text.text = portal;
     }
   }
 
@@ -155,8 +158,11 @@ class _MensaSheetState extends State<MensaSheet> {
 
   String? get _result {
     if (_own) {
+      // Erst eine gültige Adresse ist speicherbar (unabhängige Prüfung
+      // 02.11.26: vorher prüfte erst der Aufrufer, und Zugang und
+      // Erinnerung gingen mit der Fehlermeldung verloren).
       final v = _text.text.trim();
-      return v.isEmpty ? null : v;
+      return v.isEmpty || normalizeMensaUrl(v) == null ? null : v;
     }
     for (final c in widget.catalog) {
       if (c.key != _pick) continue;
@@ -243,7 +249,13 @@ class _MensaSheetState extends State<MensaSheet> {
     final pass = _pass.text;
     // Angefangene Anmeldung: erst mit beiden Feldern speicherbar.
     final loginOk = !_login || (user.isEmpty == pass.isEmpty);
-    final saved = widget.savedUser != null && !_forget && !_login;
+    // Gespeicherter Zugang gilt nur für dieselbe Seite; bei anderem Caterer
+    // löscht setMensaUrl ihn ohnehin (unabhängige Prüfung 02.11.26).
+    final samePage =
+        result == null ||
+        widget.current == null ||
+        mensaSameHost(result, widget.current);
+    final saved = widget.savedUser != null && !_forget && !_login && samePage;
     return SafeArea(
       child: SingleChildScrollView(
         padding: EdgeInsets.fromLTRB(
@@ -313,11 +325,24 @@ class _MensaSheetState extends State<MensaSheet> {
                 autocorrect: false,
                 keyboardType: TextInputType.url,
                 style: k.body,
-                decoration: onbInput(
-                  k,
-                  label: t.mensaUrlLabel,
-                  icon: Icons.link,
-                ).copyWith(hintText: t.mensaDialogHint),
+                decoration:
+                    onbInput(
+                      k,
+                      label: t.mensaUrlLabel,
+                      icon: Icons.link,
+                    ).copyWith(
+                      hintText: t.mensaDialogHint,
+                      // Eingabe da, aber keine gültige Adresse: gleich sagen.
+                      errorText:
+                          _text.text.trim().isNotEmpty &&
+                              normalizeMensaUrl(_text.text.trim()) == null
+                          ? t.invalidUrl
+                          : null,
+                      // Hinweis von früher (Anmeldeseite, Woche wird ersetzt).
+                      helperText: t.mensaDialogText,
+                      helperMaxLines: 5,
+                      helperStyle: k.planMeta(k.p.muted),
+                    ),
                 onChanged: (_) => setState(() {}),
               ),
               if (widget.current == null && widget.suggestion != null)

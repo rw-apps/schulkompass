@@ -308,6 +308,8 @@ class _PreviewShellState extends State<PreviewShell> {
           owner,
           MensaLogin(host: Uri.parse(url).host, user: user, pass: r.pass ?? ''),
         );
+        // Heute gleich mit dem neuen Zugang lesen (MealRefresh).
+        MealCache.instance.requestRefresh(owner);
       } else if (r.forgetLogin) {
         await forgetMensaLogin(owner);
       }
@@ -409,7 +411,13 @@ class _PreviewShellState extends State<PreviewShell> {
                 ? kids.single
                 : await _chooseKid(context, kids);
             if (pick == null || !mounted) return;
-            final saved = await readMensaLogin(s.mensaOwner(pick.$1));
+            final cur = s.mensa.of(pick.$1);
+            // Nur ein Zugang derselben Seite gilt als hinterlegt (Altlast
+            // einer früher falsch eingetragenen Adresse sonst sichtbar).
+            final saved = await readMensaLogin(
+              s.mensaOwner(pick.$1),
+              site: cur,
+            );
             if (!mounted) return;
             final r = await showMensaSheet(
               this.context,

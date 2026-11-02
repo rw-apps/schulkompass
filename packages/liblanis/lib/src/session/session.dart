@@ -8,6 +8,7 @@ import 'package:dio/io.dart';
 import 'package:dio_cookie_manager/dio_cookie_manager.dart';
 import 'package:html/dom.dart';
 import 'package:html/parser.dart';
+import 'package:http/http.dart' show ClientException;
 
 import '../applets/definition.dart';
 import '../config.dart';
@@ -463,8 +464,8 @@ class LanisSession {
 /// scheitert, obwohl der connectionChecker vorher „verbunden“ meldete). Er
 /// landete als UnknownException im Bericht statt als „keine Verbindung“.
 /// Jetzt zählen auch SocketException, HttpException (Verbindung mitten im
-/// Lesen abgebrochen) und HandshakeException (WLAN-Anmeldeseite) als
-/// offline. Grenze: Ein echtes Zertifikatsproblem des Portals sähe genauso
+/// Lesen abgebrochen), HandshakeException (WLAN-Anmeldeseite) und
+/// ClientException (Cronet auf Android) als offline. Grenze: Ein echtes Zertifikatsproblem des Portals sähe genauso
 /// aus wie eine WLAN-Anmeldeseite – beides ist für die Familie „gerade kein
 /// Netz“.
 bool dioMeansOffline(DioException e) {
@@ -479,7 +480,12 @@ bool dioMeansOffline(DioException e) {
       final x = e.error;
       return x is SocketException ||
           x is HttpException ||
-          x is HandshakeException;
+          x is HandshakeException ||
+          // Android: Die App spricht über Cronet (NativeAdapter); dessen
+          // Netzfehler kommen als ClientException (CronetException,
+          // NetworkException), nicht als SocketException (unabhängige
+          // Prüfung 02.11.26).
+          x is ClientException;
     default:
       return false;
   }

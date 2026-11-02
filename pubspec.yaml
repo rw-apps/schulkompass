@@ -20,7 +20,7 @@ publish_to: 'none'
 # Upstream-Ständen denselben Code. 9301 = Upstream-Build 93, Fork-Ausgabe 01.
 # Grenze: Die Test-APK vom 14.10.26 (arm64, --split-per-abi) hatte 2093;
 # 9301 > 2093, das Update darüber klappt also.
-version: 4.1.0+9466
+version: 4.1.0+9467
 
 environment:
   sdk: ^3.10.0
@@ -238,6 +238,8 @@ flutter_native_splash:
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  # Nur Tests: ClientException (Cronet-Netzfehler, dio_offline_test.dart).
+  http: ^1.6.0
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is

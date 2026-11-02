@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:liblanis/liblanis.dart' show SecretStore;
 
 import '../bridge/flutter_secret_store.dart';
-import 'mensa.dart' show mensaSameSite;
+import 'mensa.dart' show mensaSameHost;
 
 /// Gemerkte Anmeldung beim Caterer je Kind (`konto:kind`, MensaPage.owner).
 ///
@@ -17,11 +17,11 @@ import 'mensa.dart' show mensaSameSite;
 /// Sicherheit:
 /// - Benutzername und Passwort liegen nur im geschützten Speicher des
 ///   Geräts (Android Keystore, wie das Schulportal-Passwort).
-/// - Eingesetzt nur auf derselben Seite, auf der sie eingegeben wurden
-///   ([MensaLogin.host], gleiche Hauptdomain – mensaSameSite; seit 9465,
-///   weil im Blatt eingetragene Zugänge den Host der Adresse tragen und der
-///   Caterer z. B. auf „www.“ umleitet); die eingebettete Seite lässt ohnehin
-///   nur die eingetragene Seite zu (mensaAllows).
+/// - Eingesetzt nur auf dem Host, auf dem sie eingegeben wurden
+///   ([MensaLogin.host]), bis auf ein führendes „www.“ (mensaSameHost; im
+///   Blatt eingetragene Zugänge tragen den Host der Adresse, und Caterer
+///   leiten auf „www.“ um); die eingebettete Seite lässt ohnehin nur die
+///   eingetragene Seite zu (mensaAllows).
 /// - Je Seitenaufruf höchstens ein Versuch: Schlägt er fehl (Passwort
 ///   geändert), zeigt die App die Anmeldeseite wie bisher.
 /// Grenze: Mit Captcha oder Bestätigungscode geht es nicht.
@@ -44,7 +44,7 @@ String _key(String owner) => 'fork-mensa-login/$owner';
 
 /// Gemerkte Anmeldung; null = keine bzw. abgelehnt.
 ///
-/// Mit [site]: nur eine Anmeldung derselben Seite (mensaSameSite). Ursache
+/// Mit [site]: nur eine Anmeldung desselben Hosts (mensaSameHost). Ursache
 /// (Rückmeldung 01.11.26): Nach einer versehentlich eingetragenen Adresse
 /// des Geschwisters lag dessen Anmeldung unter dem Kind; der Abruf der
 /// richtigen Seite löschte deshalb alle Cookies (anderes Kind angemeldet)
@@ -56,7 +56,7 @@ Future<MensaLogin?> readMensaLogin(String owner, {String? site}) async {
     if (v is! Map || v['never'] == true) return null;
     final h = v['h'], u = v['u'], p = v['p'];
     if (h is! String || u is! String || p is! String) return null;
-    if (site != null && !mensaSameSite('https://$h', site)) return null;
+    if (site != null && !mensaSameHost('https://$h', site)) return null;
     return MensaLogin(host: h, user: u, pass: p);
   } catch (_) {
     return null;

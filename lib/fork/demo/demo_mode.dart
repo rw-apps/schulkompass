@@ -10,6 +10,7 @@ import 'package:lanis/utils/privacy_policy.dart';
 
 import '../error_log.dart';
 import '../homework_ledger.dart';
+import '../mensa_login.dart' show mensaSecrets;
 import '../mensa_store.dart';
 import '../ui/live/live_data.dart' show mensaUrlSetting;
 import 'demo_meals.dart';
@@ -75,6 +76,12 @@ Future<List<Override>> bootstrapDemoClient(
   }
 
   demoActive = true;
+  // Caterer-Zugänge der Demo nur im Speicher (unabhängige Prüfung
+  // 02.11.26): Das Blatt „Bestellseite“ speichert bzw. löscht Zugänge unter
+  // `konto:kind` – in der frisch angelegten Demo-Datenbank ist das Konto 1,
+  // derselbe Schlüssel wie beim ersten echten Konto.
+  _realMensaSecrets ??= mensaSecrets;
+  mensaSecrets = MemorySecretStore();
   // Dieselbe Uhr wie DemoPortal (Demo-Prüfung 27.10.26: vorher
   // DateTime.now, mit Test-Uhr liefen Essen und Portal auseinander).
   MealCache.instance.demo = (_) => demoMealEntry((now ?? DateTime.now)());
@@ -147,9 +154,13 @@ HomeworkLedger demoHomeworkLedger(DateTime now) {
   );
 }
 
+SecretStore? _realMensaSecrets;
+
 /// Demo verlassen: Merker zurück, Protokoll wieder an.
 void leaveDemo() {
   demoActive = false;
+  if (_realMensaSecrets case final real?) mensaSecrets = real;
+  _realMensaSecrets = null;
   MealCache.instance.demo = null;
   ErrorLog.instance.muted = false;
 }

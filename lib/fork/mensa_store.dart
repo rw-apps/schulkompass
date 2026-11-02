@@ -4,7 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:liblanis/liblanis.dart' show TypedSettings;
 
-import 'mensa.dart' show mensaSameSite;
+import 'mensa.dart' show mensaSameSite, mensaSiteKey;
 import 'mensa_week.dart';
 
 /// Zuletzt gelesene Essenswochen je Kind (`konto:kind`, MensaPage.owner),
@@ -192,7 +192,6 @@ List<DateTime> mealReminderDays(
   return out..sort();
 }
 
-/// Adresse, von der aus die App die Wochen liest: die zuletzt gelesene
 /// Gemerkter Stand eines Kindes, soweit er zur eingetragenen Adresse
 /// [address] gehört (mensaSameSite); null ohne Adresse oder wenn alle
 /// gemerkten Wochen von einer anderen Seite stammen.
@@ -221,6 +220,7 @@ MealEntry? mealEntryFor(MealEntry? e, String? address) {
   );
 }
 
+/// Adresse, von der aus die App die Wochen liest: die zuletzt gelesene
 /// Wochenseite (MealWeek.url), sonst die eingetragene Adresse.
 ///
 /// Ursache (Bildschirmfoto 27.10.26): Eingetragen ist oft die Startseite
@@ -324,11 +324,29 @@ Map<String, MealEntry> readMealEntries(TypedSettings s) {
 /// MealFetcher und MealOrderRunner prüfen deshalb diesen Eintrag.
 const mensaLastKey = 'fork-mensa/last';
 
+/// Einträge je Hauptdomain (mensaSiteKey). Ältere Einträge standen unter
+/// dem genauen Host; liegen dort für eine Domain verschiedene Kinder (z. B.
+/// mit und ohne „www.“), ist unklar, wer zuletzt angemeldet war – dann gilt
+/// [_unknownOwner], das zu keinem Kind passt: Abruf meldet neu an, Bestellen
+/// unterbleibt, bis jemand die Seite übernimmt.
+const _unknownOwner = '?';
+
 Map<String, dynamic> _readLast(TypedSettings? s) {
   try {
     final raw = s?.getString(mensaLastKey);
     final v = raw == null ? null : jsonDecode(raw);
-    return v is Map<String, dynamic> ? v : {};
+    if (v is! Map<String, dynamic>) return {};
+    final out = <String, dynamic>{};
+    for (final e in v.entries) {
+      final k = mensaSiteKey(e.key);
+      final old = out[k];
+      if (old is Map && e.value is Map && old['owner'] != e.value['owner']) {
+        out[k] = {'owner': _unknownOwner, 'name': ''};
+      } else {
+        out[k] = e.value;
+      }
+    }
+    return out;
   } catch (_) {
     return {};
   }
@@ -336,13 +354,13 @@ Map<String, dynamic> _readLast(TypedSettings? s) {
 
 /// Kind, das zuletzt auf [host] war; null = unbekannt.
 String? mensaLastOwner(TypedSettings? s, String host) {
-  final e = _readLast(s)[host];
+  final e = _readLast(s)[mensaSiteKey(host)];
   return e is Map ? e['owner'] as String? : null;
 }
 
 /// Name des Kindes, das zuletzt auf [host] war ('' = unbekannt).
 String mensaLastName(TypedSettings? s, String host) {
-  final e = _readLast(s)[host];
+  final e = _readLast(s)[mensaSiteKey(host)];
   return e is Map ? '${e['name'] ?? ''}' : '';
 }
 
@@ -354,8 +372,9 @@ void setMensaLastOwner(
 }) {
   if (s == null) return;
   final last = _readLast(s);
-  final old = last[host];
-  last[host] = {
+  final key = mensaSiteKey(host);
+  final old = last[key];
+  last[key] = {
     'owner': owner,
     'name':
         name ??
@@ -382,6 +401,20 @@ class MealCache {
   MealEntry Function(String owner)? demo;
 
   final notifier = ValueNotifier<Map<String, MealEntry>>(const {});
+
+  /// Kinder, deren Woche Heute gleich neu lesen soll (MealRefresh), auch
+  /// wenn der letzte Versuch frisch ist. Ursache (unabhängige Prüfung
+  /// 02.11.26): Nach dem Hinterlegen eines Zugangs bei gleicher Adresse
+  /// las Heute bis zum Neustart nicht neu (MealRefresh._tried).
+  final refreshRequests = ValueNotifier<Set<String>>(const {});
+
+  void requestRefresh(String owner) =>
+      refreshRequests.value = {...refreshRequests.value, owner};
+
+  void takeRefresh(String owner) => refreshRequests.value = {
+    for (final o in refreshRequests.value)
+      if (o != owner) o,
+  };
 
   void attach(TypedSettings s) {
     if (identical(s, _settings)) return;

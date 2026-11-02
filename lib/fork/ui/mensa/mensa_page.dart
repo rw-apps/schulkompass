@@ -59,6 +59,9 @@ class _MensaPageState extends ConsumerState<MensaPage> {
   bool _failed = false;
   String? _otherName;
 
+  /// Hinweis ausgeblendet – die Seite gilt trotzdem nicht als übernommen.
+  bool _hidden = false;
+
   /// Gemerkte Anmeldung je Seite höchstens einmal einsetzen (mensa_login.dart).
   bool _triedLogin = false;
   bool _afterLogin = false;
@@ -156,7 +159,7 @@ class _MensaPageState extends ConsumerState<MensaPage> {
       final l = await readMensaLogin(widget.owner);
       final host = Uri.tryParse(await _c.currentUrl() ?? '')?.host;
       if (l == null ||
-          !mensaSameSite('https://$host', 'https://${l.host}') ||
+          !mensaSameHost('https://$host', 'https://${l.host}') ||
           !mounted) {
         return;
       }
@@ -349,31 +352,50 @@ class _MensaPageState extends ConsumerState<MensaPage> {
       ),
       body: Column(
         children: [
-          if (other != null)
+          if (other != null && !_hidden)
             Material(
               color: k.p.change.bg,
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(Sp.l, Sp.s, Sp.s, Sp.s),
-                child: Row(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Expanded(
-                      child: Text(
-                        other.isEmpty
-                            ? t.mensaOtherLoggedIn
-                            : t.mensaOtherLoggedInName(other),
-                        style: k.boxText(k.p.change),
-                      ),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            other.isEmpty
+                                ? t.mensaOtherLoggedIn
+                                : t.mensaOtherLoggedInName(other),
+                            style: k.boxText(k.p.change),
+                          ),
+                        ),
+                        IconButton(
+                          tooltip: t.close,
+                          icon: Icon(Icons.close, color: k.p.change.ink),
+                          onPressed: () => setState(() => _hidden = true),
+                        ),
+                      ],
                     ),
-                    TextButton(
-                      onPressed: _logout,
-                      child: Text(t.mensaLogout, style: k.link),
-                    ),
-                    IconButton(
-                      tooltip: t.close,
-                      icon: Icon(Icons.close, color: k.p.change.ink),
-                      // Geschwister teilen ein Konto beim Caterer: Seite
-                      // gilt ab jetzt als die dieses Kindes.
-                      onPressed: _claim,
+                    Wrap(
+                      spacing: Sp.s,
+                      children: [
+                        TextButton(
+                          onPressed: _logout,
+                          child: Text(t.mensaLogout, style: k.link),
+                        ),
+                        // Geschwister teilen ein Konto beim Caterer: erst
+                        // dieser ausdrückliche Knopf übernimmt die Seite
+                        // (_claim). Ursache (unabhängige Prüfung 02.11.26):
+                        // Bis 9466 tat das schon das Schließen – wer den
+                        // Hinweis nur wegklickte, ließ die App die Woche des
+                        // Geschwisters als die dieses Kindes merken und dort
+                        // bestellen.
+                        TextButton(
+                          onPressed: _claim,
+                          child: Text(t.mensaSameAccount, style: k.link),
+                        ),
+                      ],
                     ),
                   ],
                 ),

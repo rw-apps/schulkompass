@@ -4,7 +4,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
-import '../../mensa.dart' show mensaAllows, mensaSameSite;
+import '../../mensa.dart' show mensaAllows, mensaSameHost;
 import '../../mensa_login.dart';
 import '../../mensa_store.dart'
     show MealCache, mealNavJs, mensaLastOwner, setMensaLastOwner;
@@ -422,7 +422,7 @@ class _MealFetcherState extends State<MealFetcher> {
     final l = await readMensaLogin(owner);
     final host = Uri.tryParse(await _c.currentUrl() ?? '')?.host;
     if (l == null ||
-        !mensaSameSite('https://$host', 'https://${l.host}') ||
+        !mensaSameHost('https://$host', 'https://${l.host}') ||
         _done ||
         !mounted) {
       _trace(l == null ? 'no saved login' : 'login host differs');

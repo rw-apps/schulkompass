@@ -1978,5 +1978,7 @@
   "mensaLoginWhy": "Optional – dann meldet sich die App selbst an und zeigt das Essen auf Heute.",
   "mensaLoginAddShort": "Hinterlegen",
   "mealRemindDaysHint": "An diesen Tagen erinnern, wenn nichts bestellt ist",
-  "mealRemindNone": "Aus – keine Erinnerung"
+  "mealRemindNone": "Aus – keine Erinnerung",
+  "mensaSameAccount": "Gleiches Konto",
+  "mealBusy": "Die Woche wird gerade neu gelesen – bitte gleich noch einmal."
 }

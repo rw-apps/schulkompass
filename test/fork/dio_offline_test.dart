@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' show ClientException;
 import 'package:liblanis/liblanis.dart' show dioMeansOffline;
 
 // Fehlerberichte 02.11.26: Netzfehler hinter DioExceptionType.unknown kamen
@@ -41,6 +42,18 @@ void main() {
     expect(
       dioMeansOffline(
         e(DioExceptionType.unknown, const HandshakeException('x')),
+      ),
+      isTrue,
+    );
+  });
+
+  test('Cronet (ClientException): offline', () {
+    expect(
+      dioMeansOffline(
+        e(
+          DioExceptionType.unknown,
+          ClientException('net::ERR_NAME_NOT_RESOLVED'),
+        ),
       ),
       isTrue,
     );

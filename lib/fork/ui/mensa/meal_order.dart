@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 import '../../meal_order_js.dart';
-import '../../mensa.dart' show mensaAllows, mensaSameSite;
+import '../../mensa.dart' show mensaAllows, mensaSameHost;
 import '../../mensa_login.dart';
 import '../../mensa_store.dart'
     show MealCache, mensaLastOwner, setMensaLastOwner;
@@ -355,7 +355,7 @@ class _MealOrderRunnerState extends State<MealOrderRunner> {
     final l = await readMensaLogin(widget.owner);
     final host = Uri.tryParse(await _c.currentUrl() ?? '')?.host;
     if (l == null ||
-        !mensaSameSite('https://$host', 'https://${l.host}') ||
+        !mensaSameHost('https://$host', 'https://${l.host}') ||
         _over) {
       return false;
     }

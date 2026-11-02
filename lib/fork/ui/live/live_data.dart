@@ -779,14 +779,13 @@ class _LiveDataScopeState extends ConsumerState<LiveDataScope>
         // Andere oder keine Adresse: gemerkte Anmeldung beim Caterer gehört
         // zur alten Seite und wird gelöscht (mensa_login.dart). Auch ein
         // anderer Mandant derselben Plattform zählt als Wechsel
-        // (mensaCatererForUrl; Plattform mit getrennten Kundenkonten je
+        // (mensaOtherPage, mensaCatererForUrl; getrennte Kundenkonten je
         // Mandant, mensa_catalog.dart).
         final before = _mensa.of(kid);
         final next = _mensa.withUrl(kid, u);
         final after = next.of(kid);
         final changed =
-            Uri.tryParse(before ?? '')?.host !=
-                Uri.tryParse(after ?? '')?.host ||
+            mensaOtherPage(before, after) ||
             mensaCatererForUrl(before) != mensaCatererForUrl(after);
         setState(() => _mensa = next);
         final s = ref.read(accountSpecificSettingsProvider);
