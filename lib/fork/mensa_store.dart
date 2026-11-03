@@ -314,6 +314,32 @@ Map<String, MealEntry> readMealEntries(TypedSettings s) {
   return out;
 }
 
+/// Bestellen und Abbestellen in der App (MealOrderRunner) eingeschaltet?
+///
+/// Ursache (Prüfung auf Massentauglichkeit 03.11.26): Die App drückt dabei
+/// unsichtbar die Knöpfe der Caterer-Seite – es geht um Geld, ein Umbau der
+/// Seite träfe viele Familien zugleich, und die Nutzungsbedingungen der
+/// Caterer sind ungeklärt. Für einen Rollout deshalb eine Testfunktion:
+/// neu eingerichtet aus, „Bestellen“ öffnet dann die Seite des Caterers.
+/// Grenze: Wer schon Essenswochen in der App hat (bisherige Nutzer), behält
+/// sie eingeschaltet, bis er sie selbst ausschaltet.
+const mealOrderInAppKey = 'fork-mensa/order-in-app';
+
+bool mealOrderInApp(TypedSettings? s) => s?.getBool(mealOrderInAppKey) ?? false;
+
+/// Voreinstellung einmal festlegen und merken (MealCache.attach): bisherige
+/// Nutzer mit gelesenen Wochen an, neue aus. Sonst schaltete sich die
+/// Funktion bei neuen Nutzern ein, sobald die erste Woche gelesen ist.
+void settleMealOrderInApp(TypedSettings s) {
+  try {
+    if (s.getBool(mealOrderInAppKey) != null) return;
+    s.setBool(mealOrderInAppKey, readMealEntries(s).isNotEmpty);
+  } catch (_) {}
+}
+
+void setMealOrderInApp(TypedSettings s, bool on) =>
+    s.setBool(mealOrderInAppKey, on);
+
 /// Wer zuletzt auf welcher Seite eines Caterers angemeldet bzw. geöffnet
 /// war (geräteweit, Host → `{owner, name}`; Schlüssel wie MensaPage).
 ///
@@ -419,6 +445,7 @@ class MealCache {
   void attach(TypedSettings s) {
     if (identical(s, _settings)) return;
     _settings = s;
+    settleMealOrderInApp(s);
     final out = readMealEntries(s);
     // Aufruf aus initState (MealRefresh, MealWeekPage) fällt in den Aufbau;
     // Heute hört auf [notifier] – erst nach dem Bild melden, sonst

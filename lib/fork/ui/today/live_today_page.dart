@@ -335,6 +335,21 @@ class _LiveTodayPageState extends State<LiveTodayPage> {
                           if (r != null) m.snapshot.setClass!(r.name);
                         },
                 ),
+            // Elternkonto mit mehreren Kindern (Prüfung auf Massentauglichkeit
+            // 03.11.26): Heute, Plan und Meldungen folgen derzeit nur dem
+            // ersten Kind (mensaKid, lessons_parent.dart) – sonst still
+            // falsche Daten beim zweiten. Grenze: nur ein Hinweis, die
+            // getrennte Darstellung je Kind steht noch aus.
+            for (final (m, kid) in shown)
+              if (m.snapshot.kids.length > 1)
+                HintCard(
+                  icon: Icons.family_restroom_outlined,
+                  title: context.t.severalKidsTitle,
+                  text: context.t.severalKidsText(
+                    kid.firstName,
+                    m.snapshot.kids.skip(1).map((k) => k.firstName).join(', '),
+                  ),
+                ),
             // Offene Wahl im Wahltool (portal_extras.dart, Wunsch 20.10.26).
             for (final (m, kid) in shown)
               if (m.snapshot.electionOpen)

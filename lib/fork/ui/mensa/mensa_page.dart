@@ -156,7 +156,7 @@ class _MensaPageState extends ConsumerState<MensaPage> {
     if (_triedLogin || _filling) return;
     _filling = true;
     try {
-      final l = await readMensaLogin(widget.owner);
+      final l = await readMensaLogin(widget.owner, auto: true);
       final host = Uri.tryParse(await _c.currentUrl() ?? '')?.host;
       if (l == null ||
           !mensaSameHost('https://$host', 'https://${l.host}') ||
@@ -216,6 +216,11 @@ class _MensaPageState extends ConsumerState<MensaPage> {
     if (_asked) return;
     final old = await readMensaLogin(widget.owner);
     if (old != null && old.user == u && old.pass == p && old.host == h) {
+      // Selbst eingegeben, also wieder gültig: eine frühere Ablehnung
+      // (markMensaLoginFailed) aufheben.
+      if (await mensaLoginFailed(widget.owner)) {
+        await saveMensaLogin(widget.owner, old);
+      }
       return;
     }
     if (old == null && await mensaLoginDeclined(widget.owner)) return;

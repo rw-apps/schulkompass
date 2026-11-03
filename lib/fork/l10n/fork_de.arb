@@ -348,7 +348,7 @@
       }
     }
   },
-  "unofficial": "inoffiziell, nicht vom Land Hessen",
+  "unofficial": "inoffiziell, nicht vom Land Hessen – Angaben ohne Gewähr, verbindlich ist das Schulportal",
   "whatsNew": "Neu in dieser Version",
   "privacy": "Datenschutz",
   "privacyDetail": "Kein eigener Server – Fehlerberichte nur mit Zustimmung",
@@ -1021,7 +1021,7 @@
     }
   },
   "onbAppName": "Schulportal",
-  "onbIntro": "Stundenplan, Vertretungen, Termine und Nachrichten deiner Kinder – für alle Schulen im Schulportal Hessen.",
+  "onbIntro": "Stundenplan, Vertretungen, Termine und Nachrichten deiner Kinder aus dem Schulportal Hessen.",
   "onbToday": "Was gerade läuft, was ausfällt, was ansteht",
   "onbCalendar": "Woche und Termine aller Kinder",
   "onbCourses": "Hausaufgaben, Arbeiten und Noten",
@@ -1059,7 +1059,7 @@
   "onbNotifyTitle": "Nichts verpassen",
   "onbNotifyIntro": "Die App meldet sich nur, wenn es das Kind betrifft – nicht bei jeder Änderung im Plan der Klasse.",
   "onbNotifyChanges": "Ausfall und Vertretung",
-  "onbNotifyChangesText": "Für heute sofort, für morgen gesammelt ab 19 Uhr",
+  "onbNotifyChangesText": "Für heute zeitnah, für morgen gesammelt ab 19 Uhr",
   "onbNotifyGrades": "Neue Noten und Arbeiten",
   "onbNotifyGradesText": "Einmal am Tag – nur das Fach, nie die Note",
   "onbNotifyEvents": "Wichtige Termine",
@@ -2021,5 +2021,34 @@
         "type": "String"
       }
     }
-  }
+  },
+  "transferAuthTitle": "Zugänge übertragen",
+  "transferAuthText": "Zum Senden aller gespeicherten Zugänge bitte bestätigen.",
+  "transferNoLockTitle": "Keine Displaysperre",
+  "transferNoLockText": "Dieses Gerät hat keine PIN, kein Muster und keinen Fingerabdruck. Jeder, der es in der Hand hat, könnte alle Zugänge übertragen. Trotzdem senden?",
+  "transferNoLockGo": "Trotzdem senden",
+  "transferMensaHosts": "Bestellseiten für „Essen“ aus der Datei: {hosts}. Nur übernehmen, wenn du diese Seiten kennst.",
+  "@transferMensaHosts": {
+    "placeholders": {
+      "hosts": {
+        "type": "String"
+      }
+    }
+  },
+  "severalKidsTitle": "Mehrere Kinder im Elternkonto",
+  "severalKidsText": "Heute, Stundenplan und Benachrichtigungen zeigen derzeit nur {first}. Für {others} bitte vorerst das Schulportal nutzen.",
+  "@severalKidsText": {
+    "placeholders": {
+      "first": {
+        "type": "String"
+      },
+      "others": {
+        "type": "String"
+      }
+    }
+  },
+  "onbDisclaimer": "Inoffizielle App, nicht vom Land Hessen. Angaben ohne Gewähr – verbindlich ist das Schulportal.",
+  "mealHubLoginRejected": "abgelehnt – neu eingeben",
+  "mealOrderInApp": "In der App bestellen (Test)",
+  "mealOrderInAppDetail": "Bestellen und Abbestellen direkt im Wochenplan. Aus: „Seite des Caterers“ öffnet die Bestellseite."
 }

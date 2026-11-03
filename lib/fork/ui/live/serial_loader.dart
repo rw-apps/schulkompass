@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 /// Führt Ladedurchgänge strikt nacheinander aus und verwirft keinen Wunsch.
 ///
 /// Ursache: Alle Parser teilen eine Sitzung; gleichzeitige Durchgänge hätten
@@ -63,9 +65,16 @@ class SerialLoader {
 /// null – null, wenn alles gelang (Folge beginnt dann von vorn) oder die
 /// Folge aufgebraucht ist (dann übernimmt der feste Takt).
 class RetryBackoff {
-  RetryBackoff(this.delays);
+  RetryBackoff(this.delays, {this.jitter = 0.25, math.Random? random})
+    : _random = random ?? math.Random();
 
   final List<Duration> delays;
+
+  /// Zufälliger Anteil je Abstand (±): Nach einer Portalstörung sollen nicht
+  /// alle Geräte im selben 1/2/5-Minuten-Takt wiederkommen (Prüfung auf
+  /// Massentauglichkeit 03.11.26). 0 = genau [delays] (Tests).
+  final double jitter;
+  final math.Random _random;
   int _step = 0;
 
   Duration? after({required bool failed}) {
@@ -74,6 +83,9 @@ class RetryBackoff {
       return null;
     }
     if (_step >= delays.length) return null;
-    return delays[_step++];
+    final d = delays[_step++];
+    if (jitter <= 0) return d;
+    final f = 1 + jitter * (2 * _random.nextDouble() - 1);
+    return Duration(milliseconds: (d.inMilliseconds * f).round());
   }
 }

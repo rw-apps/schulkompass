@@ -204,7 +204,7 @@ class _MealFetcherState extends State<MealFetcher> {
     final owner = widget.owner;
     final last = mensaLastOwner(MealCache.instance.settings, _home.host);
     if (owner != null && last != null && last != owner) {
-      final l = await readMensaLogin(owner, site: widget.url);
+      final l = await readMensaLogin(owner, site: widget.url, auto: true);
       if (_done || !mounted) return;
       if (l == null || MealOrderRunner.running > 0) {
         _trace('other child logged in, not reading');
@@ -387,6 +387,18 @@ class _MealFetcherState extends State<MealFetcher> {
     return true;
   }
 
+  Future<bool> _passwordShown() async {
+    try {
+      final r = await _c.runJavaScriptReturningResult(
+        "Array.prototype.some.call(document.querySelectorAll('input[type=password]'), "
+        "function (x) { return !!(x.offsetWidth || x.offsetHeight); }) ? 'yes' : 'no'",
+      );
+      return '$r'.contains('yes');
+    } catch (_) {
+      return false;
+    }
+  }
+
   /// true = Anmeldung läuft bzw. Woche wird neu geladen; auf die nächste
   /// Seite warten.
   Future<bool> _login() async {
@@ -418,8 +430,17 @@ class _MealFetcherState extends State<MealFetcher> {
       _load(target);
       return true;
     }
-    if (_triedLogin) return false;
-    final l = await readMensaLogin(owner);
+    if (_triedLogin) {
+      // Nach unserem Ausfüllen wieder eine sichtbare Anmeldemaske: abgelehnt
+      // (markMensaLoginFailed) – nicht bei jedem Abruf neu versuchen. Eine
+      // Hinweisseite ohne Passwortfeld nach der Anmeldung zählt nicht.
+      if (await _passwordShown() && !_done && mounted) {
+        _trace('login rejected');
+        await markMensaLoginFailed(owner);
+      }
+      return false;
+    }
+    final l = await readMensaLogin(owner, auto: true);
     final host = Uri.tryParse(await _c.currentUrl() ?? '')?.host;
     if (l == null ||
         !mensaSameHost('https://$host', 'https://${l.host}') ||

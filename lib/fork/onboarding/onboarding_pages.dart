@@ -60,6 +60,11 @@ class ForkWelcomePage extends StatelessWidget {
           Text(t.onbAppName, style: k.greeting),
           const SizedBox(height: Sp.s),
           Text(t.onbIntro, style: k.body),
+          // Hinweis „inoffiziell, ohne Gewähr“ gleich am Anfang (Prüfung auf
+          // Massentauglichkeit 03.11.26): Wer sich auf eine Meldung verlässt,
+          // soll wissen, dass verbindlich das Schulportal ist.
+          const SizedBox(height: Sp.s),
+          Text(t.onbDisclaimer, style: k.meta),
           const SizedBox(height: Sp.xl),
           OnbFeature(
             icon: Icons.wb_sunny_outlined,

@@ -82,6 +82,8 @@ class _MealWeekPageState extends ConsumerState<MealWeekPage> {
 
   DateTime get _thisWeek => schoolWeek(_now).first;
 
+  bool get _inApp => _cache.demo != null || mealOrderInApp(_cache.settings);
+
   /// Zuletzt gelesene Wochenseite statt Startseite (mealBaseUrl).
   String get _base => mealBaseUrl(widget.url, _entry);
 
@@ -339,11 +341,13 @@ class _MealWeekPageState extends ConsumerState<MealWeekPage> {
                             ? null
                             : () => _go(w, 1),
                         onOrder: () => _order(w),
-                        // Während eines Vorgangs keine weiteren Knöpfe.
-                        onOrderOption: _job != null || fetch != null
+                        // Während eines Vorgangs keine weiteren Knöpfe;
+                        // ohne „In der App bestellen“ (mealOrderInApp)
+                        // gar keine – dann „Seite des Caterers“.
+                        onOrderOption: _job != null || fetch != null || !_inApp
                             ? null
                             : (d, o) => _change(w, d, o),
-                        onCancel: _job != null || fetch != null
+                        onCancel: _job != null || fetch != null || !_inApp
                             ? null
                             : (d) => _change(w, d, null),
                       );

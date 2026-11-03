@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart' show ProviderScope;
+import 'package:liblanis/liblanis.dart' show sharedOverAccountSettingsProvider;
 
 import '../../l10n/l10n.dart';
 import '../../mensa.dart' show MensaKidKey;
@@ -11,6 +13,7 @@ import '../kit.dart';
 import '../live/family.dart';
 import '../live/live_data.dart';
 import '../nav.dart' show pushFullScreen;
+import '../settings/settings_widgets.dart';
 import '../today/live_today_page.dart' show openMensa, mealUnorderedDay;
 import '../today/today_from_lanis.dart' show shortSchoolName;
 import '../today/today_page.dart' show schoolWeek, dayDiff;
@@ -172,6 +175,19 @@ class _MealHubPageState extends State<MealHubPage> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    try {
+      MealCache.instance.attach(
+        ProviderScope.containerOf(
+          context,
+          listen: false,
+        ).read(sharedOverAccountSettingsProvider),
+      );
+    } catch (_) {}
+  }
+
+  @override
   Widget build(BuildContext context) {
     final k = Kit.of(context);
     final t = context.t;
@@ -198,6 +214,24 @@ class _MealHubPageState extends State<MealHubPage> {
                 now: now,
                 named: kids.length > 1,
                 onEdit: () => _edit(kid),
+              ),
+            ],
+            // Bestellen in der App als Testfunktion (mealOrderInApp).
+            if (MealCache.instance.settings case final st?) ...[
+              const SizedBox(height: Sp.l),
+              SettingsGroup(
+                children: [
+                  SettingsSwitchRow(
+                    label: t.mealOrderInApp,
+                    detail: t.mealOrderInAppDetail,
+                    icon: Icons.science_outlined,
+                    value: mealOrderInApp(st),
+                    onChanged: (v) {
+                      setMealOrderInApp(st, v);
+                      setState(() {});
+                    },
+                  ),
+                ],
               ),
             ],
           ],
@@ -322,14 +356,23 @@ class _KidMealCard extends StatelessWidget {
           onTap: onEdit,
         ),
         Divider(height: 1, color: k.p.inset),
-        FutureBuilder<MensaLogin?>(
-          future: readMensaLogin(owner, site: url),
-          builder: (context, snap) => _Row(
-            icon: Icons.key_outlined,
-            label: t.mealHubLogin,
-            value: snap.data != null ? t.mealHubLoginSaved : t.mealHubLoginNone,
-            onTap: onEdit,
-          ),
+        FutureBuilder<(MensaLogin?, bool)>(
+          future: _loginState(owner, url),
+          builder: (context, snap) {
+            final (login, failed) = snap.data ?? (null, false);
+            return _Row(
+              icon: Icons.key_outlined,
+              label: t.mealHubLogin,
+              // Abgelehnt (markMensaLoginFailed): neu eingeben.
+              value: login == null
+                  ? t.mealHubLoginNone
+                  : failed
+                  ? t.mealHubLoginRejected
+                  : t.mealHubLoginSaved,
+              valueColor: failed && login != null ? k.p.change.ink : null,
+              onTap: onEdit,
+            );
+          },
         ),
         Divider(height: 1, color: k.p.inset),
         _Row(
@@ -368,6 +411,12 @@ class _KidMealCard extends StatelessWidget {
       ),
     );
   }
+
+  static Future<(MensaLogin?, bool)> _loginState(
+    String owner,
+    String url,
+  ) async =>
+      (await readMensaLogin(owner, site: url), await mensaLoginFailed(owner));
 
   /// „Mo–Fr“, „aus“ oder die Kurznamen („Mo, Di, Do“).
   static String _days(ForkL10n t, Set<int> d) {
@@ -464,8 +513,10 @@ class _Row extends StatelessWidget {
     required this.value,
     required this.onTap,
     this.external = false,
+    this.valueColor,
   });
 
+  final Color? valueColor;
   final IconData icon;
   final String label;
   final String value;
@@ -490,7 +541,9 @@ class _Row extends StatelessWidget {
                 value,
                 textAlign: TextAlign.right,
                 overflow: TextOverflow.ellipsis,
-                style: k.hintSlot,
+                style: valueColor == null
+                    ? k.hintSlot
+                    : k.hintSlot.copyWith(color: valueColor),
               ),
             ),
             const SizedBox(width: Sp.xs),

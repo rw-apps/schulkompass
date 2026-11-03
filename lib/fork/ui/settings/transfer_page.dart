@@ -112,6 +112,9 @@ class _TransferPageState extends ConsumerState<TransferPage> {
       _snack(t.transferNoMatch);
       return;
     }
+    final hosts = transferMensaHosts(data, [
+      for (final a in matched) transferAccountKey(a.schoolID, a.username),
+    ]);
     final ok = await showDialog<bool>(
       context: context,
       builder: (c) => AlertDialog(
@@ -127,6 +130,7 @@ class _TransferPageState extends ConsumerState<TransferPage> {
                   .join(', '),
             ),
             if (skipped > 0) t.transferSkipped(skipped),
+            if (hosts.isNotEmpty) t.transferMensaHosts(hosts.join(', ')),
           ].join('\n\n'),
         ),
         actions: [

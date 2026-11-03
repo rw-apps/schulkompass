@@ -164,3 +164,36 @@ Map<String, Map<String, String?>> collectTransferValues(
       for (final k in transferKeys) k: db.getAccountSetting(a.localId, k),
     },
 };
+
+/// Hosts der Bestellseiten, die eine Eingaben-Datei für [keys] setzen würde
+/// (je Kind und alte Kontoadresse), sortiert.
+///
+/// Ursache (Sicherheitsprüfung 03.11.26): Ein Import schrieb Mensa-Adressen
+/// ohne Hinweis. Eine in einem Klassenchat geteilte „Einrichtungsdatei“ hätte
+/// „Essen“ auf eine nachgemachte Anmeldeseite lenken können; der Dialog
+/// nennt die Seiten jetzt, damit man sie vor dem Übernehmen sieht.
+List<String> transferMensaHosts(
+  Map<String, Map<String, String>> data,
+  Iterable<String> keys,
+) {
+  final out = <String>{};
+  void add(String? url) {
+    final h = Uri.tryParse(url?.trim() ?? '')?.host ?? '';
+    if (h.isNotEmpty) out.add(h);
+  }
+
+  for (final k in keys) {
+    final v = data[k];
+    if (v == null) continue;
+    add(v['fork/$mensaUrlSetting']);
+    try {
+      final m = jsonDecode(v['fork/$mensaUrlsSetting'] ?? '');
+      if (m is Map) {
+        for (final u in m.values) {
+          add('$u');
+        }
+      }
+    } catch (_) {}
+  }
+  return out.toList()..sort();
+}

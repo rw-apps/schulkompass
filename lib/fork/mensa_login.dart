@@ -49,17 +49,55 @@ String _key(String owner) => 'fork-mensa-login/$owner';
 /// des Geschwisters lag dessen Anmeldung unter dem Kind; der Abruf der
 /// richtigen Seite löschte deshalb alle Cookies (anderes Kind angemeldet)
 /// und konnte sich trotzdem nicht anmelden.
-Future<MensaLogin?> readMensaLogin(String owner, {String? site}) async {
+///
+/// Mit [auto]: nicht, wenn die letzte selbsttätige Anmeldung abgelehnt wurde
+/// ([markMensaLoginFailed]) – erst ein neu eingegebener Zugang gilt wieder.
+Future<MensaLogin?> readMensaLogin(
+  String owner, {
+  String? site,
+  bool auto = false,
+}) async {
   try {
     final raw = await mensaSecrets.read(_key(owner));
     final v = raw == null ? null : jsonDecode(raw);
     if (v is! Map || v['never'] == true) return null;
+    if (auto && v['fail'] == true) return null;
     final h = v['h'], u = v['u'], p = v['p'];
     if (h is! String || u is! String || p is! String) return null;
     if (site != null && !mensaSameHost('https://$h', site)) return null;
     return MensaLogin(host: h, user: u, pass: p);
   } catch (_) {
     return null;
+  }
+}
+
+/// Selbsttätige Anmeldung mit dem gemerkten Zugang wurde abgelehnt (die
+/// Anmeldeseite kam wieder): bis zu einem neu eingegebenen Zugang nicht mehr
+/// selbst anmelden.
+///
+/// Ursache (Prüfung auf Massentauglichkeit 03.11.26): Nach einer
+/// Passwortänderung beim Caterer versuchte der Hintergrund-Abruf alle
+/// paar Stunden den alten Zugang – Caterer sperren Konten nach mehreren
+/// Fehlversuchen. Wie login_guard.dart beim Schulportal. Grenze: Eine nur
+/// vorübergehende Störung der Anmeldeseite zählt ebenfalls als Ablehnung;
+/// dann einmal in „Essen und Caterer“ neu eingeben.
+Future<void> markMensaLoginFailed(String owner) async {
+  try {
+    final raw = await mensaSecrets.read(_key(owner));
+    final v = raw == null ? null : jsonDecode(raw);
+    if (v is! Map || v['never'] == true) return;
+    await mensaSecrets.write(_key(owner), jsonEncode({...v, 'fail': true}));
+  } catch (_) {}
+}
+
+/// Wurde die selbsttätige Anmeldung abgelehnt ([markMensaLoginFailed])?
+Future<bool> mensaLoginFailed(String owner) async {
+  try {
+    final raw = await mensaSecrets.read(_key(owner));
+    final v = raw == null ? null : jsonDecode(raw);
+    return v is Map && v['fail'] == true;
+  } catch (_) {
+    return false;
   }
 }
 

@@ -352,7 +352,7 @@ class _MealOrderRunnerState extends State<MealOrderRunner> {
     // Anmeldung nicht ein zweites Mal ausfüllen (Prüfung 27.10.26).
     if (_triedLogin) return false;
     _triedLogin = true;
-    final l = await readMensaLogin(widget.owner);
+    final l = await readMensaLogin(widget.owner, auto: true);
     final host = Uri.tryParse(await _c.currentUrl() ?? '')?.host;
     if (l == null ||
         !mensaSameHost('https://$host', 'https://${l.host}') ||

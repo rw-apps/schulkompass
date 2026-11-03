@@ -1,5 +1,8 @@
 package com.example.app
 
+import android.app.Activity
+import android.app.KeyguardManager
+import android.content.Context
 import android.content.Intent
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
@@ -12,7 +15,12 @@ import java.io.IOException
 
 class MainActivity: FlutterActivity() {
     private val createFileCode = 1404
+    private val confirmDeviceCode = 1405
     private var filePath = ""
+
+    /// Wartet auf die Bestätigung mit Geräte-PIN/Muster/Biometrie
+    /// (DEVICE_AUTH_CHANNEL, device_auth.dart).
+    private var pendingConfirm: MethodChannel.Result? = null
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
@@ -28,11 +36,45 @@ class MainActivity: FlutterActivity() {
                 }
             }
         }
+
+        // Geräte-Anmeldung vor sensiblen Schritten (Sicherheitsprüfung
+        // 03.11.26: Geräteübertragung gab alle Passwörter ohne erneute
+        // Bestätigung heraus). KeyguardManager statt local_auth: kein neues
+        // Plugin, kein Umbau auf FlutterFragmentActivity. Ergebnis:
+        // "ok" | "cancel" | "none" (keine Displaysperre eingerichtet).
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, DEVICE_AUTH_CHANNEL).setMethodCallHandler { call, result ->
+            if (call.method != "confirm") {
+                result.notImplemented()
+                return@setMethodCallHandler
+            }
+            val km = getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager
+            if (!km.isDeviceSecure) {
+                result.success("none")
+                return@setMethodCallHandler
+            }
+            @Suppress("DEPRECATION")
+            val intent = km.createConfirmDeviceCredentialIntent(
+                call.argument<String>("title"),
+                call.argument<String>("text"),
+            )
+            if (intent == null) {
+                result.success("none")
+                return@setMethodCallHandler
+            }
+            pendingConfirm?.success("cancel")
+            pendingConfirm = result
+            @Suppress("DEPRECATION")
+            startActivityForResult(intent, confirmDeviceCode)
+        }
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         when (requestCode) {
+            confirmDeviceCode -> {
+                pendingConfirm?.success(if (resultCode == Activity.RESULT_OK) "ok" else "cancel")
+                pendingConfirm = null
+            }
             createFileCode -> {
                 data?.data?.let { uri ->
                     try {
@@ -64,5 +106,6 @@ class MainActivity: FlutterActivity() {
 
     companion object {
         private const val STORAGE_CHANNEL = "io.github.lanis-mobile/storage"
+        private const val DEVICE_AUTH_CHANNEL = "schulportal/device_auth"
     }
 }

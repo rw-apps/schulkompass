@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'dart:ui' show PlatformDispatcher;
 
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -374,6 +375,23 @@ Future<void> _run(
 /// einen Tag zu spät.
 const courseScanHour = 15;
 
+/// Fester Versatz je Konto und Gerät (0–239 Minuten) auf [courseScanHour].
+///
+/// Ursache (Prüfung auf Massentauglichkeit 03.11.26): Alle Geräte sahen ab
+/// 15:00 in alle Kursmappen (etwa 15 Seiten je Konto) – bei vielen Nutzern
+/// eine Lastspitze am Nachmittag. Jetzt verteilt zwischen 15 und 19 Uhr,
+/// je Konto einmal zufällig gewählt und gemerkt. Grenze: Der Hintergrund
+/// läuft nur etwa stündlich; der Abruf kommt beim ersten Lauf nach dem
+/// Versatz.
+int courseScanOffset(TypedSettings s, [math.Random? random]) {
+  const key = 'fork-notify/scan-offset';
+  final old = s.getInt(key);
+  if (old != null && old >= 0 && old < 240) return old;
+  final v = (random ?? math.Random()).nextInt(240);
+  s.setInt(key, v);
+  return v;
+}
+
 /// Kennung der Meldung „Neu im Unterricht“ (notices.dart nutzt 2, 1 war
 /// die frühere Tagesmeldung; sendMessage verlangt 0–10000).
 const courseNewsId = 3;
@@ -487,7 +505,9 @@ Future<void> _courseNews({
 }) async {
   final old = storedCourseScan(s);
   final today = DateTime(now.year, now.month, now.day);
-  if (now.hour < courseScanHour) return;
+  if (now.hour * 60 + now.minute < courseScanHour * 60 + courseScanOffset(s)) {
+    return;
+  }
   if (old != null && !old.day.isBefore(today)) return;
   final parser = container.read(lessonsStudentParserProvider);
   final pages = <String, DetailedLesson>{};

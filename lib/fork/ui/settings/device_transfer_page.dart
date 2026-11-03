@@ -15,6 +15,7 @@ import 'package:lanis/fork_identity.dart';
 import 'package:lanis/utils/privacy_policy.dart';
 import 'package:lanis/utils/safe_launch.dart';
 
+import '../../security/device_auth.dart';
 import '../../device_transfer.dart';
 import '../../error_log.dart';
 import '../../kid_name.dart';
@@ -661,6 +662,32 @@ class _DeviceSendPageState extends ConsumerState<DeviceSendPage> {
 
   Future<void> _send() async {
     if (_busy || _codes != null) return;
+    // Vor dem Herausgeben aller Passwörter: Geräte-Anmeldung (device_auth.dart,
+    // Sicherheitsprüfung 03.11.26). Ohne Displaysperre einmal nachfragen.
+    final t = context.t;
+    final auth = await confirmDevice(t.transferAuthTitle, t.transferAuthText);
+    if (!mounted) return;
+    if (auth == DeviceAuth.cancelled) return;
+    if (auth == DeviceAuth.noLock) {
+      final go = await showDialog<bool>(
+        context: context,
+        builder: (c) => AlertDialog(
+          title: Text(t.transferNoLockTitle),
+          content: Text(t.transferNoLockText),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(c).pop(false),
+              child: Text(t.cancel),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(c).pop(true),
+              child: Text(t.transferNoLockGo),
+            ),
+          ],
+        ),
+      );
+      if (go != true || !mounted) return;
+    }
     setState(() => _busy = true);
     try {
       final db = ref.read(lanisDatabaseProvider);
