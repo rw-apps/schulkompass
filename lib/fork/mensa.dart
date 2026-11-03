@@ -126,8 +126,14 @@ String mensaUrlForWeek(String url, ({int year, int week}) w) {
 }
 
 /// Darf die eingebettete Seite zu [target] wechseln? Nur https und nur zur
-/// eingetragenen Seite (gleicher Host oder dessen Unterdomain) bzw. deren
-/// Hauptdomain.
+/// eingetragenen Seite: gleicher Host (mit oder ohne „www.“) oder dessen
+/// Unterdomain.
+///
+/// Bis 9468 auch die ganze Hauptdomain (letzte zwei Namensteile). Ursache
+/// der Einschränkung (Sicherheitsprüfung 03.11.26): Auf Plattformen mit
+/// Mandanten als Unterdomain (mandant.plattform.de) zeigte die App sonst
+/// auch fremde Mandanten ohne Adresszeile; bei zweiteiligen Endungen
+/// („co.uk“) sogar alles darunter.
 ///
 /// Ursache: Die Seite läuft mit gespeicherter Anmeldung in der App; fremde
 /// Links (Zahlungsanbieter, Hilfe, Werbung) öffnen im Browser, damit dort
@@ -136,9 +142,14 @@ String mensaUrlForWeek(String url, ({int year, int week}) w) {
 /// im Browser – dann dort anmelden.
 bool mensaAllows(Uri home, Uri target) {
   if (target.scheme != 'https' || target.userInfo.isNotEmpty) return false;
-  final base = _registrable(home.host);
-  final h = target.host.toLowerCase();
-  return h == base || h.endsWith('.$base');
+  String bare(String h) {
+    final x = h.toLowerCase();
+    return x.startsWith('www.') ? x.substring(4) : x;
+  }
+
+  final base = bare(home.host);
+  final h = bare(target.host);
+  return base.isNotEmpty && (h == base || h.endsWith('.$base'));
 }
 
 /// Dieselbe Seite eines Caterers? Gleiche Hauptdomain wie bei [mensaAllows]
@@ -209,8 +220,10 @@ String mensaSiteKey(String hostOrUrl) {
 }
 
 /// Hauptdomain aus den letzten zwei Teilen („www.bestellung.example.de“ →
-/// „example.de“). Grenze: zweiteilige Endungen (co.uk) gelten als Domain –
-/// für deutsche Caterer ohne Belang, dann nur strenger.
+/// „example.de“). Grenze: zweiteilige Endungen (co.uk) gelten als Domain,
+/// dann wäre der Schlüssel zu weit – genutzt nur noch für Wochenfilter und
+/// „zuletzt angemeldet“ (mensaSameSite, mensaSiteKey), nicht mehr für die
+/// Navigation (mensaAllows) und nicht für Zugangsdaten (mensaSameHost).
 String _registrable(String host) {
   final p = host.toLowerCase().split('.');
   return p.length <= 2 ? p.join('.') : p.sublist(p.length - 2).join('.');

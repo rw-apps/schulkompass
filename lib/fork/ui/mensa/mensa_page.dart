@@ -189,9 +189,28 @@ class _MensaPageState extends ConsumerState<MensaPage> {
       return;
     }
     if (v is! Map) return;
-    final h = v['h'], u = v['u'], p = v['p'];
-    if (h is! String || u is! String || p is! String || u.isEmpty) return;
+    final u = v['u'], p = v['p'];
+    if (u is! String || p is! String || u.isEmpty || p.isEmpty) return;
+    // Absender nicht glauben (Sicherheitsprüfung 03.11.26): Der Kanal steht
+    // auf Android jedem Rahmen offen, auch fremden iframes (Werbung,
+    // Zähler), und die Nachricht nannte ihren Host selbst. Jetzt zählt der
+    // Host der Seite im Hauptrahmen, und dort muss ein Passwortfeld genau
+    // diesen Wert tragen – sonst weder übernehmen (_claim) noch merken.
+    final h = Uri.tryParse(await _c.currentUrl() ?? '')?.host ?? '';
+    if (!mounted || h.isEmpty) return;
     if (!mensaAllows(_home, Uri(scheme: 'https', host: h))) return;
+    final Object typed;
+    try {
+      typed = await _c.runJavaScriptReturningResult(
+        '(function (p) { var ps = document.querySelectorAll('
+        "'input[type=password]'); for (var i = 0; i < ps.length; i++) "
+        "{ if (ps[i].value === p) return 'yes'; } return 'no'; })"
+        '(${jsonEncode(p)})',
+      );
+    } catch (_) {
+      return;
+    }
+    if (!'$typed'.contains('yes') || !mounted) return;
     // Selbst angemeldet: ab jetzt die Sitzung dieses Kindes.
     _claim();
     if (_asked) return;

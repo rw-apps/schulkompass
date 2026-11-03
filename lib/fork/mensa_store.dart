@@ -530,3 +530,49 @@ class MealCache {
     notifier.value = const {};
   }
 }
+
+/// Alles zum Essen eines entfernten Kontos [localId] vergessen: Wochen
+/// (MealCache), Erinnerungstage, „zuletzt angemeldet“ und – über
+/// [forgetLogin] – die gemerkten Caterer-Zugänge je Kind ([kids], dazu
+/// immer '' für Schülerkonten bzw. noch nicht geladene Kinder).
+///
+/// Ursache (Sicherheitsprüfung 03.11.26): removeAccountFromDevice löschte
+/// Portal-Passwort, Dateien und Cookies, aber nicht die Caterer-Zugänge
+/// (`fork-mensa-login/konto:kind` im Keystore) – auf weitergegebenen oder
+/// geteilten Geräten blieben sie verwaist liegen. Grenze: Der Keystore lässt
+/// sich nicht nach Präfix durchsuchen; Kinder, deren Schlüssel weder in der
+/// Adressliste noch im MealCache stehen, findet die App nicht.
+Future<void> forgetMealAccount(
+  TypedSettings? shared,
+  int localId, {
+  Iterable<String> kids = const [],
+  required Future<void> Function(String owner) forgetLogin,
+}) async {
+  final prefix = '$localId:';
+  final owners = <String>{
+    '$prefix',
+    for (final k in kids) '$prefix$k',
+    for (final o in MealCache.instance.notifier.value.keys)
+      if (o.startsWith(prefix)) o,
+  };
+  for (final o in owners) {
+    MealCache.instance.forget(o);
+    await forgetLogin(o);
+  }
+  if (shared == null) return;
+  try {
+    final raw = shared.getString(mealRemindKey);
+    final v = raw == null ? null : jsonDecode(raw);
+    if (v is Map<String, dynamic>) {
+      v.removeWhere((k, _) => k.startsWith(prefix));
+      shared.setString(mealRemindKey, jsonEncode(v));
+    }
+  } catch (_) {}
+  try {
+    final last = _readLast(shared)
+      ..removeWhere(
+        (_, e) => e is Map && '${e['owner'] ?? ''}'.startsWith(prefix),
+      );
+    shared.setString(mensaLastKey, jsonEncode(last));
+  } catch (_) {}
+}

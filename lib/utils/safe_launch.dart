@@ -17,12 +17,26 @@ Future<bool> _defaultLaunchUrl(
 @visibleForTesting
 LaunchUrlFn launchUrlImpl = _defaultLaunchUrl;
 
+/// Schemata, die [safeLaunchUrl] öffnet.
+const safeLaunchSchemes = {'http', 'https', 'mailto', 'tel'};
+
 /// Opens [url] without throwing. Returns `false` if the OS cannot handle it.
 Future<bool> safeLaunchUrl(
   Uri url, {
   BuildContext? context,
   LaunchMode mode = LaunchMode.platformDefault,
 }) async {
+  // Nur Web, E-Mail und Telefon (Sicherheitsprüfung 03.11.26): Links aus
+  // Portal, Nachrichten oder Caterer-Seiten sollen keine `intent:`-,
+  // `file:`- oder `javascript:`-Adressen auslösen können. Heute erreichbar war
+  // das nicht (Text wird vor der Darstellung maskiert), das ist die
+  // Absicherung dahinter. Grenze: Andere Schemata öffnen nicht, sondern
+  // zeigen „Link ließ sich nicht öffnen“.
+  if (!safeLaunchSchemes.contains(url.scheme.toLowerCase())) {
+    logger.w('Blocked URL scheme: ${url.scheme}');
+    _maybeShowSnackBar(context);
+    return false;
+  }
   try {
     final launched = await launchUrlImpl(url, mode: mode);
     if (launched) return true;

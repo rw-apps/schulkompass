@@ -10,6 +10,10 @@ import 'package:webview_flutter/webview_flutter.dart' show WebViewCookieManager;
 import 'package:lanis/background_service.dart' show refreshBackgroundService;
 import 'package:lanis/features/auth/auth_controller.dart';
 import 'package:lanis/fork/l10n/l10n.dart';
+import 'package:lanis/fork/mensa.dart' show MensaAddresses;
+import 'package:lanis/fork/mensa_login.dart' show forgetMensaLogin;
+import 'package:lanis/fork/mensa_store.dart' show forgetMealAccount;
+import 'package:lanis/fork/ui/live/live_data.dart' show mensaUrlsSetting;
 import 'package:lanis/fork/ui/language.dart' show languageProvider;
 import 'package:lanis/fork/widget/home_widget_sync.dart'
     show removeHomeWidgetKid;
@@ -63,6 +67,22 @@ Future<void> removeAccountFromDevice(WidgetRef ref, int localId) async {
   String? language;
   try {
     language = ref.read(languageProvider);
+  } catch (_) {}
+  // Caterer-Zugänge, Wochen und Erinnerungen des Kontos (forgetMealAccount,
+  // Sicherheitsprüfung 03.11.26) – Kinder aus der Adressliste des Kontos,
+  // solange es noch besteht.
+  try {
+    final db = ref.read(lanisDatabaseProvider);
+    final acc = TypedSettings.account(db, localId);
+    final mensa = MensaAddresses.decode(
+      acc.getString('fork/$mensaUrlsSetting'),
+    );
+    await forgetMealAccount(
+      ref.read(sharedOverAccountSettingsProvider),
+      localId,
+      kids: mensa.byKid.keys,
+      forgetLogin: forgetMensaLogin,
+    );
   } catch (_) {}
   await ref
       .read(authControllerProvider.notifier)

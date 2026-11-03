@@ -87,7 +87,14 @@ void main() {
       mensaAllows(home, Uri.parse('https://bestellung.example.de/x')),
       isTrue,
     );
-    expect(mensaAllows(home, Uri.parse('https://www.example.de/')), isTrue);
+    // Seit 9469 nicht mehr die Hauptdomain und keine Nachbar-Unterdomain
+    // (Sicherheitsprüfung 03.11.26: Mandanten als Unterdomains).
+    expect(mensaAllows(home, Uri.parse('https://www.example.de/')), isFalse);
+    expect(mensaAllows(home, Uri.parse('https://andere.example.de/')), isFalse);
+    expect(
+      mensaAllows(home, Uri.parse('https://www.bestellung.example.de/')),
+      isTrue,
+    );
     expect(
       mensaAllows(home, Uri.parse('http://bestellung.example.de/')),
       isFalse,
