@@ -56,15 +56,22 @@ class _TransferPageState extends ConsumerState<TransferPage> {
     final t = context.t;
     setState(() => _busy = true);
     try {
+      final accounts = await _accounts();
       final values = collectTransferValues(
         ref.read(lanisDatabaseProvider),
-        await _accounts(),
+        accounts,
       );
       final dir = await getTemporaryDirectory();
       _deleteFile();
       final f = File('${dir.path}/schulportal-eingaben.json');
       _file = f;
-      await f.writeAsString(buildTransfer(values, now: DateTime.now()));
+      await f.writeAsString(
+        buildTransfer(
+          values,
+          now: DateTime.now(),
+          names: collectTransferNames(accounts),
+        ),
+      );
       await SharePlus.instance.share(
         ShareParams(
           files: [XFile(f.path, mimeType: 'application/json')],

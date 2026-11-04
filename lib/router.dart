@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:liblanis/liblanis.dart';
 import 'package:lanis/fork/start.dart';
+import 'package:lanis/fork/settings_transfer.dart' show TransferBackup;
 import 'package:lanis/fork/ui/preview/preview_shell.dart';
 import 'package:lanis/startup.dart';
 import 'package:lanis/features/auth/auth_controller.dart';
@@ -60,8 +61,16 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/login',
-        builder: (context, state) =>
-            const Scaffold(body: LoginForm(showBackButton: true)),
+        // extra: Sicherungsdatei aus „Mit Sicherungsdatei einrichten“
+        // (WelcomeLoginScreen); sonst leeres Formular.
+        builder: (context, state) => Scaffold(
+          body: LoginForm(
+            showBackButton: true,
+            restore: state.extra is TransferBackup
+                ? state.extra as TransferBackup
+                : null,
+          ),
+        ),
       ),
       GoRoute(
         path: forkHomePath,

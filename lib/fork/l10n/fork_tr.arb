@@ -800,5 +800,18 @@
   "onbDisclaimer": "Resmî olmayan uygulama, Hessen eyaletine ait değil. Garanti yoktur – geçerli olan okul portalıdır.",
   "mealHubLoginRejected": "reddedildi – yeniden gir",
   "mealOrderInApp": "Uygulamada sipariş (test)",
-  "mealOrderInAppDetail": "Haftalık menüde doğrudan sipariş ve iptal. Kapalı: „Yemek firmasının sayfası“ sipariş sayfasını açar."
+  "mealOrderInAppDetail": "Haftalık menüde doğrudan sipariş ve iptal. Kapalı: „Yemek firmasının sayfası“ sipariş sayfasını açar.",
+  "setupAlready": "Daha önce kuruldu mu?",
+  "setupWithFile": "Yedek dosyasıyla kur",
+  "loginOr": "veya",
+  "restoreTitle": "Yedekteki hesaplar",
+  "restoreFrom": "{date} tarihli yedek",
+  "restoreIntro": "Okul ve kullanıcı adı dosyada var. Her hesap için şifreyi gir – ders saatleri, grup seçimi, yemekhane ve işaretler ardından kendiliğinden gelir.",
+  "restoreDone": "Giriş yapıldı · girişler alındı",
+  "restoreNext": "Sıradaki",
+  "restoreSkipped": "Atlandı",
+  "restoreLogin": "Giriş yap ({n} / {total})",
+  "restoreSkip": "Bu hesabı atla",
+  "restoreSchool": "Okul {id}",
+  "restoreEmpty": "Bu dosyada hesap yok."
 }

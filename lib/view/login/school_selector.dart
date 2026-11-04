@@ -59,41 +59,7 @@ class _SchoolSelectorState extends State<SchoolSelector> {
     if (SchoolSelector.skipNetworkLoad || !mounted) return;
     try {
       await SchoolSelector.beforeLoadForTest?.call();
-      final packageInfo = await PackageInfo.fromPlatform();
-      final dio = Dio();
-      dio.httpClientAdapter = getNativeAdapterInstance();
-      final response = await dio.get(
-        "https://startcache.schulportal.hessen.de/exporteur.php?a=schoollist",
-        options: Options(
-          headers: {
-            "User-Agent":
-                "${forkUserAgent(packageInfo.version, packageInfo.buildNumber)} on ${Platform.operatingSystem} (${kReleaseMode
-                    ? "release"
-                    : kDebugMode
-                    ? "debug"
-                    : "profile"})",
-          },
-        ),
-      );
-      List<dynamic> data = jsonDecode(response.data);
-      List<RemoteSchoolBezirk> result = [];
-      for (var elem in data) {
-        var bezirk = RemoteSchoolBezirk(
-          id: elem["Id"],
-          name: elem["Name"],
-          schools: [],
-        );
-        for (var schule in elem['Schulen']) {
-          bezirk.schools.add(
-            RemoteSchool(
-              name: schule["Name"],
-              id: schule["Id"],
-              city: schule["Ort"],
-            ),
-          );
-        }
-        result.add(bezirk);
-      }
+      final result = await fetchSchoolList();
       if (!mounted) return; // Fork: siehe _retryTimer.
       setState(() {
         schoolBezirke = result;
@@ -305,6 +271,57 @@ class _SchoolSelectorState extends State<SchoolSelector> {
     );
   }
 }
+
+/// Öffentliche Schulliste des Portals (startcache, ohne Anmeldung).
+/// Herausgelöst aus loadSchoolList, damit „Mit Sicherungsdatei einrichten“
+/// (restore_backup.dart) Schulnamen älterer Dateien nachschlagen kann, ohne
+/// den Schulwähler zu zeigen. Grenze: wirft bei fehlendem Netz; Aufrufer
+/// fangen das ab.
+Future<List<RemoteSchoolBezirk>> fetchSchoolList() async {
+  final packageInfo = await PackageInfo.fromPlatform();
+  final dio = Dio();
+  dio.httpClientAdapter = getNativeAdapterInstance();
+  final response = await dio.get(
+    "https://startcache.schulportal.hessen.de/exporteur.php?a=schoollist",
+    options: Options(
+      headers: {
+        "User-Agent":
+            "${forkUserAgent(packageInfo.version, packageInfo.buildNumber)} on ${Platform.operatingSystem} (${kReleaseMode
+                ? "release"
+                : kDebugMode
+                ? "debug"
+                : "profile"})",
+      },
+    ),
+  );
+  List<dynamic> data = jsonDecode(response.data);
+  List<RemoteSchoolBezirk> result = [];
+  for (var elem in data) {
+    var bezirk = RemoteSchoolBezirk(
+      id: elem["Id"],
+      name: elem["Name"],
+      schools: [],
+    );
+    for (var schule in elem['Schulen']) {
+      bezirk.schools.add(
+        RemoteSchool(
+          name: schule["Name"],
+          id: schule["Id"],
+          city: schule["Ort"],
+        ),
+      );
+    }
+    result.add(bezirk);
+  }
+  return result;
+}
+
+/// Schulnummer → Name aus [fetchSchoolList].
+Future<Map<int, String>> fetchSchoolNames() async => {
+  for (final b in await fetchSchoolList())
+    for (final s in b.schools)
+      if (int.tryParse(s.id) case final id?) id: s.name,
+};
 
 class RemoteSchoolBezirk {
   final String id;

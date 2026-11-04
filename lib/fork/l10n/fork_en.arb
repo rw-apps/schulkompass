@@ -800,5 +800,18 @@
   "onbDisclaimer": "Unofficial app, not from the State of Hesse. No guarantee – the school portal is authoritative.",
   "mealHubLoginRejected": "rejected – enter again",
   "mealOrderInApp": "Order in the app (beta)",
-  "mealOrderInAppDetail": "Order and cancel directly in the weekly menu. Off: “Caterer's page” opens the ordering page."
+  "mealOrderInAppDetail": "Order and cancel directly in the weekly menu. Off: “Caterer's page” opens the ordering page.",
+  "setupAlready": "Set up before?",
+  "setupWithFile": "Set up from a backup file",
+  "loginOr": "or",
+  "restoreTitle": "Accounts from the backup",
+  "restoreFrom": "Backup from {date}",
+  "restoreIntro": "School and username come from the file. Enter the password for each account – lesson times, group choices, canteen and ticks follow automatically.",
+  "restoreDone": "Signed in · entries applied",
+  "restoreNext": "Next",
+  "restoreSkipped": "Skipped",
+  "restoreLogin": "Sign in ({n} of {total})",
+  "restoreSkip": "Skip this account",
+  "restoreSchool": "School {id}",
+  "restoreEmpty": "This file contains no account."
 }

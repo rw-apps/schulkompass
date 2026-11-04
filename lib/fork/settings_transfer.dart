@@ -44,13 +44,26 @@ const _format = 'schulportal-eingaben';
 
 /// Datei-Inhalt aus den rohen gespeicherten Werten je Konto.
 /// [values]: Kontoschlüssel → (Einstellung → roher Wert, null = fehlt).
+///
+/// [names]: Kontoschlüssel → Schulname (seit 9474). Ursache: „Mit
+/// Sicherungsdatei einrichten“ (restore_backup.dart) zeigt die Konten vor
+/// der Anmeldung; ohne Namen stünde dort nur die Schulnummer. Grenze:
+/// Ältere Dateien haben keine Namen – dort lädt die Einrichtung die
+/// öffentliche Schulliste nach (fetchSchoolNames).
 String buildTransfer(
   Map<String, Map<String, String?>> values, {
   required DateTime now,
+  Map<String, String> names = const {},
 }) => const JsonEncoder.withIndent(' ').convert({
   'format': _format,
   'version': 1,
   'created': now.toIso8601String(),
+  if (names.isNotEmpty)
+    'names': {
+      for (final e in names.entries)
+        if (values.containsKey(e.key) && e.value.trim().isNotEmpty)
+          e.key: e.value.trim(),
+    },
   'accounts': {
     for (final a in values.entries)
       a.key: {
@@ -82,6 +95,70 @@ Map<String, Map<String, String>>? parseTransfer(String text) {
   } catch (_) {
     return null;
   }
+}
+
+/// Konto aus einer Sicherungsdatei, noch nicht auf diesem Gerät.
+typedef BackupAccount = ({String key, int schoolId, String username});
+
+/// Ganze Sicherungsdatei für „Mit Sicherungsdatei einrichten“: Eingaben
+/// ([data], wie [parseTransfer]), Schulnamen ([names], nur neuere Dateien)
+/// und Erstellzeit.
+class TransferBackup {
+  const TransferBackup({
+    required this.data,
+    this.names = const {},
+    this.created,
+  });
+
+  final Map<String, Map<String, String>> data;
+  final Map<String, String> names;
+  final DateTime? created;
+
+  /// Konten in Dateireihenfolge. Ursache für das Zerlegen des Schlüssels
+  /// (transferAccountKey: „Schulnummer:benutzername“): Die Datei trägt
+  /// keine eigenen Felder dafür; der Benutzername darf selbst „:“ enthalten,
+  /// deshalb wird nur am ersten getrennt. Einträge ohne gültige
+  /// Schulnummer oder Namen fallen weg.
+  List<BackupAccount> get accounts => [
+    for (final k in data.keys)
+      if (_split(k) case final a?) a,
+  ];
+
+  static BackupAccount? _split(String key) {
+    final i = key.indexOf(':');
+    if (i <= 0) return null;
+    final id = int.tryParse(key.substring(0, i));
+    final user = key.substring(i + 1).trim();
+    if (id == null || id <= 0 || user.isEmpty) return null;
+    return (key: key, schoolId: id, username: user);
+  }
+}
+
+/// Sicherungsdatei lesen; null, wenn es keine Übertragungsdatei dieser App
+/// ist. Gleiche Prüfung wie [parseTransfer] – Namen nur als Text, höchstens
+/// 120 Zeichen (Anzeige, kein Code).
+TransferBackup? parseBackup(String text) {
+  final data = parseTransfer(text);
+  if (data == null) return null;
+  final names = <String, String>{};
+  final valid = {for (final a in TransferBackup(data: data).accounts) a.key};
+  DateTime? created;
+  try {
+    final v = jsonDecode(text) as Map;
+    created = DateTime.tryParse('${v['created'] ?? ''}');
+    final n = v['names'];
+    if (n is Map) {
+      for (final e in n.entries) {
+        final name = e.value is String ? (e.value as String).trim() : '';
+        if (valid.contains('${e.key}') &&
+            name.isNotEmpty &&
+            name.length <= 120) {
+          names['${e.key}'] = name;
+        }
+      }
+    }
+  } catch (_) {}
+  return TransferBackup(data: data, names: names, created: created);
 }
 
 /// Wert, der nach dem Übernehmen gilt.
@@ -165,6 +242,13 @@ Map<String, Map<String, String?>> collectTransferValues(
     },
 };
 
+/// Schulnamen der [accounts] je Kontoschlüssel (für [buildTransfer]).
+Map<String, String> collectTransferNames(List<AccountSummary> accounts) => {
+  for (final a in accounts)
+    if (a.schoolName.trim().isNotEmpty)
+      transferAccountKey(a.schoolID, a.username): a.schoolName,
+};
+
 /// Hosts der Bestellseiten, die eine Eingaben-Datei für [keys] setzen würde
 /// (je Kind und alte Kontoadresse), sortiert.
 ///
@@ -182,12 +266,29 @@ List<String> transferMensaHosts(
     if (h.isNotEmpty) out.add(h);
   }
 
+  // Werte stehen in der Datei so, wie die Datenbank sie speichert
+  // (LanisDatabase.encodeValue: {"v": …}). Ursache (04.11.26): Bis 9473
+  // las diese Funktion den rohen Text als Adresse – bei echten Dateien kam
+  // nie ein Host heraus, der Hinweis blieb immer leer. Grenze: Ein Wert
+  // ohne Hülle (ältere Tests, Handarbeit) wird unverändert gelesen.
+  String? plain(String? raw) {
+    if (raw == null) return null;
+    try {
+      final d = jsonDecode(raw);
+      if (d is Map && d.containsKey('v')) {
+        final v = d['v'];
+        return v is String ? v : jsonEncode(v);
+      }
+    } catch (_) {}
+    return raw;
+  }
+
   for (final k in keys) {
     final v = data[k];
     if (v == null) continue;
-    add(v['fork/$mensaUrlSetting']);
+    add(plain(v['fork/$mensaUrlSetting']));
     try {
-      final m = jsonDecode(v['fork/$mensaUrlsSetting'] ?? '');
+      final m = jsonDecode(plain(v['fork/$mensaUrlsSetting']) ?? '');
       if (m is Map) {
         for (final u in m.values) {
           add('$u');

@@ -2050,5 +2050,42 @@
   "onbDisclaimer": "Inoffizielle App, nicht vom Land Hessen. Angaben ohne Gewähr – verbindlich ist das Schulportal.",
   "mealHubLoginRejected": "abgelehnt – neu eingeben",
   "mealOrderInApp": "In der App bestellen (Test)",
-  "mealOrderInAppDetail": "Bestellen und Abbestellen direkt im Wochenplan. Aus: „Seite des Caterers“ öffnet die Bestellseite."
+  "mealOrderInAppDetail": "Bestellen und Abbestellen direkt im Wochenplan. Aus: „Seite des Caterers“ öffnet die Bestellseite.",
+  "setupAlready": "Schon einmal eingerichtet?",
+  "setupWithFile": "Mit Sicherungsdatei einrichten",
+  "loginOr": "oder",
+  "restoreTitle": "Konten aus der Sicherung",
+  "restoreFrom": "Sicherung vom {date}",
+  "restoreIntro": "Schule und Benutzername stehen in der Datei. Gib je Konto das Passwort ein – Stundenzeiten, Gruppenwahl, Mensa und Haken kommen danach von selbst.",
+  "restoreDone": "Angemeldet · Eingaben übernommen",
+  "restoreNext": "Als Nächstes",
+  "restoreSkipped": "Übersprungen",
+  "restoreLogin": "Anmelden ({n} von {total})",
+  "restoreSkip": "Dieses Konto überspringen",
+  "restoreSchool": "Schule {id}",
+  "restoreEmpty": "In dieser Datei steht kein Konto.",
+  "@restoreFrom": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "@restoreLogin": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "@restoreSchool": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  }
 }

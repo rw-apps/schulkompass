@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import '../class_choice.dart' show classLabel;
 import 'package:permission_handler/permission_handler.dart';
@@ -20,6 +21,7 @@ class ForkWelcomePage extends StatelessWidget {
     super.key,
     required this.onLogin,
     this.onTransfer,
+    this.onFile,
     this.onDemo,
   });
 
@@ -30,6 +32,9 @@ class ForkWelcomePage extends StatelessWidget {
 
   /// „Von anderem Gerät übernehmen“ (device_transfer.dart).
   final VoidCallback? onTransfer;
+
+  /// „Mit Sicherungsdatei einrichten“ (restore_backup.dart).
+  final VoidCallback? onFile;
 
   @override
   Widget build(BuildContext context) {
@@ -42,18 +47,12 @@ class ForkWelcomePage extends StatelessWidget {
           const SizedBox(height: Sp.l),
           Align(
             alignment: Alignment.centerLeft,
-            child: Container(
+            // App-Symbol (Kompass, seit 9471) statt des Doktorhuts der
+            // Vorlage; dieselbe Datei wie das Startlogo (startup.dart).
+            child: SvgPicture.asset(
+              'assets/startup.svg',
               width: Sz.button,
               height: Sz.button,
-              decoration: BoxDecoration(
-                color: k.p.strong,
-                borderRadius: BorderRadius.circular(Rad.tile),
-              ),
-              child: Icon(
-                Icons.school_outlined,
-                color: k.p.onStrong,
-                size: Sz.navIcon + Sp.s,
-              ),
             ),
           ),
           const SizedBox(height: Sp.l),
@@ -99,6 +98,23 @@ class ForkWelcomePage extends StatelessWidget {
           Text(t.onbFamilyHint, style: k.meta, textAlign: TextAlign.center),
           const SizedBox(height: Sp.l),
           OnbButton(label: t.onbLogin, onPressed: onLogin),
+          if (onTransfer != null || onFile != null) ...[
+            const SizedBox(height: Sp.l),
+            Text(
+              OnbPage.upper(t.setupAlready),
+              style: k.dateCaps,
+              textAlign: TextAlign.center,
+            ),
+          ],
+          if (onFile != null) ...[
+            const SizedBox(height: Sp.s),
+            OnbButton(
+              label: t.setupWithFile,
+              icon: Icons.upload_file,
+              strong: false,
+              onPressed: onFile,
+            ),
+          ],
           if (onTransfer != null) ...[
             const SizedBox(height: Sp.s),
             OnbButton(

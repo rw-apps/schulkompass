@@ -9,6 +9,11 @@ import 'package:lanis/fork/onboarding/onboarding_kit.dart';
 import 'package:lanis/fork/class_choice.dart' show storeClass;
 import 'package:lanis/fork/login_guard.dart' show handOverLoginUrl;
 import 'package:lanis/fork/onboarding/onboarding_pages.dart';
+import 'package:lanis/fork/onboarding/restore_backup.dart';
+import 'package:lanis/fork/settings_transfer.dart';
+import 'package:lanis/fork/ui/live/live_data.dart' show settingsRevision;
+import 'package:lanis/fork/ui/settings/device_transfer_page.dart'
+    show DeviceReceivePage;
 import 'package:lanis/fork/onboarding/setup_class.dart';
 import 'package:lanis/fork/ui/settings/class_sheet.dart';
 import 'package:lanis/fork/ui/kit.dart';
@@ -24,7 +29,11 @@ import 'package:lanis/view/login/school_selector.dart';
 
 class LoginForm extends ConsumerStatefulWidget {
   final bool showBackButton;
-  const LoginForm({required this.showBackButton, super.key});
+
+  /// Sicherungsdatei, mit der die Einrichtung beginnt (Willkommen →
+  /// „Mit Sicherungsdatei einrichten“, router.dart über `extra`).
+  final TransferBackup? restore;
+  const LoginForm({required this.showBackButton, this.restore, super.key});
 
   @override
   ConsumerState<LoginForm> createState() => LoginFormState();
@@ -58,9 +67,72 @@ class LoginFormState extends ConsumerState<LoginForm> {
   /// Neu erzeugt den Schulwähler je Runde (ValueKey), damit er leer beginnt.
   int _round = 0;
 
+  /// Einrichtung aus einer Sicherungsdatei (restore_backup.dart): Konten
+  /// der Datei nacheinander, je Konto nur das Passwort. null = normales
+  /// Formular.
+  TransferBackup? _restore;
+  final _restoreSteps = <String, RestoreStep>{};
+
+  /// Schulnamen aus der öffentlichen Schulliste für ältere Dateien ohne
+  /// `names` (settings_transfer.dart, buildTransfer).
+  Map<int, String> _schoolNames = const {};
+
+  BackupAccount? get _restoreActive {
+    final b = _restore;
+    if (b == null) return null;
+    for (final a in b.accounts) {
+      if (_restoreSteps[a.key] == RestoreStep.pending) return a;
+    }
+    return null;
+  }
+
+  String _restoreSchool(BackupAccount a) =>
+      _restore?.names[a.key] ?? _schoolNames[a.schoolId] ?? '';
+
+  void _startRestore(TransferBackup b) {
+    _restore = b;
+    _restoreSteps
+      ..clear()
+      ..addAll({for (final a in b.accounts) a.key: RestoreStep.pending});
+    passwordController.clear();
+    if (b.accounts.any((a) => !b.names.containsKey(a.key))) {
+      fetchSchoolNames()
+          .then((names) {
+            if (mounted) setState(() => _schoolNames = names);
+          })
+          // Ohne Netz bleibt „Schule 1234“ stehen; die Anmeldung meldet den
+          // fehlenden Zugang dann selbst.
+          .catchError((Object _) {});
+    }
+  }
+
+  /// Aktuelles Konto der Sicherung überspringen; ohne weitere Konten endet
+  /// die Einrichtung (mit Konten) oder kehrt zum Formular zurück (ohne).
+  void _skipRestore() {
+    final a = _restoreActive;
+    if (a == null) return;
+    setState(() {
+      _restoreSteps[a.key] = RestoreStep.skipped;
+      passwordController.clear();
+    });
+    if (_restoreActive != null) return;
+    if (_added.isNotEmpty) {
+      _finishSetup();
+    } else {
+      setState(() => _restore = null);
+    }
+  }
+
+  Future<void> _pickRestore() async {
+    final b = await pickBackup(context);
+    if (b == null || !mounted) return;
+    setState(() => _startRestore(b));
+  }
+
   @override
   void initState() {
     super.initState();
+    if (widget.restore case final b?) _startRestore(b);
     // Mirror the device-wide GlitchTip choice when adding another account.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
@@ -187,7 +259,11 @@ class LoginFormState extends ConsumerState<LoginForm> {
           .loginWithAccount(newID, removeAccountOnFailure: true);
       if (!mounted) return;
       // Klasse erkennen, solange der Ladedialog noch steht (höchstens 10 s).
-      final cls = ok && firstSetup ? await detectSetupClass(ref) : null;
+      // Aus der Sicherung kommt die Klasse mit den Eingaben (classSetting);
+      // die Erkennung und ihre Rückfrage entfallen dort.
+      final cls = ok && firstSetup && _restore == null
+          ? await detectSetupClass(ref)
+          : null;
       if (!mounted) return;
       Navigator.pop(context); // pop dialog
       dialogOpen = false;
@@ -202,6 +278,24 @@ class LoginFormState extends ConsumerState<LoginForm> {
         final c = cls ?? (detected: '', kidName: '', show: false);
         _setup.add((id: newID, school: selectedSchoolName, cls: c));
         _classes.add(c.show ? (value: c.detected, detected: true) : null);
+        if (_restore case final b?) {
+          // Eingaben dieses Kontos sofort übernehmen, dann das nächste.
+          final key = transferAccountKey(schoolId, username);
+          final db = ref.read(lanisDatabaseProvider);
+          final mine = (await db.listAccounts()).where(
+            (a) => a.localId == newID,
+          );
+          applyTransferValues(db, {key: b.data[key] ?? const {}}, [...mine]);
+          settingsRevision.value++;
+          if (!mounted) return;
+          setState(() {
+            _restoreSteps[key] = RestoreStep.done;
+            passwordController.clear();
+          });
+          if (_restoreActive != null) return;
+          await _finishSetup();
+          return;
+        }
         final more = await _askForAnother();
         if (!mounted) return;
         if (more == true) {
@@ -214,21 +308,7 @@ class LoginFormState extends ConsumerState<LoginForm> {
           });
           return;
         }
-        // Schritt 2: Benachrichtigungen erklären, dann fragen – nur wenn
-        // Android sie noch nicht erlaubt hat (NotifyIntroPage).
-        final home = firstSupportedHomePath(ref);
-        if (await Permission.notification.isGranted) {
-          if (mounted) context.go(home);
-          return;
-        }
-        if (!mounted) return;
-        await Navigator.of(context).push(
-          MaterialPageRoute<void>(
-            builder: (page) =>
-                NotifyIntroPage(onDone: () => Navigator.of(page).pop()),
-          ),
-        );
-        if (mounted) context.go(home);
+        await _finishSetup();
         return;
       }
       if (!mounted) return;
@@ -260,6 +340,25 @@ class LoginFormState extends ConsumerState<LoginForm> {
       _noteLock(ex);
       _showLoginError(ex);
     }
+  }
+
+  /// Schritt 2: Benachrichtigungen erklären, dann fragen – nur wenn
+  /// Android sie noch nicht erlaubt hat (NotifyIntroPage); danach zur
+  /// Startseite. Gemeinsam für das Formular und die Sicherung.
+  Future<void> _finishSetup() async {
+    final home = firstSupportedHomePath(ref);
+    if (await Permission.notification.isGranted) {
+      if (mounted) context.go(home);
+      return;
+    }
+    if (!mounted) return;
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (page) =>
+            NotifyIntroPage(onDone: () => Navigator.of(page).pop()),
+      ),
+    );
+    if (mounted) context.go(home);
   }
 
   void _noteLock(Object? e) {
@@ -313,6 +412,136 @@ class LoginFormState extends ConsumerState<LoginForm> {
     super.dispose();
   }
 
+  /// Seite „Konten aus der Sicherung“ (Entwurf 04.11.26, abgenommen).
+  Widget _buildRestore(BuildContext context) {
+    final k = Kit.of(context);
+    final t = context.t;
+    final l = AppLocalizations.of(context);
+    final b = _restore!;
+    final accounts = b.accounts;
+    final active = _restoreActive;
+    final created = b.created?.toLocal();
+    final hosts = transferMensaHosts(b.data, [for (final a in accounts) a.key]);
+    final done = accounts
+        .where((a) => _restoreSteps[a.key] != RestoreStep.pending)
+        .length;
+    String school(BackupAccount a) {
+      final n = _restoreSchool(a);
+      final id = '${a.schoolId}';
+      return n.isEmpty ? t.restoreSchool(id) : '$n · $id';
+    }
+
+    String two(int v) => v.toString().padLeft(2, '0');
+    return AutofillGroup(
+      child: OnbPage(
+        step: t.onbStep(1, 2),
+        // Zurück verlässt nur die Sicherung (zum normalen Formular); schon
+        // angemeldete Konten bleiben.
+        onBack: _added.isEmpty ? () => setState(() => _restore = null) : null,
+        top: [
+          const SizedBox(height: Sp.m),
+          if (created != null)
+            Text(
+              OnbPage.upper(
+                t.restoreFrom(
+                  '${two(created.day)}.${two(created.month)}.${created.year}',
+                ),
+              ),
+              style: k.dateCaps,
+            ),
+          const SizedBox(height: Sp.xs),
+          Text(t.restoreTitle, style: k.pageTitle),
+          const SizedBox(height: Sp.s),
+          Text(t.restoreIntro, style: k.meta),
+          // Ursache wie im Übernehmen-Dialog (transfer_page.dart,
+          // Sicherheitsprüfung 03.11.26): Eine fremde Datei könnte „Essen“
+          // auf eine nachgemachte Bestellseite lenken.
+          if (hosts.isNotEmpty) ...[
+            const SizedBox(height: Sp.s),
+            Text(t.transferMensaHosts(hosts.join(', ')), style: k.meta),
+          ],
+          const SizedBox(height: Sp.xl),
+          for (final a in accounts)
+            RestoreAccountCard(
+              school: school(a),
+              username: a.username,
+              step: _restoreSteps[a.key] ?? RestoreStep.pending,
+              password: a.key == active?.key
+                  ? TextField(
+                      controller: passwordController,
+                      autofillHints: const [AutofillHints.password],
+                      autocorrect: false,
+                      obscureText: true,
+                      style: k.body,
+                      onChanged: (_) => setState(() {}),
+                      decoration: onbInput(
+                        k,
+                        label: l.authPasswordHint,
+                        icon: Icons.lock_outline,
+                      ),
+                    )
+                  : null,
+            ),
+          InkWell(
+            onTap: () => setState(() => dseAgree = !dseAgree),
+            child: Row(
+              children: [
+                Checkbox(
+                  value: dseAgree,
+                  onChanged: (v) => setState(() => dseAgree = v ?? false),
+                ),
+                Expanded(
+                  child: Text.rich(
+                    TextSpan(
+                      style: k.meta,
+                      children: [
+                        TextSpan(text: l.authIAccept),
+                        TextSpan(
+                          text: l.authTermsOfService,
+                          style: k.link,
+                          recognizer: TapGestureRecognizer()
+                            ..onTap = () => safeLaunchUrl(
+                              Uri.parse(privacyPolicyUrl),
+                              context: context,
+                            ),
+                        ),
+                        TextSpan(text: l.authOfLanisMobile),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+        bottom: [
+          OnbButton(
+            label: t.restoreLogin(done + 1, accounts.length),
+            onPressed:
+                active != null && dseAgree && passwordController.text.isNotEmpty
+                ? () {
+                    selectedSchoolName = _restoreSchool(active);
+                    schoolIDController.text = '${active.schoolId}';
+                    login(
+                      active.username.trim().toLowerCase(),
+                      passwordController.text,
+                      '${active.schoolId}',
+                    );
+                  }
+                : null,
+          ),
+          const SizedBox(height: Sp.s),
+          Center(
+            child: TextButton(
+              onPressed: active == null ? null : _skipRestore,
+              child: Text(t.restoreSkip, style: k.link),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     // Fork (Entwurf 18.10.26): Formular im Stil der App (onboarding_kit.dart)
@@ -320,8 +549,9 @@ class LoginFormState extends ConsumerState<LoginForm> {
     final k = Kit.of(context);
     final t = context.t;
     final l = AppLocalizations.of(context);
-    final firstSetup =
-        ref.watch(accountsProvider).value?.isEmpty == true || _added.isNotEmpty;
+    final noAccounts = ref.watch(accountsProvider).value?.isEmpty == true;
+    final firstSetup = noAccounts || _added.isNotEmpty;
+    if (_restore != null) return _buildRestore(context);
     final ready = schoolIDController.text.isNotEmpty;
     return Form(
       key: _formKey,
@@ -428,6 +658,31 @@ class LoginFormState extends ConsumerState<LoginForm> {
                 ],
               ),
             ),
+            // Zweitwege nur bei der allerersten Einrichtung (Entwurf
+            // 04.11.26): Nach einer Neuinstallation fand man sie sonst nur
+            // auf der Willkommensseite.
+            if (noAccounts && _added.isEmpty) ...[
+              const SizedBox(height: Sp.l),
+              const OnbOrDivider(),
+              const SizedBox(height: Sp.m),
+              OnbButton(
+                label: t.setupWithFile,
+                icon: Icons.upload_file,
+                strong: false,
+                onPressed: _pickRestore,
+              ),
+              const SizedBox(height: Sp.s),
+              OnbButton(
+                label: t.devFromOther,
+                icon: Icons.qr_code_2,
+                strong: false,
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => const DeviceReceivePage(firstSetup: true),
+                  ),
+                ),
+              ),
+            ],
           ],
           bottom: [
             Row(

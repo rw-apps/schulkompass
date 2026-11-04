@@ -34,8 +34,12 @@ void main() {
     final l10n = AppLocalizations.of(tester.element(find.byType(LoginForm)));
     expect(find.text(l10n.logIn), findsWidgets);
 
-    // Fork: Knopf im Stil der App (OnbButton).
-    final button = tester.widget<OnbButton>(find.byType(OnbButton).first);
+    // Fork: Knopf im Stil der App (OnbButton). Gesucht über die Aufschrift,
+    // weil bei der Ersteinrichtung „Mit Sicherungsdatei einrichten“ und
+    // „Von anderem Gerät übernehmen“ als OnbButton davor stehen.
+    final button = tester.widget<OnbButton>(
+      find.widgetWithText(OnbButton, l10n.logIn),
+    );
     expect(button.onPressed, isNull);
   });
 

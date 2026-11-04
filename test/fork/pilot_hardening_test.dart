@@ -7,7 +7,8 @@ import 'package:lanis/fork/security/device_auth.dart';
 import 'package:lanis/fork/settings_transfer.dart';
 import 'package:lanis/fork/ui/live/live_data.dart'
     show mensaUrlSetting, mensaUrlsSetting;
-import 'package:liblanis/liblanis.dart' show MemorySecretStore, TypedSettings;
+import 'package:liblanis/liblanis.dart'
+    show LanisDatabase, MemorySecretStore, TypedSettings;
 
 // Härtung vor einem Pilot (Prüfungen 03.11.26).
 void main() {
@@ -83,5 +84,17 @@ void main() {
     };
     expect(transferMensaHosts(data, ['k1']), ['alt.example', 'essen.example']);
     expect(transferMensaHosts(data, ['k1', 'k2']), hasLength(3));
+    // Wie in echten Dateien: Werte in der Hülle der Datenbank.
+    final real = {
+      'k': {
+        'fork/$mensaUrlSetting': LanisDatabase.encodeValue(
+          'https://essen.example/',
+        ),
+        'fork/$mensaUrlsSetting': LanisDatabase.encodeValue(
+          '{"1:Jonas":"https://kind.example/bestellen"}',
+        ),
+      },
+    };
+    expect(transferMensaHosts(real, ['k']), ['essen.example', 'kind.example']);
   });
 }

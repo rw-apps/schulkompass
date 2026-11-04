@@ -1,5 +1,12 @@
 ## Schulkompass (rw-apps, bis 9472 „Schulportal“) – Änderungen gegenüber Lanis-Mobile
 
+**4.1.0+9474** – Mit Sicherungsdatei einrichten
+
+- **Neu einrichten ohne Abtippen:** Auf der Willkommensseite und bei der Anmeldung gibt es „Mit Sicherungsdatei einrichten“. Die App liest Schule und Benutzername aller Konten aus der Datei; je Konto nur noch das Passwort eingeben. Stundenzeiten, Gruppenwahl, Mensa und Haken werden nach jeder Anmeldung gleich übernommen. „Von anderem Gerät übernehmen“ (QR-Code, mit Passwörtern) steht jetzt auch auf der Anmeldeseite.
+- **Kompass auch auf der Willkommensseite** statt des alten Doktorhuts.
+- **Hinweis auf Bestellseiten:** Beim Übernehmen einer Datei nennt die App die Bestellseiten für „Essen“ aus der Datei – das funktionierte bei echten Dateien bisher nicht.
+- **Umstieg von 4.1.0+9472 oder älter** (neue Signatur, einmalig): In der alten App Einstellungen → Daten → „Auf neues Gerät übertragen“ → „Nur Eingaben per Datei“ → „Als Datei senden“ und die Datei sichern. Alte App deinstallieren, in Obtainium „Installieren“, dann „Mit Sicherungsdatei einrichten“.
+
 **4.1.0+9473** – Neuer Name „Schulkompass“, neue Signatur: einmal neu installieren
 
 - **Neuer Name:** Die App heißt jetzt „Schulkompass“ und hat ein Kompass-Symbol. „Schulportal“ ist der Name des Portals selbst; die App sollte nicht wie ein offizielles Angebot wirken.

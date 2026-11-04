@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import 'package:lanis/fork/demo/demo_entry.dart';
 import 'package:lanis/fork/onboarding/onboarding_pages.dart';
+import 'package:lanis/fork/onboarding/restore_backup.dart';
 import 'package:lanis/fork/ui/settings/device_transfer_page.dart';
 
 /// Start der Erstanmeldung. Fork: eine Willkommensseite im Stil der App
@@ -17,6 +18,10 @@ class WelcomeLoginScreen extends StatelessWidget {
   Widget build(BuildContext context) => ForkWelcomePage(
     onLogin: () => context.go('/login'),
     onDemo: () => showDemoChooser(context),
+    onFile: () async {
+      final b = await pickBackup(context);
+      if (b != null && context.mounted) context.go('/login', extra: b);
+    },
     onTransfer: () => Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (_) => const DeviceReceivePage(firstSetup: true),
