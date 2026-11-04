@@ -34,7 +34,7 @@ Passwörter liegen im geschützten Schlüsselspeicher von Android (Keystore). Be
 
 - **Schulportal Hessen** (`*.schulportal.hessen.de`, auch das Moodle deiner Schule): Anmeldung und Inhalte. Vor der Anmeldung lädt die App die öffentliche Schulliste (`startcache.schulportal.hessen.de`).
 - **Bestellseite deines Caterers** – nur wenn du unter „Essen und Caterer“ eine Adresse eingetragen hast. Die Seite läuft in einer eingebetteten Ansicht; dabei gelten die Datenschutzbestimmungen des Caterers.
-- **GitHub** (GitHub Inc., USA; `api.github.com`): Die App fragt dort nach neuen Versionen und lädt auf „Über die App“ die Liste der Mitwirkenden. GitHub erfährt deine IP-Adresse, aber keine Zugangsdaten und keine Portal-Inhalte. Rechtsgrundlage: berechtigtes Interesse an Sicherheitsupdates (Art. 6 Abs. 1 lit. f DSGVO).
+- **GitHub** (GitHub Inc., USA): nur wenn du in der App selbst einen Link antippst (Neuigkeiten, Quellcode, Fehler melden als Issue, dieser Hinweis). Er öffnet sich dann im Browser; die App selbst baut keine Verbindung zu GitHub auf.
 - **Cloudflare** (Cloudflare Inc., USA; `*.workers.dev`): nur für Fehlerberichte mit deiner Zustimmung (Abschnitt 5).
 - **Termine abonnieren:** Die Abo-Adresse stellt das Schulportal bereit. Dein Kalenderdienst (z. B. Google Kalender) ruft die Termine dann selbst beim Portal ab; die App ist daran nicht beteiligt.
 
