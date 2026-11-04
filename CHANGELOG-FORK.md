@@ -1,5 +1,10 @@
 ## Schulkompass (rw-apps, bis 9472 „Schulportal“) – Änderungen gegenüber Lanis-Mobile
 
+**4.1.0+9477** – Vollständiger Datenschutzhinweis
+
+- **Datenschutzhinweis neu:** Verantwortlicher mit Kontakt, alle Verbindungen der App, Rechtsgrundlagen, Speicherdauer der Fehlerberichte (spätestens 12 Monate), Übertragen zwischen Geräten, Kinder, deine Rechte und die zuständige Aufsichtsbehörde. Die App fragt deshalb einmal neu nach deiner Zustimmung.
+- **Umstieg von 4.1.0+9472 oder älter** (neue Signatur, einmalig): In der alten App Einstellungen → Daten → „Auf neues Gerät übertragen“ (dort noch der alte Name) → „Nur Eingaben per Datei“ → „Als Datei senden“. Alte App deinstallieren, in Obtainium „Installieren“, dann „Sicherungsdatei“.
+
 **4.1.0+9476** – Willkommen auf einer Seite, QR-Übertragung ohne Scrollen
 
 - **Willkommensseite:** Symbol und Name nebeneinander, die Funktionen als knappe Liste, darunter „Anmelden“ und – nebeneinander – „Sicherungsdatei“ und „Anderes Gerät“. Alles passt auch bei großer Schrift auf eine Seite.

@@ -6,7 +6,9 @@ import 'package:lanis/fork_identity.dart';
 /// Bump this string when the policy is republished so users are prompted again.
 // Fork: 26.10.26 neu wegen der Fehlerberichte (report_relay.dart) – alle
 // werden einmal neu gefragt, weil ein neuer Empfänger dazukommt.
-const privacyPolicyPublishedAt = '2026-10-26';
+// 04.11.26: Datenschutzhinweis vollständig neu (Verantwortlicher,
+// Rechtsgrundlagen, Speicherdauer, Rechte) – Nutzer stimmen einmal neu zu.
+const privacyPolicyPublishedAt = '2026-11-04';
 
 /// Canonical privacy policy URL (About + login + gate screen).
 const privacyPolicyUrl = forkPrivacyPolicyUrl;
