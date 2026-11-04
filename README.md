@@ -33,7 +33,7 @@ Die App hat eine eigene App-ID (`io.github.rwapps.sph`) und läuft parallel zu L
 
 Zu jedem Release gehört außerdem `SHA256SUMS.txt` mit den Prüfsummen der APK-Dateien.
 
-**Umstieg von 4.1.0+9472 oder älter:** Diese Versionen trugen eine andere Signatur; Android lässt das Update deshalb nicht über die alte App installieren. Einmalig: in der alten App unter Einstellungen → Daten → „Auf neues Gerät übertragen“ → „Nur Eingaben per Datei“ „Als Datei senden“ und die Datei sichern, App deinstallieren, neu installieren (oder in Obtainium installieren), anmelden und dort „Datei übernehmen“.
+**Umstieg von 4.1.0+9472 oder älter:** Diese Versionen trugen eine andere Signatur; Android lässt das Update deshalb nicht über die alte App installieren. Einmalig: in der alten App unter Einstellungen → Daten → „Auf neues Gerät übertragen“ → „Nur Eingaben per Datei“ „Als Datei senden“ und die Datei sichern, App deinstallieren, neu installieren (oder in Obtainium installieren) und auf der Willkommensseite „Sicherungsdatei“ wählen – dann je Konto nur das Passwort eingeben.
 
 ## Datenschutz
 

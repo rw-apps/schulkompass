@@ -115,8 +115,9 @@ Future<void> _firstSetup(
     () => c.read(authControllerProvider.notifier).bootstrapIfNeeded(),
   );
   final de = forkL10nFor('de');
-  await until(find.text(de.devFromOther));
-  await tap(de.devFromOther);
+  // Willkommen (Entwurf B, 04.11.26): Kachel „Anderes Gerät“.
+  await until(find.text(de.setupDeviceTile));
+  await tap(de.setupDeviceTile);
   await until(find.byType(TransferQr));
 
   // Das alte Gerät (hier der Test) verschlüsselt für den gezeigten Code.

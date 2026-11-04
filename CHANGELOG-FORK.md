@@ -1,5 +1,12 @@
 ## Schulkompass (rw-apps, bis 9472 „Schulportal“) – Änderungen gegenüber Lanis-Mobile
 
+**4.1.0+9476** – Willkommen auf einer Seite, QR-Übertragung ohne Scrollen
+
+- **Willkommensseite:** Symbol und Name nebeneinander, die Funktionen als knappe Liste, darunter „Anmelden“ und – nebeneinander – „Sicherungsdatei“ und „Anderes Gerät“. Alles passt auch bei großer Schrift auf eine Seite.
+- **„Zwischen Geräten übertragen“** heißt jetzt der Eintrag unter Einstellungen → Daten (vorher „Auf neues Gerät übertragen“) – darüber wird gesendet und empfangen, per QR-Code oder Datei.
+- **QR-Übertragung:** Der Code auf dem neuen Gerät ist etwas kleiner, damit Prüfcode, Hinweis und „Code des alten Geräts scannen“ ohne Scrollen zu sehen sind. Die Codes des alten Geräts bleiben groß.
+- **Umstieg von 4.1.0+9472 oder älter** (neue Signatur, einmalig): In der alten App Einstellungen → Daten → „Auf neues Gerät übertragen“ (dort noch der alte Name) → „Nur Eingaben per Datei“ → „Als Datei senden“. Alte App deinstallieren, in Obtainium „Installieren“, dann „Sicherungsdatei“.
+
 **4.1.0+9474** – Mit Sicherungsdatei einrichten
 
 - **Neu einrichten ohne Abtippen:** Auf der Willkommensseite und bei der Anmeldung gibt es „Mit Sicherungsdatei einrichten“. Die App liest Schule und Benutzername aller Konten aus der Datei; je Konto nur noch das Passwort eingeben. Stundenzeiten, Gruppenwahl, Mensa und Haken werden nach jeder Anmeldung gleich übernommen. „Von anderem Gerät übernehmen“ (QR-Code, mit Passwörtern) steht jetzt auch auf der Anmeldeseite.

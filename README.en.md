@@ -33,7 +33,7 @@ The app has its own app ID (`io.github.rwapps.sph`) and runs alongside Lanis-Mob
 
 Each release also contains `SHA256SUMS.txt` with the checksums of the APK files.
 
-**Moving from 4.1.0+9472 or older:** Those versions carried a different signature, so Android will not install the update over the old app. Once: in the old app under Settings → Data → “Transfer to a new device” → “Entries only, via file” tap “Send as file” and keep the file, uninstall, install again (or install in Obtainium), sign in and tap “Import file” there.
+**Moving from 4.1.0+9472 or older:** Those versions carried a different signature, so Android will not install the update over the old app. Once: in the old app under Settings → Data → “Transfer to a new device” → “Entries only, via file” tap “Send as file” and keep the file, uninstall, install again (or install in Obtainium) and choose “Backup file” on the welcome page – then enter just the password for each account.
 
 ## Privacy
 

@@ -1022,10 +1022,10 @@
   },
   "onbAppName": "Schulkompass",
   "onbIntro": "Stundenplan, Vertretungen, Termine und Nachrichten deiner Kinder aus dem Schulportal Hessen.",
-  "onbToday": "Was gerade läuft, was ausfällt, was ansteht",
-  "onbCalendar": "Woche und Termine aller Kinder",
-  "onbCourses": "Hausaufgaben, Arbeiten und Noten",
-  "onbMessages": "Lehrkräfte direkt anschreiben",
+  "onbToday": "Was läuft, was ausfällt",
+  "onbCalendar": "Woche aller Kinder",
+  "onbCourses": "Aufgaben und Noten",
+  "onbMessages": "Lehrkräfte anschreiben",
   "onbFamilyHint": "Für Eltern- und Schülerkonten. Mehrere Kinder an verschiedenen Schulen lassen sich zusammen einrichten.",
   "onbLogin": "Anmelden",
   "onbStep": "Schritt {n} von {of}",
@@ -1074,7 +1074,7 @@
   "transferSend": "Als Datei senden",
   "transferReceive": "Datei übernehmen",
   "transferLimit": "Ein Abgleich auf Knopfdruck: Was danach auf einem Gerät geändert wird, kommt erst mit der nächsten Übertragung aufs andere. Konten werden über Schule und Benutzername zugeordnet – sie müssen auf beiden Geräten eingerichtet sein.",
-  "transferShareText": "Eingaben für die Schulkompass-App – in der App unter Einstellungen → Daten → „Auf neues Gerät übertragen“ → „Nur Eingaben per Datei“ → „Datei übernehmen“ öffnen.",
+  "transferShareText": "Eingaben für die Schulkompass-App – in der App unter Einstellungen → Daten → „Zwischen Geräten übertragen“ → „Nur Eingaben per Datei“ → „Datei übernehmen“ öffnen.",
   "transferFailed": "Das hat nicht geklappt.",
   "transferNotOurs": "Das ist keine Übertragungsdatei dieser App.",
   "transferNoMatch": "Keines der Konten in der Datei ist auf diesem Gerät eingerichtet.",
@@ -1281,8 +1281,8 @@
       }
     }
   },
-  "devTitle": "Auf neues Gerät übertragen",
-  "devDetail": "Zugangsdaten und Eingaben per QR-Code",
+  "devTitle": "Zwischen Geräten übertragen",
+  "devDetail": "Senden oder empfangen – per QR-Code oder Datei",
   "devIntro": "Beide Geräte liegen nebeneinander. Das neue Gerät zeigt zuerst einen Code, das alte scannt ihn und zeigt dann die verschlüsselten Daten, die das neue Gerät scannt.",
   "devIsNew": "Dieses Gerät ist das neue",
   "devIsNewDetail": "Zeigt einen Code für das alte Gerät",
@@ -1292,7 +1292,7 @@
   "devStep1": "Schritt 1 von 2",
   "devStep2": "Schritt 2 von 2",
   "devShowTitle": "Diesen Code mit dem alten Gerät scannen",
-  "devShowHint": "Auf dem alten Gerät: Einstellungen → Daten → Auf neues Gerät übertragen → Daten an ein neues Gerät senden.",
+  "devShowHint": "Auf dem alten Gerät: Einstellungen → Daten → Zwischen Geräten übertragen → Daten an ein neues Gerät senden.",
   "devCheck": "Prüfcode",
   "devScanData": "Code des alten Geräts scannen",
   "devScanOffer": "Code des neuen Geräts scannen",
@@ -2087,5 +2087,7 @@
         "type": "String"
       }
     }
-  }
+  },
+  "setupFileTile": "Sicherungs-\ndatei",
+  "setupDeviceTile": "Anderes\nGerät"
 }

@@ -29,7 +29,9 @@ import '../live/live_data.dart' show settingsRevision;
 import 'settings_widgets.dart';
 import 'transfer_page.dart';
 
-/// „Auf neues Gerät übertragen“ (device_transfer.dart, Wunsch 20.10.26):
+/// „Zwischen Geräten übertragen“ (bis 9475 „Auf neues Gerät übertragen“;
+/// umbenannt 04.11.26, weil die Seite auch sendet und Dateien kann)
+/// (device_transfer.dart, Wunsch 20.10.26):
 /// Wahl, ob dieses Gerät das neue oder das alte ist; dazu die bisherige
 /// Übertragung nur der Eingaben per Datei.
 class DeviceTransferPage extends StatelessWidget {
@@ -92,14 +94,24 @@ class DeviceTransferPage extends StatelessWidget {
 
 /// QR-Code auf weißem Grund (auch im dunklen Design gut lesbar).
 class TransferQr extends StatelessWidget {
-  const TransferQr({super.key, required this.data});
+  const TransferQr({super.key, required this.data, this.compact = false});
 
   final String data;
 
+  /// Höhe auf gut ein Viertel des Bildschirms begrenzen. Ursache
+  /// (Rückmeldung 04.11.26, Pixel mit großer Schrift): Auf „Dieses Gerät ist
+  /// das neue“ schob der volle Code Hinweis und „Code des alten Geräts
+  /// scannen“ unter die Navigationsleiste. Grenze: nur für den Schlüssel des
+  /// neuen Geräts – der ist kurz (wenige Module) und bleibt bei 200 dp gut
+  /// lesbar; die dichten Daten-Codes des alten Geräts bleiben groß.
+  final bool compact;
+
   @override
   Widget build(BuildContext context) {
-    final size = (MediaQuery.sizeOf(context).width - 2 * Sp.page - 2 * Sp.l)
-        .clamp(200.0, 340.0);
+    final screen = MediaQuery.sizeOf(context);
+    var size = (screen.width - 2 * Sp.page - 2 * Sp.l).clamp(200.0, 340.0);
+    if (compact)
+      size = size.clamp(200.0, (screen.height * 0.27).clamp(200.0, 340.0));
     return Center(
       child: Container(
         padding: const EdgeInsets.all(Sp.l),
@@ -551,7 +563,7 @@ class _DeviceReceivePageState extends ConsumerState<DeviceReceivePage> {
             child: Center(child: CircularProgressIndicator()),
           )
         else ...[
-          TransferQr(data: _offer!),
+          TransferQr(data: _offer!, compact: true),
           const SizedBox(height: Sp.m),
           _CheckCode(code: _check!),
         ],

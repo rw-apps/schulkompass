@@ -42,86 +42,74 @@ class ForkWelcomePage extends StatelessWidget {
     final t = context.t;
     return PopScope(
       canPop: false,
+      // Alles auf einer Seite (Entwurf B, 04.11.26 abgenommen). Ursache:
+      // Auf dem Pixel mit großer Schrift lagen „Schon einmal eingerichtet?“
+      // und die Übernahme-Wege unter dem Bildschirmrand – genau die Wege,
+      // die man nach einer Neuinstallation sucht. Deshalb Symbol und Name
+      // in einer Zeile, Funktionen als knappe Liste, beide Wege nebeneinander.
+      // Grenze: Bei noch größerer Schrift scrollt OnbPage weiterhin.
       child: OnbPage(
         top: [
-          const SizedBox(height: Sp.l),
-          Align(
-            alignment: Alignment.centerLeft,
-            // App-Symbol (Kompass, seit 9471) statt des Doktorhuts der
-            // Vorlage; dieselbe Datei wie das Startlogo (startup.dart).
-            child: SvgPicture.asset(
-              'assets/startup.svg',
-              width: Sz.button,
-              height: Sz.button,
-            ),
+          const SizedBox(height: Sp.m),
+          Row(
+            children: [
+              // App-Symbol (Kompass, seit 9471) statt des Doktorhuts der
+              // Vorlage; dieselbe Datei wie das Startlogo (startup.dart).
+              SvgPicture.asset(
+                'assets/startup.svg',
+                width: Sz.button,
+                height: Sz.button,
+              ),
+              const SizedBox(width: Sp.m),
+              Expanded(child: Text(t.onbAppName, style: k.pageTitle)),
+            ],
           ),
           const SizedBox(height: Sp.l),
-          Text(t.onbAppName, style: k.greeting),
-          const SizedBox(height: Sp.s),
           Text(t.onbIntro, style: k.body),
           // Hinweis „inoffiziell, ohne Gewähr“ gleich am Anfang (Prüfung auf
           // Massentauglichkeit 03.11.26): Wer sich auf eine Meldung verlässt,
           // soll wissen, dass verbindlich das Schulportal ist.
           const SizedBox(height: Sp.s),
           Text(t.onbDisclaimer, style: k.meta),
-          const SizedBox(height: Sp.xl),
-          OnbFeature(
-            icon: Icons.wb_sunny_outlined,
-            title: t.navToday,
-            text: t.onbToday,
-            bg: k.plainTone.bg,
-            ink: k.plainTone.ink,
-          ),
-          OnbFeature(
-            icon: Icons.calendar_month_outlined,
-            title: t.navCalendar,
-            text: t.onbCalendar,
-            bg: k.plainTone.bg,
-            ink: k.plainTone.ink,
-          ),
-          OnbFeature(
-            icon: Icons.menu_book_outlined,
-            title: t.navCourses,
-            text: t.onbCourses,
-            bg: k.plainTone.bg,
-            ink: k.plainTone.ink,
-          ),
-          OnbFeature(
-            icon: Icons.chat_bubble_outline,
-            title: t.navMessages,
-            text: t.onbMessages,
-            bg: k.plainTone.bg,
-            ink: k.plainTone.ink,
-          ),
+          const SizedBox(height: Sp.l),
+          _Feature(Icons.wb_sunny_outlined, t.navToday, t.onbToday),
+          _Feature(Icons.calendar_month_outlined, t.navCalendar, t.onbCalendar),
+          _Feature(Icons.menu_book_outlined, t.navCourses, t.onbCourses),
+          _Feature(Icons.chat_bubble_outline, t.navMessages, t.onbMessages),
         ],
         bottom: [
-          Text(t.onbFamilyHint, style: k.meta, textAlign: TextAlign.center),
-          const SizedBox(height: Sp.l),
           OnbButton(label: t.onbLogin, onPressed: onLogin),
           if (onTransfer != null || onFile != null) ...[
-            const SizedBox(height: Sp.l),
+            const SizedBox(height: Sp.m),
             Text(
               OnbPage.upper(t.setupAlready),
               style: k.dateCaps,
               textAlign: TextAlign.center,
             ),
-          ],
-          if (onFile != null) ...[
             const SizedBox(height: Sp.s),
-            OnbButton(
-              label: t.setupWithFile,
-              icon: Icons.upload_file,
-              strong: false,
-              onPressed: onFile,
-            ),
-          ],
-          if (onTransfer != null) ...[
-            const SizedBox(height: Sp.s),
-            OnbButton(
-              label: t.devFromOther,
-              icon: Icons.qr_code_2,
-              strong: false,
-              onPressed: onTransfer,
+            Row(
+              children: [
+                if (onFile != null)
+                  Expanded(
+                    child: _WayTile(
+                      icon: Icons.upload_file,
+                      label: t.setupFileTile,
+                      semantics: t.setupWithFile,
+                      onTap: onFile!,
+                    ),
+                  ),
+                if (onFile != null && onTransfer != null)
+                  const SizedBox(width: Sp.s),
+                if (onTransfer != null)
+                  Expanded(
+                    child: _WayTile(
+                      icon: Icons.qr_code_2,
+                      label: t.setupDeviceTile,
+                      semantics: t.devFromOther,
+                      onTap: onTransfer!,
+                    ),
+                  ),
+              ],
             ),
           ],
           if (onDemo != null)
@@ -130,6 +118,94 @@ class ForkWelcomePage extends StatelessWidget {
               child: Text(t.demoTitle, style: k.link),
             ),
         ],
+      ),
+    );
+  }
+}
+
+/// Eine Zeile der Funktionsliste auf der Willkommensseite: Symbol, Name,
+/// kurzer Zusatz (einzeilig, wird bei Platzmangel gekürzt).
+class _Feature extends StatelessWidget {
+  const _Feature(this.icon, this.title, this.text);
+
+  final IconData icon;
+  final String title;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final k = Kit.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: Sp.s),
+      child: Row(
+        children: [
+          Icon(icon, size: Sz.icon, color: k.p.muted),
+          const SizedBox(width: Sp.m),
+          Text(title, style: k.planSubject(k.p.ink)),
+          const SizedBox(width: Sp.s),
+          Expanded(
+            child: Text(
+              text,
+              style: k.meta,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Kachel für einen Übernahme-Weg (Symbol über zweizeiliger Aufschrift);
+/// [semantics] ist der volle Name für Bildschirmleser.
+class _WayTile extends StatelessWidget {
+  const _WayTile({
+    required this.icon,
+    required this.label,
+    required this.semantics,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final String semantics;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final k = Kit.of(context);
+    return Semantics(
+      button: true,
+      label: semantics,
+      excludeSemantics: true,
+      child: Material(
+        color: k.p.card,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(Rad.button),
+          side: BorderSide(color: k.p.line),
+        ),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(Rad.button),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              vertical: Sp.m,
+              horizontal: Sp.s,
+            ),
+            child: Column(
+              children: [
+                Icon(icon, size: Sz.navIcon, color: k.p.ink),
+                const SizedBox(height: Sp.xs),
+                Text(
+                  label,
+                  style: k.button(k.p.ink),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
