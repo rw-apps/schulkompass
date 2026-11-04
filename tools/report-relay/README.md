@@ -14,6 +14,9 @@ hier, nie in der App (die App ist quelloffen).
 4. Unter Settings → Variables:
    - `GITHUB_TOKEN` (als Secret) = der Token
    - `REPO` = `<besitzer>/schulportal-berichte`
+   - `SALT` (als Secret) = zufälliger Text, mindestens 32 Zeichen. Macht den
+     gezählten Absender-Hash unumkehrbar (sonst ließe er sich über alle
+     IPv4-Adressen zurückrechnen).
 5. Unter Storage → KV einen Namespace anlegen und im Worker als `LIMITS`
    binden (Tagesgrenze).
 6. Adresse des Workers in `lib/fork/report_relay.dart` bei
@@ -23,4 +26,6 @@ hier, nie in der App (die App ist quelloffen).
 
 - Die Adresse ist öffentlich bekannt; Schutz sind Größe (400 KB),
   Tagesgrenze (50) und das private Repo.
-- Speichert keine IP-Adressen; Cloudflare protokolliert Abrufe kurzzeitig.
+- Speichert keine IP-Adressen, nur zwei Tage lang einen Hash aus `SALT`, Tag
+  und Adresse (5 Berichte je Absender und Tag). Cloudflare protokolliert
+  Abrufe kurzzeitig.

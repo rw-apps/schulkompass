@@ -10,14 +10,19 @@
 //   GITHUB_TOKEN  feingranularer Token, nur „Issues: write“ auf REPO (Secret)
 //   REPO          z. B. "rw-apps/schulportal-berichte" (privat)
 //   LIMITS        KV-Namespace für die Tagesgrenze
+//   SALT          zufälliger geheimer Text (Secret), mind. 32 Zeichen
 //
 // Grenzen:
 // - Jeder kann an die Adresse senden (die App ist offen, ein Geheimnis in
 //   ihr wäre keins). Schutz: Größe, Art, Grenze je Absender und Tag, Tages-
 //   grenze gesamt; das Repo ist privat. Grenze: KV zählt nicht atomar –
 //   gleichzeitige Anfragen können eine Grenze knapp überschreiten.
-// - Speichert keine IP-Adresse; Cloudflare selbst protokolliert Abrufe
-//   kurzzeitig (Datenschutzerklärung nennen).
+// - Speichert keine IP-Adresse, nur für zwei Tage einen Hash aus SALT, Tag
+//   und Adresse (Grenze je Absender). Ursache für SALT (04.11.26): Ohne
+//   Geheimnis ließe sich der Hash über alle ~4 Mrd. IPv4-Adressen
+//   zurückrechnen. Grenze: Fehlt SALT, zählt der Dienst trotzdem (ohne
+//   diesen Schutz). Cloudflare selbst protokolliert Abrufe kurzzeitig
+//   (PRIVACY.md).
 // - Ein Issue fasst 65 536 Zeichen; längere Seiten werden auf Kommentare
 //   verteilt.
 
@@ -51,7 +56,7 @@ export default {
     }
     const day = new Date().toISOString().slice(0, 10);
     const ip = req.headers.get('CF-Connecting-IP') ?? '';
-    const sender = `${day}:${await sha256(`${day}|${ip}`)}`;
+    const sender = `${day}:${await sha256(`${env.SALT ?? ''}|${day}|${ip}`)}`;
     const m = +((await env.LIMITS.get(sender)) ?? 0);
     if (m >= PER_SENDER) return text('Grenze je Absender erreicht', 429);
     const n = +((await env.LIMITS.get(day)) ?? 0);
