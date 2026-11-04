@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Kopfzeile des großen Widgets (4 × 4, Wunsch 30.10.26): links App-Symbol
-     und „Schulportal“, rechts Tag (heute/Wochentag) und Stand des
+     und App-Name (@string/widget_app_name), rechts Tag (heute/Wochentag) und Stand des
      Vertretungsplans; darunter feine Linie (widget_line im Aufbau). Ursache:
      Oben war Platz frei; der Stand zeigt zugleich, wie aktuell die Daten sind. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"

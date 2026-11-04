@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:liblanis/liblanis.dart';
+import 'package:lanis/fork_identity.dart' show forkAppName;
 
 import 'package:lanis/view/settings/subsettings/debug_export.dart'
     show filterPresetsForSchool;
@@ -121,7 +122,7 @@ Future<AnonExport> runAnonExport({
   onProgress?.call(sections.length, sections.length);
 
   out
-    ..writeln('Schulportal-App – anonymer Export')
+    ..writeln('$forkAppName-App – anonymer Export')
     ..writeln('Version $version · Konto: ${_typeName(type)} · $day')
     ..writeln(
       'Verwürfelt: alle Wörter außer Beschriftungen (gleiche Wörter gleich), '
@@ -200,7 +201,7 @@ Future<AnonExport> anonPage({
   final ct = r.headers.value('content-type') ?? '';
   final page = a.body(_asString(r.data), contentType: ct);
   final text = StringBuffer()
-    ..writeln('Schulportal-App – anonyme Seite: $label')
+    ..writeln('$forkAppName-App – anonyme Seite: $label')
     ..writeln('Version $version · ${request.method} ${_shortUrl(a, request)}')
     ..writeln('Status ${r.statusCode} · $ct')
     ..writeln('Unverändert: ${a.kept.join(', ')}')

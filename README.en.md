@@ -1,8 +1,8 @@
-# Schulportal
+# Schulkompass
 
 *[Auf Deutsch lesen](README.md)*
 
-An Android app for the **Schulportal Hessen** (the school portal of the German state of Hesse) – made for parents and students who want the school day at a glance: what's on today, what's cancelled, which homework is open. Private and non-commercial, shared with family and friends.
+**Schulkompass** (called “Schulportal” up to version 4.1.0+9472) is an Android app for the **Schulportal Hessen** (the school portal of the German state of Hesse) – made for parents and students who want the school day at a glance: what's on today, what's cancelled, which homework is open. Private and non-commercial, shared with family and friends.
 
 The app is a fork of [Lanis-Mobile](https://github.com/lanis-mobile/lanis) and, like the original, licensed under the **GPL-3.0**. It is not affiliated with the State of Hesse, the Schulportal Hessen or the Lanis-Mobile developers.
 
@@ -26,6 +26,14 @@ The app is available for **Android** only.
 2. For automatic updates: install [Obtainium](https://github.com/ImranR98/Obtainium) and add `https://github.com/rw-apps/schulportal`.
 
 The app has its own app ID (`io.github.rwapps.sph`) and runs alongside Lanis-Mobile.
+
+**Verify the signature:** Since 4.1.0+9473 all APKs are signed with this certificate (SHA-256):
+
+`8D:4A:42:80:3C:12:28:D9:D3:D3:0E:EC:C8:40:5A:55:15:E6:97:97:B9:5B:12:C5:44:AE:62:0F:4C:64:FC:EE`
+
+Each release also contains `SHA256SUMS.txt` with the checksums of the APK files.
+
+**Moving from 4.1.0+9472 or older:** Those versions carried a different signature, so Android will not install the update over the old app. Once: in the old app under Settings → Data → “Transfer to a new device” → “Entries only, via file” tap “Send as file” and keep the file, uninstall, install again (or install in Obtainium), sign in and tap “Import file” there.
 
 ## Privacy
 

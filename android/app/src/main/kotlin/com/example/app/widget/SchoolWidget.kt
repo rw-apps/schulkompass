@@ -306,7 +306,7 @@ internal object SchoolWidgetRenderer {
         RemoteViews(ctx.packageName, if (mode == Mode.STRIP) R.layout.widget_tag else R.layout.widget_tag_logo)
             .apply { setTextViewText(R.id.tag_text, tag) }
 
-    /** Kopfzeile 4 × 4: Symbol, „Schulportal“, Tag und ältester Stand der gezeigten Kinder. */
+    /** Kopfzeile 4 × 4: Symbol, App-Name (widget_app_name), Tag und ältester Stand der gezeigten Kinder. */
     private fun daysHead(ctx: Context, tag: String, rows: List<KidView>, l: Labels, now: LocalDateTime): RemoteViews {
         val r = RemoteViews(ctx.packageName, R.layout.widget_days_head)
         r.setTextViewText(R.id.head_day, tag)

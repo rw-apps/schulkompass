@@ -1,4 +1,4 @@
-/// Identität dieses Forks („Schulportal“ von rw-apps) an EINER Stelle.
+/// Identität dieses Forks („Schulkompass“ von rw-apps, bis 9472 „Schulportal“) an EINER Stelle.
 ///
 /// Ursache: Das Original (lanis-mobile/lanis) hat Namen, Repo-, Store- und
 /// Kontaktadressen über ~12 Dateien verstreut (u. a. whats_new.dart,
@@ -15,7 +15,14 @@ library;
 
 /// Anzeigename in App-Leiste und Task-Umschalter (Launcher-Name steht in
 /// android/app/src/main/AndroidManifest.xml, android:label).
-const forkAppName = 'Schulportal';
+///
+/// Umbenennung 04.11.26 (Build 9473): „Schulportal“ war der Name des Portals
+/// selbst und ließ die App wie ein offizielles Angebot des Landes wirken.
+/// Grenze: App-ID (io.github.rwapps.sph) und Repo-Name bleiben – ein neuer
+/// Paketname hätte eine zweite, getrennte App erzeugt, und Obtainium-Quellen
+/// (github.com/rw-apps/schulportal) sowie APK-Dateinamen (schulportal-v….apk)
+/// zeigen weiter auf dieselbe Stelle.
+const forkAppName = 'Schulkompass';
 
 /// GitHub-Repo des Forks: Quelle für Update-Prüfung, Fehlermeldungen, Quellcode.
 const forkRepo = 'rw-apps/schulportal';
@@ -37,7 +44,7 @@ const upstreamRepoUrl = 'https://github.com/lanis-mobile/lanis';
 /// andere App mit eigener Versionszählung; unter fremdem Namen aufzutreten
 /// würde Fehler im Portal-Log dem Original zuschreiben.
 String forkUserAgent(String version, String buildNumber) =>
-    'Schulportal-rw/v${appVersionLabel(version, buildNumber)} '
+    'Schulkompass-rw/v${appVersionLabel(version, buildNumber)} '
     '(fork of $upstreamName)';
 
 /// „4.1.0+9452“ aus PackageInfo. Ursache: Seit 30.10.26 trägt der

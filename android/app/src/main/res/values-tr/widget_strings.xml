@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="widget_strip_label">Okul portalı şerit</string>
-    <string name="widget_small_label">Okul portalı küçük</string>
-    <string name="widget_medium_label">Okul portalı orta</string>
-    <string name="widget_large_label">Okul portalı büyük</string>
+    <string name="widget_strip_label">Schulkompass şerit</string>
+    <string name="widget_small_label">Schulkompass küçük</string>
+    <string name="widget_medium_label">Schulkompass orta</string>
+    <string name="widget_large_label">Schulkompass büyük</string>
     <string name="widget_strip_description">Her çocuğun ders saatleri ve yapılacakları tek şeritte</string>
     <string name="widget_small_description">Her çocuk için ders saatleri, sınavlar, ödevler ve yemek</string>
     <string name="widget_medium_description">En fazla dört çocuk için ders saatleri, sınavlar, ödevler ve yemek</string>

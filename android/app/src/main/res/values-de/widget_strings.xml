@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="widget_strip_label">Schulportal Leiste</string>
-    <string name="widget_small_label">Schulportal klein</string>
-    <string name="widget_medium_label">Schulportal mittel</string>
-    <string name="widget_large_label">Schulportal groß</string>
+    <string name="widget_strip_label">Schulkompass Leiste</string>
+    <string name="widget_small_label">Schulkompass klein</string>
+    <string name="widget_medium_label">Schulkompass mittel</string>
+    <string name="widget_large_label">Schulkompass groß</string>
     <string name="widget_strip_description">Unterrichtszeit und Fälliges je Kind in einer Leiste</string>
     <string name="widget_small_description">Unterrichtszeit, Arbeiten, Aufgaben und Essen je Kind</string>
     <string name="widget_medium_description">Unterrichtszeit, Arbeiten, Aufgaben und Essen für bis zu vier Kinder</string>

@@ -1,8 +1,8 @@
-# Schulportal
+# Schulkompass
 
 *[Read this in English](README.en.md)*
 
-Eine Android-App für das **Schulportal Hessen** – gemacht für Eltern und Schüler, die den Alltag auf einen Blick sehen wollen: was heute ansteht, was ausfällt, welche Hausaufgaben offen sind. Privat und nicht kommerziell, weitergegeben im Familien- und Freundeskreis.
+**Schulkompass** (bis Version 4.1.0+9472 „Schulportal“) ist eine Android-App für das **Schulportal Hessen** – gemacht für Eltern und Schüler, die den Alltag auf einen Blick sehen wollen: was heute ansteht, was ausfällt, welche Hausaufgaben offen sind. Privat und nicht kommerziell, weitergegeben im Familien- und Freundeskreis.
 
 Die App ist eine Abwandlung von [Lanis-Mobile](https://github.com/lanis-mobile/lanis) und steht wie das Original unter der **GPL-3.0**. Mit dem Land Hessen, dem Schulportal Hessen und den Entwicklern von Lanis-Mobile besteht keine Verbindung.
 
@@ -26,6 +26,14 @@ Die App gibt es nur für **Android**.
 2. Für automatische Updates: [Obtainium](https://github.com/ImranR98/Obtainium) installieren und dort `https://github.com/rw-apps/schulportal` hinzufügen.
 
 Die App hat eine eigene App-ID (`io.github.rwapps.sph`) und läuft parallel zu Lanis-Mobile.
+
+**Signatur prüfen:** Seit 4.1.0+9473 sind alle APKs mit diesem Zertifikat signiert (SHA-256):
+
+`8D:4A:42:80:3C:12:28:D9:D3:D3:0E:EC:C8:40:5A:55:15:E6:97:97:B9:5B:12:C5:44:AE:62:0F:4C:64:FC:EE`
+
+Zu jedem Release gehört außerdem `SHA256SUMS.txt` mit den Prüfsummen der APK-Dateien.
+
+**Umstieg von 4.1.0+9472 oder älter:** Diese Versionen trugen eine andere Signatur; Android lässt das Update deshalb nicht über die alte App installieren. Einmalig: in der alten App unter Einstellungen → Daten → „Auf neues Gerät übertragen“ → „Nur Eingaben per Datei“ „Als Datei senden“ und die Datei sichern, App deinstallieren, neu installieren (oder in Obtainium installieren), anmelden und dort „Datei übernehmen“.
 
 ## Datenschutz
 

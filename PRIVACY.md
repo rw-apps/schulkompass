@@ -1,8 +1,8 @@
-# Datenschutzhinweis – App „Schulportal“ (rw-apps)
+# Datenschutzhinweis – App „Schulkompass“ (rw-apps)
 
-Stand: 26.10.2026
+Stand: 04.11.2026
 
-„Schulportal“ ist eine inoffizielle, private und nicht kommerzielle Abwandlung der quelloffenen App [Lanis-Mobile](https://github.com/lanis-mobile/lanis). Sie wird im Familien- und Freundeskreis weitergegeben. Mit dem Land Hessen, dem Schulportal Hessen und den Entwicklern von Lanis-Mobile besteht keine Verbindung.
+„Schulkompass“ (bis Version 4.1.0+9472 „Schulportal“) ist eine inoffizielle, private und nicht kommerzielle Abwandlung der quelloffenen App [Lanis-Mobile](https://github.com/lanis-mobile/lanis). Sie wird im Familien- und Freundeskreis weitergegeben. Mit dem Land Hessen, dem Schulportal Hessen und den Entwicklern von Lanis-Mobile besteht keine Verbindung.
 
 ## Welche Daten die App verarbeitet
 

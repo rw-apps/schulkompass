@@ -8,7 +8,7 @@ void main() {
     expect(appVersionLabel('4.1.0+9452', '11452'), '4.1.0+9452');
     expect(
       forkUserAgent('4.1.0+9452', '11452'),
-      'Schulportal-rw/v4.1.0+9452 (fork of Lanis-Mobile)',
+      'Schulkompass-rw/v4.1.0+9452 (fork of Lanis-Mobile)',
     );
   });
   test('ältere Builds und iOS: Build-Nummer anhängen', () {

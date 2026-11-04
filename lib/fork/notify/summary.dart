@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:liblanis/liblanis.dart' show TypedSettings;
 import 'package:lanis/background_service.dart' show notificationChannelId;
+import 'package:lanis/fork_identity.dart' show forkAppName;
 
 import '../l10n/l10n.dart';
 import '../ui/today/today_model.dart';
@@ -247,7 +248,7 @@ Future<void> showSummary(
       notificationDetails: NotificationDetails(
         android: AndroidNotificationDetails(
           notificationChannelId,
-          'Schulportal',
+          forkAppName,
           channelDescription: 'Applet notifications',
           importance: Importance.high,
           priority: Priority.high,
@@ -256,7 +257,7 @@ Future<void> showSummary(
           onlyAlertOnce: !loud,
           // Vertraulich wie die übrigen Hinweise: Auf dem Sperrbildschirm
           // zeigt Android den Inhalt nur, wenn „sensible Inhalte“ nicht
-          // ausgeblendet sind; sonst nur „Schulportal“.
+          // ausgeblendet sind; sonst nur den App-Namen (forkAppName).
           visibility: NotificationVisibility.private,
         ),
       ),

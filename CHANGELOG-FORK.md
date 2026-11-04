@@ -1,4 +1,14 @@
-## Schulportal (rw-apps) – Änderungen gegenüber Lanis-Mobile
+## Schulkompass (rw-apps, bis 9472 „Schulportal“) – Änderungen gegenüber Lanis-Mobile
+
+**4.1.0+9473** – Neuer Name „Schulkompass“, neue Signatur: einmal neu installieren
+
+- **Neuer Name:** Die App heißt jetzt „Schulkompass“ und hat ein Kompass-Symbol. „Schulportal“ ist der Name des Portals selbst; die App sollte nicht wie ein offizielles Angebot wirken.
+- **Neue Signatur – einmalig neu installieren:** Die App ist mit einem neuen Schlüssel signiert. Android installiert das Update deshalb nicht über die alte App („App nicht installiert“ bzw. Signaturfehler in Obtainium). So gehts:
+  1. In der alten App: Einstellungen → Daten → „Auf neues Gerät übertragen“ → „Nur Eingaben per Datei“ → „Als Datei senden“ und die Datei z. B. per Mail an dich selbst oder in „Dateien“ speichern (Gruppenwahl und Lehrernamen im Stundenplan, Stundenzeiten, Mensa-Adressen, abgehakte Hausaufgaben, gesendete Entschuldigungen; Zugangsdaten sind nicht enthalten).
+  2. Alte App deinstallieren.
+  3. Neue App installieren – in Obtainium auf „Installieren“ tippen oder die APK aus dem Release laden.
+  4. Alle Konten wieder anmelden, dann Einstellungen → Daten → „Auf neues Gerät übertragen“ → „Nur Eingaben per Datei“ → „Datei übernehmen“.
+- **Prüfen:** Zertifikat SHA-256 `8D:4A:42:80:3C:12:28:D9:D3:D3:0E:EC:C8:40:5A:55:15:E6:97:97:B9:5B:12:C5:44:AE:62:0F:4C:64:FC:EE` (auch im README).
 
 **4.1.0+9351** – Krankmeldung: Zurück statt totem Menü-Knopf
 

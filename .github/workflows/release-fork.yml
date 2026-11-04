@@ -1,4 +1,4 @@
-name: Release (Fork Schulportal)
+name: Release (Fork Schulkompass)
 
 # Baut bei jeder neuen Version in pubspec.yaml eine signierte APK und legt
 # Tag + GitHub-Release an.
@@ -140,4 +140,4 @@ jobs:
         run: |
           # Prüfsummen zum Abgleich (Sicherheitsprüfung 03.11.26).
           sha256sum schulportal-*.apk > SHA256SUMS.txt
-          gh release create "${{ steps.ver.outputs.tag }}" schulportal-*.apk SHA256SUMS.txt --target "$GITHUB_SHA" --title "Schulportal ${{ steps.ver.outputs.tag }}" --notes-file notes.md
+          gh release create "${{ steps.ver.outputs.tag }}" schulportal-*.apk SHA256SUMS.txt --target "$GITHUB_SHA" --title "Schulkompass ${{ steps.ver.outputs.tag }}" --notes-file notes.md

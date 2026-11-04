@@ -18,6 +18,7 @@ import 'package:lanis/bridge/lanis_bootstrap.dart';
 import 'package:lanis/l10n/account_type_ui.dart';
 import 'package:lanis/utils/logger.dart';
 import 'package:lanis/utils/privacy_policy.dart';
+import 'package:lanis/fork_identity.dart' show forkAppName;
 
 const _oneShotTaskId = 'com.transistorsoft.notftask';
 
@@ -504,7 +505,7 @@ class BackgroundTaskToolkit {
     try {
       final androidDetails = AndroidNotificationDetails(
         notificationChannelId,
-        'Schulportal',
+        forkAppName,
         channelDescription: 'Applet notifications',
         importance: Importance.high,
         priority: Priority.high,
@@ -512,7 +513,7 @@ class BackgroundTaskToolkit {
         ongoing: false,
         // Fork (Sicherheitsprüfung 17.10.26): Inhalt (Namen, Fächer,
         // Betreffzeilen) gilt als vertraulich. Auf einem gesperrten Handy
-        // zeigt Android dann nur „Schulportal“ ohne Text, sofern unter
+        // zeigt Android dann nur den App-Namen (forkAppName) ohne Text, sofern unter
         // „Sperrbildschirm“ das Ausblenden sensibler Inhalte gewählt ist.
         // Grenze: Mit „Alle Inhalte anzeigen“ entscheidet der Nutzer anders.
         visibility: NotificationVisibility.private,

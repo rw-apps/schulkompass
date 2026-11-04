@@ -6,15 +6,15 @@
      lib/fork/widget/home_widget_data.dart). Englisch als Vorgabe wie
      fallbackLanguage (lib/fork/l10n/l10n.dart). -->
 <resources>
-    <string name="widget_strip_label">School portal bar</string>
-    <string name="widget_small_label">School portal small</string>
-    <string name="widget_medium_label">School portal medium</string>
-    <string name="widget_large_label">School portal large</string>
+    <string name="widget_strip_label">Schulkompass bar</string>
+    <string name="widget_small_label">Schulkompass small</string>
+    <string name="widget_medium_label">Schulkompass medium</string>
+    <string name="widget_large_label">Schulkompass large</string>
     <string name="widget_strip_description">Each child\'s school hours and what is due, in one bar</string>
     <string name="widget_small_description">School hours, exams, homework and lunch for each child</string>
     <string name="widget_medium_description">School hours, exams, homework and lunch for up to four children</string>
     <string name="widget_large_description">School hours, exams, homework and lunch for up to four children, with more room</string>
     <string name="widget_no_data">Open the app once to load the plan.</string>
     <!-- Kopfzeile im großen Widget (4 × 4, Wunsch 30.10.26); Name der App, in allen Sprachen gleich. -->
-    <string name="widget_app_name" translatable="false">Schulportal</string>
+    <string name="widget_app_name" translatable="false">Schulkompass</string>
 </resources>

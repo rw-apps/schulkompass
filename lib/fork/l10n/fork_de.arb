@@ -1020,7 +1020,7 @@
       }
     }
   },
-  "onbAppName": "Schulportal",
+  "onbAppName": "Schulkompass",
   "onbIntro": "Stundenplan, Vertretungen, Termine und Nachrichten deiner Kinder aus dem Schulportal Hessen.",
   "onbToday": "Was gerade läuft, was ausfällt, was ansteht",
   "onbCalendar": "Woche und Termine aller Kinder",
@@ -1074,7 +1074,7 @@
   "transferSend": "Als Datei senden",
   "transferReceive": "Datei übernehmen",
   "transferLimit": "Ein Abgleich auf Knopfdruck: Was danach auf einem Gerät geändert wird, kommt erst mit der nächsten Übertragung aufs andere. Konten werden über Schule und Benutzername zugeordnet – sie müssen auf beiden Geräten eingerichtet sein.",
-  "transferShareText": "Eingaben für die Schulportal-App – in der App unter Einstellungen → Eingaben übertragen → Datei übernehmen öffnen.",
+  "transferShareText": "Eingaben für die Schulkompass-App – in der App unter Einstellungen → Daten → „Auf neues Gerät übertragen“ → „Nur Eingaben per Datei“ → „Datei übernehmen“ öffnen.",
   "transferFailed": "Das hat nicht geklappt.",
   "transferNotOurs": "Das ist keine Übertragungsdatei dieser App.",
   "transferNoMatch": "Keines der Konten in der Datei ist auf diesem Gerät eingerichtet.",

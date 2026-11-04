@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:lanis/fork_identity.dart' show forkAppName;
+
 import 'portal_fault.dart';
 
 /// Fehlerprotokoll ohne Inhalte – nur auf dem Gerät, gesendet wird nur, was
@@ -221,7 +223,7 @@ class ErrorLog {
   /// Text zum Teilen; genau das sieht der Nutzer vor dem Senden.
   String report({required String os}) {
     final b = StringBuffer()
-      ..writeln('Schulportal-App – Fehlerbericht (ohne Inhalte)')
+      ..writeln('$forkAppName-App – Fehlerbericht (ohne Inhalte)')
       ..writeln('System: $os');
     for (final r in _records) {
       b

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Design-Kit der neuen Oberfläche („Schulportal“-Fork).
+/// Design-Kit der neuen Oberfläche („Schulkompass“-Fork).
 ///
 /// Regel: Neue Seiten setzen KEINE Schriftgrößen, Farben, Abstände oder Radien
 /// von Hand, sondern nehmen sie nur von hier ([Sp], [Sz], [Rad], [Kit]).
