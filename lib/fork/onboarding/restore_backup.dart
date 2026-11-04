@@ -40,7 +40,13 @@ Future<TransferBackup?> pickBackup(BuildContext context) async {
     final files = await FilePicker.pickFiles(type: FileType.any);
     final path = files.firstOrNull?.path;
     if (path == null) return null;
-    text = await File(path).readAsString();
+    final f = File(path);
+    // Größe vor dem Lesen prüfen (maxBackupBytes, settings_transfer.dart).
+    if (await f.length() > maxBackupBytes) {
+      snack(t.transferNotOurs);
+      return null;
+    }
+    text = await f.readAsString();
   } catch (e, st) {
     ErrorLog.instance.record('fork/sicherung-lesen', e, st);
     snack(t.transferFailed);

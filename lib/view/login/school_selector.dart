@@ -316,12 +316,16 @@ Future<List<RemoteSchoolBezirk>> fetchSchoolList() async {
   return result;
 }
 
-/// Schulnummer → Name aus [fetchSchoolList].
-Future<Map<int, String>> fetchSchoolNames() async => {
-  for (final b in await fetchSchoolList())
-    for (final s in b.schools)
-      if (int.tryParse(s.id) case final id?) id: s.name,
-};
+/// Schulnummer → Name aus [fetchSchoolList]; leer in Widget-Tests
+/// ([SchoolSelector.skipNetworkLoad]).
+Future<Map<int, String>> fetchSchoolNames() async {
+  if (SchoolSelector.skipNetworkLoad) return const {};
+  return {
+    for (final b in await fetchSchoolList())
+      for (final s in b.schools)
+        if (int.tryParse(s.id) case final id?) id: s.name,
+  };
+}
 
 class RemoteSchoolBezirk {
   final String id;

@@ -70,6 +70,33 @@ void main() {
     expect(parseBackup('{"format":"anderes"}'), isNull);
   });
 
+  test('Schlüssel kanonisch, Dubletten und Grenzen', () {
+    final b = parseBackup(
+      '{"format":"schulportal-eingaben","accounts":{'
+      '"9999:Jonas.Beispiel":{},"9999:jonas.beispiel":{},'
+      '"+9998:a":{},"09997:b":{},"9996:${'x' * 101}":{}},'
+      '"names":{"9999:Jonas.Beispiel":"Muster\\u202eSchule\\u0007"}}',
+    )!;
+    expect(b.accounts.map((a) => a.key), ['9999:jonas.beispiel', '9997:b']);
+    expect(b.names, {'9999:jonas.beispiel': 'MusterSchule'});
+    final many = {for (var i = 1; i <= 30; i++) '"$i:k$i"': '{}'};
+    final big = parseBackup(
+      '{"format":"schulportal-eingaben","accounts":{'
+      '${many.entries.map((e) => '${e.key}:${e.value}').join(',')}}}',
+    )!;
+    expect(big.accounts, hasLength(maxBackupAccounts));
+  });
+
+  test('Bestellseiten: ohne Schema und als nackter JSON-Text erkannt', () {
+    final data = {
+      'k': {
+        'fork/fork-mensa-url': LanisDatabase.encodeValue('Essen.Example/x'),
+        'fork/fork-mensa-urls': '"{\\"1:A\\":\\"nackt.example/y\\"}"',
+      },
+    };
+    expect(transferMensaHosts(data, ['k']), ['essen.example', 'nackt.example']);
+  });
+
   test('collectTransferNames: nur Konten mit Schulnamen', () {
     final names = collectTransferNames([
       AccountSummary(

@@ -347,7 +347,14 @@ class LoginFormState extends ConsumerState<LoginForm> {
   /// Startseite. Gemeinsam für das Formular und die Sicherung.
   Future<void> _finishSetup() async {
     final home = firstSupportedHomePath(ref);
-    if (await Permission.notification.isGranted) {
+    // Abfrage kann auf manchen Geräten werfen; dann wie „erlaubt“ direkt
+    // zur Startseite (StartupScreen fragt später). Ursache (Prüfung
+    // 04.11.26): Aus _skipRestore gerufen, blieb ein Fehler unbehandelt.
+    var granted = true;
+    try {
+      granted = await Permission.notification.isGranted;
+    } catch (_) {}
+    if (granted) {
       if (mounted) context.go(home);
       return;
     }
@@ -516,10 +523,26 @@ class LoginFormState extends ConsumerState<LoginForm> {
         ],
         bottom: [
           OnbButton(
-            label: t.restoreLogin(done + 1, accounts.length),
+            // Gedeckelt: Nach dem letzten Konto stünde kurz „3 von 2“.
+            label: t.restoreLogin(
+              done < accounts.length ? done + 1 : accounts.length,
+              accounts.length,
+            ),
             onPressed:
                 active != null && dseAgree && passwordController.text.isNotEmpty
-                ? () {
+                ? () async {
+                    // Ältere Dateien ohne Namen: Schulliste noch einmal
+                    // versuchen, sonst bliebe schoolName des Kontos leer
+                    // (Prüfung 04.11.26). Höchstens 5 s, dann ohne Namen.
+                    if (_restoreSchool(active).isEmpty) {
+                      try {
+                        final names = await fetchSchoolNames().timeout(
+                          const Duration(seconds: 5),
+                        );
+                        if (names.isNotEmpty) _schoolNames = names;
+                      } catch (_) {}
+                      if (!mounted) return;
+                    }
                     selectedSchoolName = _restoreSchool(active);
                     schoolIDController.text = '${active.schoolId}';
                     login(

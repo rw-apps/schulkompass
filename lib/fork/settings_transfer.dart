@@ -6,6 +6,7 @@ import 'class_choice.dart' show classSetting;
 import 'kid_colors.dart' show kidColorSetting;
 import 'absences.dart' show absenceSentSetting, decodeSent, encodeSent;
 import 'homework_ledger.dart';
+import 'school_links.dart' show normalizeMensaUrl;
 import 'ui/live/live_data.dart'
     show
         groupChoiceSetting,
@@ -126,22 +127,52 @@ class TransferBackup {
 
   static BackupAccount? _split(String key) {
     final i = key.indexOf(':');
-    if (i <= 0) return null;
-    final id = int.tryParse(key.substring(0, i));
+    if (i <= 0 || !RegExp(r'^[0-9]{1,9}$').hasMatch(key.substring(0, i))) {
+      return null;
+    }
+    final id = int.parse(key.substring(0, i));
     final user = key.substring(i + 1).trim();
-    if (id == null || id <= 0 || user.isEmpty) return null;
+    if (id <= 0 || user.isEmpty || user.length > maxBackupUsername) {
+      return null;
+    }
     return (key: key, schoolId: id, username: user);
   }
 }
 
+/// Grenzen gegen fremde oder kaputte Dateien (Prüfung 04.11.26): eine
+/// echte Datei hat wenige Konten mit kurzen Namen und ist wenige KB groß.
+const maxBackupBytes = 2 * 1024 * 1024;
+const maxBackupAccounts = 20;
+const maxBackupUsername = 100;
+
 /// Sicherungsdatei lesen; null, wenn es keine Übertragungsdatei dieser App
 /// ist. Gleiche Prüfung wie [parseTransfer] – Namen nur als Text, höchstens
-/// 120 Zeichen (Anzeige, kein Code).
+/// 120 Zeichen, ohne Steuer- und Richtungszeichen (Anzeige und schoolName
+/// des Kontos).
+///
+/// Schlüssel werden auf transferAccountKey gebracht. Ursache (Prüfung
+/// 04.11.26): Die Anmeldung rechnet den Schlüssel neu aus; „1234:Max“ in
+/// einer bearbeiteten Datei hätte dann still keine Eingaben übernommen und
+/// das Konto nie als erledigt markiert. Doppelte Konten fallen weg, mehr
+/// als [maxBackupAccounts] ebenso.
 TransferBackup? parseBackup(String text) {
-  final data = parseTransfer(text);
-  if (data == null) return null;
+  if (text.length > maxBackupBytes) return null;
+  final raw = parseTransfer(text);
+  if (raw == null) return null;
+  final data = <String, Map<String, String>>{};
+  final canon = <String, String>{}; // Schlüssel in der Datei → kanonisch
+  for (final e in raw.entries) {
+    final a = TransferBackup._split(e.key);
+    if (a == null || data.length >= maxBackupAccounts) continue;
+    final key = transferAccountKey(a.schoolId, a.username);
+    if (data.containsKey(key)) continue;
+    data[key] = e.value;
+    canon[e.key] = key;
+  }
   final names = <String, String>{};
-  final valid = {for (final a in TransferBackup(data: data).accounts) a.key};
+  final hidden = RegExp(
+    '[\u0000-\u001f\u007f\u200e\u200f\u202a-\u202e\u2066-\u2069]',
+  );
   DateTime? created;
   try {
     final v = jsonDecode(text) as Map;
@@ -149,11 +180,12 @@ TransferBackup? parseBackup(String text) {
     final n = v['names'];
     if (n is Map) {
       for (final e in n.entries) {
-        final name = e.value is String ? (e.value as String).trim() : '';
-        if (valid.contains('${e.key}') &&
-            name.isNotEmpty &&
-            name.length <= 120) {
-          names['${e.key}'] = name;
+        final name = e.value is String
+            ? (e.value as String).replaceAll(hidden, '').trim()
+            : '';
+        final key = canon['${e.key}'];
+        if (key != null && name.isNotEmpty && name.length <= 120) {
+          names[key] = name;
         }
       }
     }
@@ -261,9 +293,14 @@ List<String> transferMensaHosts(
   Iterable<String> keys,
 ) {
   final out = <String>{};
+  // Host so bestimmen, wie die App die Adresse später öffnet
+  // (normalizeMensaUrl, school_links.dart: ohne Schema mit https://).
+  // Ursache (Prüfung 04.11.26): „evil.example/x“ ergab mit Uri.tryParse
+  // keinen Host – kein Hinweis, die App hätte die Seite aber geöffnet.
   void add(String? url) {
-    final h = Uri.tryParse(url?.trim() ?? '')?.host ?? '';
-    if (h.isNotEmpty) out.add(h);
+    final n = normalizeMensaUrl(url);
+    final h = n == null ? '' : (Uri.tryParse(n)?.host ?? '');
+    if (h.isNotEmpty) out.add(h.toLowerCase());
   }
 
   // Werte stehen in der Datei so, wie die Datenbank sie speichert
@@ -271,14 +308,15 @@ List<String> transferMensaHosts(
   // las diese Funktion den rohen Text als Adresse – bei echten Dateien kam
   // nie ein Host heraus, der Hinweis blieb immer leer. Grenze: Ein Wert
   // ohne Hülle (ältere Tests, Handarbeit) wird unverändert gelesen.
+  // Wie getString liest (LanisDatabase.decodeValue): Hülle {"v": …} oder
+  // ein nackter JSON-Wert; nur wenn beides nicht passt, der Rohtext.
   String? plain(String? raw) {
     if (raw == null) return null;
     try {
-      final d = jsonDecode(raw);
-      if (d is Map && d.containsKey('v')) {
-        final v = d['v'];
-        return v is String ? v : jsonEncode(v);
-      }
+      final d = LanisDatabase.decodeValue(raw);
+      if (d is String) return d;
+      if (d is Map && !d.containsKey('v')) return raw;
+      if (d != null) return jsonEncode(d);
     } catch (_) {}
     return raw;
   }
