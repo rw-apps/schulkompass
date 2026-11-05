@@ -94,6 +94,7 @@ class TodayPage extends StatelessWidget {
     this.onOpenCalendar,
     this.onOpenDay,
     this.onOrderMeal,
+    this.onCancelMeal,
     this.onEnterTimes,
     this.onRefresh,
     this.notices = const [],
@@ -121,6 +122,9 @@ class TodayPage extends StatelessWidget {
   /// den nächsten Schultag, den die Karte gerade zeigt.
   final void Function(ChildToday child, DateTime day)? onOpenDay;
   final void Function(ChildToday child)? onOrderMeal;
+
+  /// Wie [KidCard.onCancelMeal].
+  final void Function(ChildToday child, DateTime day)? onCancelMeal;
 
   /// Wie [KidCard.onEnterTimes].
   final void Function(ChildToday child)? onEnterTimes;
@@ -169,6 +173,7 @@ class TodayPage extends StatelessWidget {
           onOpenExams: onOpenExams,
           onOpenMessages: onOpenMessages,
           onOrderMeal: onOrderMeal,
+          onCancelMeal: onCancelMeal,
           onOpenDay: onOpenDay,
           nextDay: i < data.next.length ? data.next[i] : null,
           nextDate: data.nextDate,
@@ -299,6 +304,7 @@ class KidCard extends StatelessWidget {
     this.onOpenExams,
     this.onOpenMessages,
     this.onOrderMeal,
+    this.onCancelMeal,
     this.onOpenDay,
     this.nextDay,
     this.nextDate,
@@ -326,6 +332,11 @@ class KidCard extends StatelessWidget {
   final void Function(ChildToday child)? onOpenExams;
   final void Function(ChildToday child)? onOpenMessages;
   final void Function(ChildToday child)? onOrderMeal;
+
+  /// „Essen abbestellen“ an einem Krankheitstag (KidHint.cancelMeal):
+  /// Essensseite mit der Rückfrage für genau diesen Tag (Wunsch 05.11.26).
+  /// null = wie „Essen“ ([onOrderMeal]).
+  final void Function(ChildToday child, DateTime day)? onCancelMeal;
 
   /// Tag eines Kindes im Kalender öffnen: heute bzw. – nach Schulschluss –
   /// den nächsten Schultag, den die Karte gerade zeigt.
@@ -367,21 +378,17 @@ class KidCard extends StatelessWidget {
     // (groupHints), deren Kopf dem Kartenkopf nicht widerspricht.
     final shownDay = showNext ? nextDate! : now;
     final openDay = onOpenDay == null ? null : () => onOpenDay!(kid, shownDay);
-    // Für heute krank gemeldet (nicht nur verspätet): heutige Hinweise
-    // (Essen nicht bestellt, Arbeit, Änderungen) entfallen und der Plan ist
-    // gedämpft (Wunsch 05.11.26) – das Kind ist ja zu Hause. Grenze: Die
-    // Hintergrund-Erinnerungen (notify_task.dart) kennen die Meldung nicht.
-    final absentToday =
-        !showNext &&
-        kid.reportedAbsence != null &&
-        !kid.reportedAbsence!.kind.toLowerCase().contains('versp');
-    final shown = absentToday
-        ? [
-            // Guthaben (ohne Tag) bleibt wie beim nächsten Schultag.
-            for (final h in hints)
-              if (h.day == null || dayDiff(now, h.day!) > 0) h,
-          ]
-        : !showNext
+    // Meldung des Tages, den die Karte zeigt: heute bzw. nach Schulschluss
+    // der nächste Schultag (Vorschlag 4, 05.11.26: vorher galt das Band nur
+    // heute, ein für morgen gemeldetes Kind stand am Nachmittag mit vollem
+    // Plan da). Krank (nicht nur verspätet): Plan gedämpft – das Kind ist
+    // zu Hause. Die Hinweise dieser Tage filtert kidHints selbst
+    // (ChildToday.sickDays): Änderungen und „Essen bestellen“ entfallen,
+    // Abbestellen und verpasste Arbeit kommen hinzu.
+    final report = showNext ? next.reportedAbsence : kid.reportedAbsence;
+    final absentShown =
+        report != null && !report.kind.toLowerCase().contains('versp');
+    final shown = !showNext
         ? hints
         : [
             for (final h in hints)
@@ -393,7 +400,10 @@ class KidCard extends StatelessWidget {
     // „nicht bestellt“ öffnen die Essensbestellung.
     // Arbeit: „Arbeiten & Noten“ des Kindes statt des Tages (Rückmeldung
     // 30.10.26); ohne diesen Weg wie bisher der Tag.
-    VoidCallback? tapHint(KidHint h, DateTime day) => h.toMeal
+    VoidCallback? tapHint(KidHint h, DateTime day) =>
+        h.cancelMeal && onCancelMeal != null
+        ? () => onCancelMeal!(kid, day)
+        : h.toMeal
         ? (onOrderMeal == null ? null : () => onOrderMeal!(kid))
         : h.kind == HintKind.exam && onOpenExams != null
         ? () => onOpenExams!(kid)
@@ -465,23 +475,8 @@ class KidCard extends StatelessWidget {
               ),
             ],
           ),
-          // Krankmeldung für heute (Wunsch 05.11.26): gleich unter dem Kopf,
-          // damit man ohne Öffnen sieht, dass sie erledigt ist.
-          if (kid.reportedAbsence case final a?) ...[
-            const SizedBox(height: Sp.m),
-            _ReportedStrip(
-              kind: a.kind,
-              detail: a.detail,
-              tone: tone,
-              // Antippen öffnet die Krankmeldung dieses Kindes wie
-              // „Gemeldet“ unten und die Zeile unter „Nachrichten“
-              // (Wunsch 05.11.26).
-              onTap: onReportAbsence == null
-                  ? null
-                  : () => onReportAbsence!(kid),
-            ),
-          ],
-          // Ohne Hinweise entfallen Überschrift und Abschnitt ganz.
+          // Nach Schulschluss: Kopf des nächsten Schultags, das Band seiner
+          // Meldung darunter (es gehört zu diesem Tag).
           if (showNext) ...[
             const SizedBox(height: Sp.m),
             _NextDayHead(
@@ -489,6 +484,23 @@ class KidCard extends StatelessWidget {
               now: now,
               doneAt: doneAt,
               freeLabel: kid.freeLabel,
+            ),
+          ],
+          // Krankmeldung (Wunsch 05.11.26): gleich unter dem Kopf, damit man
+          // ohne Öffnen sieht, dass sie erledigt ist.
+          if (report case final a?) ...[
+            const SizedBox(height: Sp.m),
+            _ReportedStrip(
+              kind: a.kind,
+              detail: a.detail,
+              tone: tone,
+              day: showNext ? relativeDay(t, nextDate!, now) : null,
+              // Antippen öffnet die Krankmeldung dieses Kindes wie
+              // „Gemeldet“ unten und die Zeile unter „Nachrichten“
+              // (Wunsch 05.11.26).
+              onTap: onReportAbsence == null
+                  ? null
+                  : () => onReportAbsence!(kid),
             ),
           ],
           if (shown.isNotEmpty) ...[
@@ -515,7 +527,7 @@ class KidCard extends StatelessWidget {
           // Rahmen statt Fläche: gefüllt = Hinweis, umrandet = Plan. Die
           // ganze umrandete Fläche öffnet den Tag (alle Stunden, Pausen).
           Opacity(
-            opacity: absentToday ? 0.45 : 1,
+            opacity: absentShown ? 0.45 : 1,
             child: Material(
               color: k.p.card,
               shape: RoundedRectangleBorder(
@@ -595,13 +607,15 @@ class KidCard extends StatelessWidget {
               ),
             ),
           ],
-          ..._actions(t),
+          ..._actions(t, report),
         ],
       ),
     );
   }
 
-  List<Widget> _actions(ForkL10n t) {
+  /// [report]: Meldung des gezeigten Tages (heute bzw. nach Schulschluss
+  /// der nächste Schultag) – „Gemeldet“ statt „Krank melden“.
+  List<Widget> _actions(ForkL10n t, ({String kind, String detail})? report) {
     final items = <Widget>[
       if (kid.openHomework > 0)
         _ActionButton(
@@ -623,10 +637,8 @@ class KidCard extends StatelessWidget {
         ),
       if (kid.canReportAbsence)
         _ActionButton(
-          icon: kid.reportedAbsence != null
-              ? Icons.check_circle_outline
-              : Icons.thermostat,
-          label: kid.reportedAbsence != null ? t.absenceReported : t.reportSick,
+          icon: report != null ? Icons.check_circle_outline : Icons.thermostat,
+          label: report != null ? t.absenceReported : t.reportSick,
           onTap: onReportAbsence == null ? null : () => onReportAbsence!(kid),
         ),
     ];
@@ -669,12 +681,17 @@ class _ReportedStrip extends StatelessWidget {
     required this.kind,
     required this.detail,
     required this.tone,
+    this.day,
     this.onTap,
   });
 
   final String kind;
   final String detail;
   final KidTone tone;
+
+  /// Tag der Meldung, wenn nicht heute („Morgen“, „Mo 9.11.“; relativeDay)
+  /// – dann „Morgen krank gemeldet“ statt „Heute krank gemeldet“.
+  final String? day;
 
   /// Öffnet die Krankmeldung (Anzeige der gesendeten Meldung,
   /// absence_view.dart AbsenceOverview); null = nicht antippbar (kein Kind
@@ -699,10 +716,12 @@ class _ReportedStrip extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  late ? t.absenceReportedLateToday : t.absenceReportedToday,
-                  style: k.planSubject(tone.onTint),
-                ),
+                Text(switch ((late, day)) {
+                  (true, null) => t.absenceReportedLateToday,
+                  (false, null) => t.absenceReportedToday,
+                  (true, final d?) => t.absenceReportedLateOn(d),
+                  (false, final d?) => t.absenceReportedOn(d),
+                }, style: k.planSubject(tone.onTint)),
                 if (detail.isNotEmpty)
                   Text(detail, style: k.planMeta(tone.meta)),
               ],

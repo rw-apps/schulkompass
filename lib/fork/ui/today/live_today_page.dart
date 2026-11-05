@@ -5,7 +5,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:liblanis/liblanis.dart'
     show AccountType, sharedOverAccountSettingsProvider;
 
-import 'package:lanis/fork/absence/absence_days.dart' show absenceSickOn;
+import 'package:lanis/fork/absence/absence_days.dart'
+    show absenceSickDays, absenceSickOn;
+import 'package:lanis/fork/absence/absence_form.dart' show AbsenceEntry;
 import 'package:lanis/fork/absence/absence_view.dart';
 
 import '../../l10n/l10n.dart';
@@ -25,6 +27,7 @@ import '../../demo/demo_entry.dart';
 import 'hint_card.dart';
 import '../portal_link.dart';
 import 'login_failure_card.dart';
+import '../mensa/meal_cancel.dart';
 import '../../mensa_store.dart';
 import '../../demo/demo_mode.dart' show demoActive;
 import '../../notify/summary.dart';
@@ -52,6 +55,7 @@ Future<void> openMensa(
   String? name,
   int colorIndex = 0,
   Future<bool> Function()? onSettings,
+  DateTime? cancelDay,
 }) async {
   final url = s.mensa.of(kid);
   if (url == null) return;
@@ -63,6 +67,7 @@ Future<void> openMensa(
       owner: owner,
       childName: name,
       colorIndex: colorIndex,
+      cancelDay: cancelDay,
       // Zahnrad: Blatt dieses Kindes (meal_hub_page.dart, editMensa).
       onSettings: onSettings ?? () => editMensa(context, s, kid, name: name),
     ),
@@ -71,13 +76,21 @@ Future<void> openMensa(
 
 /// Erster Tag, an den jetzt erinnert wird (mealReminderDays, mit den
 /// eingeschalteten Wochentagen); null sonst oder wenn das Kind nie bestellt.
+///
+/// [skip]: krank gemeldete Tage (Prüfung 05.11.26). Ursache: War der erste
+/// Erinnerungstag ein Krankheitstag, nahm kidHints den ganzen Hinweis
+/// heraus – die Erinnerung für den gesunden Folgetag fehlte, während die
+/// Benachrichtigung (notify_task.dart) je Tag filtert und an ihn erinnerte.
 DateTime? mealUnorderedDay(
   MealEntry? e,
   DateTime now, {
   Set<int> weekdays = const {1, 2, 3, 4, 5},
+  Set<DateTime> skip = const {},
 }) {
-  final days = mealReminderDays(e, now, weekdays: weekdays);
-  return days.isEmpty ? null : days.first;
+  for (final d in mealReminderDays(e, now, weekdays: weekdays)) {
+    if (!skip.contains(DateTime(d.year, d.month, d.day))) return d;
+  }
+  return null;
 }
 
 /// Krankmeldung über der neuen Oberfläche öffnen.
@@ -164,6 +177,8 @@ class _LiveTodayPageState extends State<LiveTodayPage> {
     );
     final courses = s.courseNames;
     final events = s.calendar.content ?? const [];
+    final absences = s.absences ?? const <AbsenceEntry>[];
+    final sick = absenceSickDays(absences, live.plan.firstName, now).toSet();
     return childTodayFromLanis(
       plan: live.plan,
       choice: effectiveChoice(live.auto, s.userChoice),
@@ -192,17 +207,31 @@ class _LiveTodayPageState extends State<LiveTodayPage> {
                 MealCache.instance.settings,
                 s.mensaOwner(s.mensaKid),
               ),
+              skip: sick,
             )
           : null,
       lowBalance: day == null ? lowMealBalance(meals) : null,
-      reportedAbsence: day == null
-          ? reportedAbsenceFor(
-              s.absences ?? const [],
-              live.plan.firstName,
-              now,
-              context.t,
-            )
-          : null,
+      // Meldung des Tages dieser Karte – auch für die Karte des nächsten
+      // Schultags (Vorschlag 4, 05.11.26: nach Schulschluss zeigt KidCard
+      // deren Band und dämpft deren Plan).
+      reportedAbsence: reportedAbsenceFor(
+        absences,
+        live.plan.firstName,
+        at,
+        context.t,
+      ),
+      sickDays: day == null ? sick : const {},
+      mealCancel: day == null
+          ? [
+              for (final d in [now, nextSchoolDay(now)])
+                if (sick.contains(DateTime(d.year, d.month, d.day)))
+                  if (cancellableMeal(meals, d, now) case final m?)
+                    (
+                      day: d,
+                      until: mealCancelLabel(context.t, m.cancelUntil, d),
+                    ),
+            ]
+          : const [],
     );
   }
 
@@ -390,9 +419,17 @@ class _LiveTodayPageState extends State<LiveTodayPage> {
           onReportAbsence: kids.any((k) => k.canReportAbsence)
               ? (c) {
                   final m = memberOf(c);
+                  // Nach Schulschluss meint „Krank melden“ fast immer den
+                  // nächsten Schultag (Vorschlag 4, 05.11.26) – vorbelegt,
+                  // das Formular hält ihn im erlaubten Bereich (_clampToForm).
+                  final phase = dayStatus(c.lessons, now).phase;
+                  final over =
+                      phase == DayPhase.over || phase == DayPhase.noLessons;
                   pushFullScreen<void>(
                     context,
-                    (_) => m.scope(const AbsencePage()),
+                    (_) => m.scope(
+                      AbsencePage(suggestDay: over ? nextSchoolDay(now) : null),
+                    ),
                   );
                 }
               : null,
@@ -407,6 +444,23 @@ class _LiveTodayPageState extends State<LiveTodayPage> {
                         ? c.firstName
                         : null,
                     colorIndex: c.colorIndex,
+                  );
+                }
+              : null,
+          // „Essen abbestellen“ an einem Krankheitstag: dieselbe Seite, gleich
+          // mit der Rückfrage für den Tag (MealWeekPage.cancelDay).
+          onCancelMeal: kids.any((k) => k.mensaUrl != null)
+              ? (c, day) {
+                  final s = memberOf(c).snapshot;
+                  openMensa(
+                    context,
+                    s,
+                    s.mensaKid,
+                    name: kids.length > 1 || s.kids.length > 1
+                        ? c.firstName
+                        : null,
+                    colorIndex: c.colorIndex,
+                    cancelDay: day,
                   );
                 }
               : null,

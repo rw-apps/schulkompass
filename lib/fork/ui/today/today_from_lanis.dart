@@ -632,6 +632,8 @@ ChildToday childTodayFromLanis({
   DateTime? mealUnordered,
   String? lowBalance,
   ({String kind, String detail})? reportedAbsence,
+  Set<DateTime> sickDays = const {},
+  List<({DateTime day, String until})> mealCancel = const [],
 }) {
   final r = applySubstitutions(
     plan: plan,
@@ -665,6 +667,8 @@ ChildToday childTodayFromLanis({
     mealUnordered: mealUnordered,
     lowBalance: lowBalance,
     reportedAbsence: reportedAbsence,
+    sickDays: sickDays,
+    mealCancel: mealCancel,
   );
 }
 

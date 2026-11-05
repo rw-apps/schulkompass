@@ -2117,6 +2117,76 @@
   "absenceReported": "Gemeldet",
   "absenceReportedToday": "Heute krank gemeldet",
   "absenceReportedLateToday": "Heute Verspätung gemeldet",
+  "absenceReportedOn": "{day} krank gemeldet",
+  "@absenceReportedOn": {
+    "placeholders": {
+      "day": {
+        "type": "String"
+      }
+    }
+  },
+  "absenceReportedLateOn": "{day} Verspätung gemeldet",
+  "@absenceReportedLateOn": {
+    "placeholders": {
+      "day": {
+        "type": "String"
+      }
+    }
+  },
+  "hintMealCancel": "abbestellen bis {until}",
+  "@hintMealCancel": {
+    "placeholders": {
+      "until": {
+        "type": "String"
+      }
+    }
+  },
+  "hintMealCancelDetail": "Krank gemeldet – bestelltes Essen ist bis {until} abbestellbar",
+  "@hintMealCancelDetail": {
+    "placeholders": {
+      "until": {
+        "type": "String"
+      }
+    }
+  },
+  "hintExamMissed": "verpasst",
+  "hintExamMissedDetail": "Krank gemeldet – für eine versäumte Arbeit kann die Schule ein ärztliches Attest verlangen.",
+  "absenceRemindTitle": "Daran denken",
+  "absenceRemindMeal": "Essen ist bestellt",
+  "absenceRemindMealDay": "{day}: abbestellbar bis {until}",
+  "@absenceRemindMealDay": {
+    "placeholders": {
+      "day": {
+        "type": "String"
+      },
+      "until": {
+        "type": "String"
+      }
+    }
+  },
+  "absenceRemindMealCancel": "{day} abbestellen",
+  "@absenceRemindMealCancel": {
+    "placeholders": {
+      "day": {
+        "type": "String"
+      }
+    }
+  },
+  "mealCancelNotOrdered": "Für diesen Tag ist kein Essen (mehr) bestellt.",
+  "mealCancelGone": "Dieser Tag ist nicht mehr abbestellbar.",
+  "mealCancelNotInApp": "Abbestellen in der App ist ausgeschaltet – bitte über „Seite des Caterers“.",
+  "absenceRemindExam": "{day}: {subject}",
+  "@absenceRemindExam": {
+    "placeholders": {
+      "day": {
+        "type": "String"
+      },
+      "subject": {
+        "type": "String"
+      }
+    }
+  },
+  "absenceRemindExamDetail": "Für eine versäumte Arbeit kann die Schule ein ärztliches Attest verlangen.",
   "absenceReportsTitle": "Krankmeldungen",
   "absenceReportBy": "Krankmeldung",
   "absenceEnteredAt": "eingetragen {time}",

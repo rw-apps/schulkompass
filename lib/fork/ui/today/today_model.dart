@@ -97,6 +97,8 @@ class ChildToday {
     this.mealUnordered,
     this.lowBalance,
     this.reportedAbsence,
+    this.sickDays = const {},
+    this.mealCancel = const [],
   });
 
   /// Guthaben beim Caterer unter 15 € („12,50“), sonst null
@@ -144,6 +146,18 @@ class ChildToday {
   /// Portal („krank“, „verspätet“), [detail] Zeitraum bzw. Eintragszeit.
   /// null = nichts gemeldet oder (Schülerkonto) nicht lesbar.
   final ({String kind, String detail})? reportedAbsence;
+
+  /// Krank gemeldete Tage (ohne Uhrzeit, nicht Verspätung) ab heute
+  /// (absence_days.dart absenceSickDays; Wunsch 05.11.26). kidHints nimmt
+  /// an diesen Tagen Änderungen und „Essen bestellen“ heraus und nennt
+  /// Arbeiten als verpasst. Leer = keine bzw. nicht lesbar.
+  final Set<DateTime> sickDays;
+
+  /// Bestelltes, noch abbestellbares Essen an [sickDays] (heute und
+  /// nächster Schultag; cancellableMeal in meal_cancel.dart): [until] wie
+  /// angezeigt („08:30“ am selben Tag, sonst „Do 08:30“). Vorschlag 1,
+  /// 05.11.26.
+  final List<({DateTime day, String until})> mealCancel;
 
   /// „Heute: Kein Essen für alle Jg.!“ aus dem Schulkalender.
   final String? mealHint;

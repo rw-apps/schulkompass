@@ -13,6 +13,9 @@ import '../ui/messages/compose_page.dart'
     show ComposeBackend, ComposePage, portalBackend;
 import '../ui/nav.dart' show pushFullScreen;
 import '../ui/today/kid_hints.dart' show nextSchoolDay;
+import '../ui/today/live_today_page.dart' show openMensa;
+import '../mensa_store.dart' show MealCache;
+import 'absence_reminders.dart';
 import 'absence_today.dart';
 
 import '../l10n/l10n.dart';
@@ -30,7 +33,11 @@ final absenceLastSent = ValueNotifier<String?>(null);
 
 /// Seite „Krankmeldung“ für Elternkonten.
 class AbsencePage extends ConsumerStatefulWidget {
-  const AbsencePage({super.key});
+  const AbsencePage({super.key, this.suggestDay});
+
+  /// Vorschlag für „von“ im Formular, wenn nichts anderes vorbelegt ist
+  /// (nach Schulschluss der nächste Schultag, live_today_page.dart).
+  final DateTime? suggestDay;
 
   @override
   ConsumerState<AbsencePage> createState() => _AbsencePageState();
@@ -123,6 +130,14 @@ class _AbsencePageState extends ConsumerState<AbsencePage> {
         listenable: _ui,
         builder: (context, _) => _AbsenceScreen(
           form: form,
+          live: live,
+          suggestDay: widget.suggestDay,
+          // Essensseite des Kindes mit der Rückfrage für den Tag (wie
+          // „Essen abbestellen“ auf Heute, openMensa cancelDay).
+          onCancelMeal: live == null || live.mensaUrl == null
+              ? null
+              : (day) =>
+                    openMensa(context, live, live.mensaKid, cancelDay: day),
           ui: _ui,
           refresh: refresh,
           onChange: () => _change(live, backend),
@@ -223,7 +238,19 @@ class _AbsenceScreen extends StatelessWidget {
     required this.onChange,
     required this.onSubmit,
     required this.onSent,
+    this.live,
+    this.onCancelMeal,
+    this.suggestDay,
   });
+
+  /// Stand des Kontos für „Daran denken“ (absenceReminders); null = ohne.
+  final LiveSnapshot? live;
+
+  /// Abbestellen eines Tages (Essensseite mit Rückfrage); null = ohne Knopf.
+  final void Function(DateTime day)? onCancelMeal;
+
+  /// Siehe [AbsencePage.suggestDay].
+  final DateTime? suggestDay;
 
   final AbsenceForm form;
   final _AbsenceUi ui;
@@ -267,16 +294,25 @@ class _AbsenceScreen extends StatelessWidget {
           ],
         ),
         body: overview
-            ? AbsenceOverview(
-                form: form,
-                entries: current,
-                onRepeat: ui.openForm,
-                onOther: () => ui.openForm(),
+            // Neu gelesene Essenswochen (z. B. nach dem Abbestellen)
+            // erneuern „Daran denken“ (Prüfung 05.11.26).
+            ? ValueListenableBuilder(
+                valueListenable: MealCache.instance.notifier,
+                builder: (context, _, _) => AbsenceOverview(
+                  form: form,
+                  entries: current,
+                  onRepeat: ui.openForm,
+                  onOther: () => ui.openForm(),
+                  reminders: live == null
+                      ? const []
+                      : absenceReminders(live!, current, t, DateTime.now()),
+                  onCancelMeal: onCancelMeal,
+                ),
               )
             : AbsenceFormView(
                 key: ValueKey(ui.round),
                 form: form,
-                initialFrom: ui.prefill?.day,
+                initialFrom: ui.prefill?.day ?? suggestDay,
                 initialPupilName: ui.prefill?.pupilName,
                 initialKind: ui.prefill?.kind,
                 // Demo: kein Senden (die Demo beantwortet Schreibaktionen
@@ -308,10 +344,20 @@ class AbsenceOverview extends StatelessWidget {
     required this.entries,
     required this.onRepeat,
     required this.onOther,
+    this.reminders = const [],
+    this.onCancelMeal,
   });
 
   final AbsenceForm form;
   final List<AbsenceEntry> entries;
+
+  /// „Daran denken“ (absence_reminders.dart): Essen abbestellen, verpasste
+  /// Arbeit. Leer = Abschnitt entfällt.
+  final List<AbsenceReminder> reminders;
+
+  /// „Abbestellen“ je bestelltem Tag (Essensseite mit Rückfrage für den
+  /// Tag); null = ohne Knöpfe (keine Essensseite).
+  final void Function(DateTime day)? onCancelMeal;
   final void Function(({DateTime day, String pupilName, String kind}) p)
   onRepeat;
   final VoidCallback onOther;
@@ -405,6 +451,72 @@ class AbsenceOverview extends StatelessWidget {
               ),
             ),
           ),
+        if (reminders.isNotEmpty) ...[
+          const SizedBox(height: 4),
+          Text(t.absenceRemindTitle, style: th.textTheme.titleMedium),
+          const SizedBox(height: 8),
+          for (final r in reminders)
+            Card(
+              margin: const EdgeInsets.only(bottom: 8),
+              color: cs.surfaceContainerHigh,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 8, 12),
+                child: Row(
+                  children: [
+                    Icon(
+                      r.kind == AbsenceReminderKind.meal
+                          ? Icons.restaurant
+                          : Icons.edit_note,
+                      color: cs.tertiary,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(r.title, style: th.textTheme.titleSmall),
+                          if (r.detail.isNotEmpty)
+                            Text(r.detail, style: th.textTheme.bodyMedium),
+                          // Je Tag eine Zeile mit eigenem Knopf (Wunsch
+                          // 05.11.26: direkt zum Abbestellen dieses Tages).
+                          for (final m in r.meals)
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    m.label,
+                                    style: th.textTheme.bodyMedium,
+                                  ),
+                                ),
+                                // Kurz „Abbestellen“, der Tag steht links
+                                // daneben (Mockup 05.11.26: „Do abbestellen“
+                                // brach die Frist dreizeilig um); für den
+                                // Bildschirmleser mit Tag.
+                                if (onCancelMeal != null)
+                                  TextButton(
+                                    onPressed: () => onCancelMeal!(m.day),
+                                    // Nur der Text bekommt die Ansage mit
+                                    // Tag – um den Knopf gelegt, verwarf
+                                    // excludeSemantics seine Tipp-Aktion
+                                    // (Prüfung 05.11.26).
+                                    child: Semantics(
+                                      label: t.absenceRemindMealCancel(
+                                        m.weekday,
+                                      ),
+                                      excludeSemantics: true,
+                                      child: Text(t.mealCancelAction),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+        ],
         const SizedBox(height: 8),
         if (repeat != null) ...[
           FilledButton.icon(

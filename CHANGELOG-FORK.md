@@ -1,5 +1,11 @@
 ## Schulkompass (rw-apps, bis 9472 „Schulportal“) – Änderungen gegenüber Lanis-Mobile
 
+**4.1.0+9490** – Krankmeldung: Essen abbestellen, verpasste Arbeit, nächster Tag
+
+- **Essen abbestellen:** Ist für einen Krankheitstag Essen bestellt und die Frist noch offen, steht auf „Heute“ „Essen abbestellen bis 08:30“. Antippen öffnet die Essensseite gleich mit der Rückfrage für genau diesen Tag – abbestellt wird erst nach deiner Bestätigung. In der Krankmeldung steht dasselbe unter „Daran denken“ mit einem Knopf je Tag. (Nur wenn „Bestellen und Abbestellen in der App“ eingeschaltet ist; sonst ein Hinweis.)
+- **Verpasste Arbeit:** Eine Arbeit an einem Krankheitstag heißt „verpasst“; die Krankmeldung erinnert daran, dass die Schule ein Attest verlangen kann.
+- **Nächster Schultag:** Nach Schulschluss zeigt die Karte für einen gemeldeten nächsten Schultag „Morgen krank gemeldet“, der Plan ist gedämpft, Ausfälle und „Essen bestellen“ für diesen Tag entfallen. „Krank melden“ schlägt nachmittags gleich den nächsten Schultag vor.
+
 **4.1.0+9489** – Keine Erinnerungen für krank gemeldete Kinder
 
 - **Benachrichtigungen:** Für Tage, an denen ein Kind krank gemeldet ist, meldet die Sammel-Benachrichtigung keine Ausfälle und Vertretungen mehr und erinnert nicht ans Essen-Bestellen. Bei einer Verspätung bleibt alles wie bisher.

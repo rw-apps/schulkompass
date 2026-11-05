@@ -35,7 +35,12 @@ class KidHint {
     this.slot,
     this.day,
     this.toMeal = false,
+    this.cancelMeal = false,
   });
+
+  /// Bestelltes Essen an einem Krankheitstag: Antippen öffnet gleich die
+  /// Rückfrage zum Abbestellen dieses Tages (KidCard.onCancelMeal).
+  final bool cancelMeal;
 
   final HintKind kind;
 
@@ -230,6 +235,17 @@ List<KidHint> kidHints(
   };
 
   final today = DateTime(now.year, now.month, now.day);
+  // Krank gemeldet (Wunsch 05.11.26): An diesen Tagen betreffen Änderungen
+  // und „Essen bestellen“ das Kind nicht. Heute zählt auch das Band
+  // (reportedAbsence), falls die Tage fehlen (z. B. Vorschau, Tests).
+  final reportedToday =
+      kid.reportedAbsence != null &&
+      !kid.reportedAbsence!.kind.toLowerCase().contains('versp');
+  bool sick(DateTime d) {
+    final day = DateTime(d.year, d.month, d.day);
+    return kid.sickDays.contains(day) || (reportedToday && day == today);
+  }
+
   final out = <KidHint>[];
   final shown = <String>{};
   for (var i = 0; i < l.length; i++) {
@@ -237,7 +253,7 @@ List<KidHint> kidHints(
     final c = x.change;
     if (c == null) continue;
     shown.add('${x.subject}|$c');
-    if (lessonDone(x, now)) continue;
+    if (lessonDone(x, now) || sick(today)) continue;
     final e = effect(i);
     out.add(
       KidHint(
@@ -274,11 +290,29 @@ List<KidHint> kidHints(
   );
 
   for (final c in kid.changes) {
-    if (dayDiff(now, c.day) != 0) continue;
+    if (dayDiff(now, c.day) != 0 || sick(c.day)) continue;
     if (shown.contains('${c.subject}|${c.kind}')) continue;
     out.add(fromItem(c));
   }
-  if (kid.mealHint case final meal?) {
+  // Abbestellen statt bestellen (Vorschlag 1): bestelltes Essen an einem
+  // Krankheitstag, solange die Frist läuft – heute hier, der nächste
+  // Schultag weiter unten bei seinen Hinweisen.
+  KidHint cancel(({DateTime day, String until}) m, {String? when}) => KidHint(
+    kind: HintKind.meal,
+    title: '${t.kindMeal} ${t.hintMealCancel(m.until)}',
+    subject: t.kindMeal,
+    // Frist im Art-Wort statt als Marke: Die Marken-Spalte heißt „Stunde“.
+    what: t.hintMealCancel(m.until),
+    toMeal: true,
+    cancelMeal: true,
+    day: DateTime(m.day.year, m.day.month, m.day.day),
+    detail: t.hintMealCancelDetail(m.until),
+    when: when,
+  );
+  for (final m in kid.mealCancel) {
+    if (dayDiff(now, m.day) == 0) out.add(cancel(m));
+  }
+  if (kid.mealHint case final meal? when !sick(mealHintDay(now))) {
     out.add(
       KidHint(
         kind: HintKind.meal,
@@ -289,7 +323,9 @@ List<KidHint> kidHints(
       ),
     );
   }
-  final unordered = kid.mealUnordered;
+  final unordered = kid.mealUnordered != null && sick(kid.mealUnordered!)
+      ? null
+      : kid.mealUnordered;
   if (unordered != null && dayDiff(now, unordered) == 0) {
     out.add(
       KidHint(
@@ -317,8 +353,13 @@ List<KidHint> kidHints(
   }
   final next = nextSchoolDay(now);
   for (final c in kid.changes) {
-    if (dayDiff(next, c.day) != 0) continue;
+    if (dayDiff(next, c.day) != 0 || sick(c.day)) continue;
     out.add(fromItem(c, when: relativeDay(t, c.day, now)));
+  }
+  for (final m in kid.mealCancel) {
+    if (dayDiff(next, m.day) == 0) {
+      out.add(cancel(m, when: relativeDay(t, m.day, now)));
+    }
   }
   // Nichts bestellt für den nächsten Schultag (mensa_store.dart).
   if (unordered != null && dayDiff(next, unordered) == 0) {
@@ -343,15 +384,22 @@ List<KidHint> kidHints(
     if (!examIsHint(e, now)) continue;
     final isToday = dayDiff(now, e.day) == 0;
     final (subject, what) = examParts(t, e.title);
+    // Arbeit an einem Krankheitstag (Vorschlag 2, 05.11.26): „verpasst“
+    // statt der Art, Hinweis aufs Attest im Detail.
+    final missed = sick(e.day);
     out.add(
       KidHint(
         kind: HintKind.exam,
         title: e.title,
         subject: subject,
-        what: what,
+        what: missed ? t.hintExamMissed : what,
         slot: examSlot(e.time),
         day: DateTime(e.day.year, e.day.month, e.day.day),
-        detail: e.time == null ? null : _keep(e.time!),
+        detail: missed
+            ? t.hintExamMissedDetail
+            : e.time == null
+            ? null
+            : _keep(e.time!),
         when: isToday ? null : relativeDay(t, e.day, now),
       ),
     );

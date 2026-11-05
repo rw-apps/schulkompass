@@ -3,7 +3,7 @@
 /// Ursache (Frage 05.11.26: „Ist ein Kind krank, wird dann auch die Anzeige
 /// in den Widgets angepasst?“): Das Widget zeigte ein krank gemeldetes Kind
 /// mit vollem Zeitraum, Aufgaben und „Essen bestellen“ – anders als Heute,
-/// das den Plan dämpft (today_page.dart, absentToday).
+/// das den Plan dämpft (today_page.dart, absentShown).
 ///
 /// Dart schreibt je Tag der Datei (home_widget_data.dart, widgetDays) den
 /// fertigen Text `absent` und `sick`; Kotlin (WidgetModel.kt) zeigt den

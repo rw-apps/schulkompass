@@ -51,7 +51,15 @@ class MealWeekPage extends ConsumerStatefulWidget {
     this.colorIndex = 0,
     this.now,
     this.onSettings,
+    this.cancelDay,
   });
+
+  /// Nach dem ersten Lesen gleich die Rückfrage „Abbestellen?“ für diesen
+  /// Tag öffnen (Hinweis „Essen abbestellen“ an einem Krankheitstag,
+  /// Wunsch 05.11.26). Abbestellt wird erst nach der Bestätigung. Grenze:
+  /// Ohne „In der App bestellen“ (mealOrderInApp) oder wenn der Tag nicht
+  /// mehr abbestellbar ist, nur ein Hinweis – die Woche steht trotzdem da.
+  final DateTime? cancelDay;
 
   /// Zahnrad oben rechts: Caterer, Zugang und Erinnerung dieses Kindes
   /// (editMensa). true = Adresse geändert – dann passt diese Woche nicht
@@ -92,13 +100,45 @@ class _MealWeekPageState extends ConsumerState<MealWeekPage> {
   /// Adresse weiter die Übersicht des Geschwisters hier.
   MealEntry? get _entry => _cache.ofSite(widget.owner, widget.url);
 
+  /// Noch offene Rückfrage aus [MealWeekPage.cancelDay].
+  late DateTime? _autoCancel = widget.cancelDay;
+
   @override
   void initState() {
     super.initState();
     try {
       _cache.attach(ref.read(sharedOverAccountSettingsProvider));
     } catch (_) {}
+    if (widget.cancelDay case final d?) _shown = schoolWeek(d).first;
     _refresh();
+    // Demo liest nichts – Rückfrage gleich nach dem ersten Bild.
+    if (_demo) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _tryCancel());
+    }
+  }
+
+  /// Rückfrage für [_autoCancel], sobald der frische Stand da ist (nach dem
+  /// Lesen, MealFetcher.onDone). Ursache: Erst der neue Stand sagt, ob noch
+  /// bestellt und die Frist offen ist; _change lehnt während des Lesens ab.
+  void _tryCancel() {
+    final day = _autoCancel;
+    if (day == null || !mounted) return;
+    _autoCancel = null;
+    void tell(String text) => ScaffoldMessenger.maybeOf(
+      context,
+    )?.showSnackBar(SnackBar(content: Text(text)));
+    final t = context.t;
+    for (final w in _weeks) {
+      for (final d in w.days) {
+        if (dayDiff(d.day, day) != 0) continue;
+        if (d.state != MealState.ordered) return tell(t.mealCancelNotOrdered);
+        if (!d.canCancel) return tell(t.mealCancelGone);
+        if (!_inApp) return tell(t.mealCancelNotInApp);
+        _change(w, d, null);
+        return;
+      }
+    }
+    tell(t.mealCancelGone);
   }
 
   /// Demo: feste Wochen (demo_meals.dart), nichts zu lesen.
@@ -318,6 +358,11 @@ class _MealWeekPageState extends ConsumerState<MealWeekPage> {
                   onUnreadable: _unreadable,
                   onDone: () {
                     if (mounted) setState(() => _fetch = null);
+                    if (mounted && _autoCancel != null) {
+                      WidgetsBinding.instance.addPostFrameCallback(
+                        (_) => _tryCancel(),
+                      );
+                    }
                   },
                 ),
               ),
