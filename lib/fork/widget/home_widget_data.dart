@@ -389,10 +389,12 @@ List<Map<String, Object?>> overlayWidgetAbsences(Object? days, Object? from) {
         {
           for (final e in d.entries)
             if (e.key != 'absent' && e.key != 'sick') '${e.key}': e.value,
-          if (marks['${d['date']}'] case final m?) ...{
-            'absent': m['absent'],
-            'sick': m['sick'] ?? false,
-          },
+          // Freie Tage nie markieren – wie widgetDaysWithAbsences.
+          if (d['free'] == null)
+            if (marks['${d['date']}'] case final m?) ...{
+              'absent': m['absent'],
+              'sick': m['sick'] ?? false,
+            },
         },
   ];
 }

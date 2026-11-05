@@ -1,5 +1,10 @@
 ## Schulkompass (rw-apps, bis 9472 „Schulportal“) – Änderungen gegenüber Lanis-Mobile
 
+**4.1.0+9488** – Widget-Krankmeldung abgesichert
+
+- **Behoben:** In seltenen Fällen konnte eine gerade gesendete Krankmeldung im Widget kurz fehlen – wenn die Aktualisierung im Hintergrund gleichzeitig eine ältere Liste las oder der Name des Kindes noch nicht bekannt war. Bekannte Meldungen bleiben jetzt stehen, bis eine neuere Liste da ist.
+- Das Band auf „Heute“ erkennt Verspätungen genauso wie die Auswahl dahinter.
+
 **4.1.0+9487** – Krankmeldung von „Heute“ aus öffnen
 
 - **Antippen:** Das Band „Heute krank gemeldet“ auf „Heute“ öffnet jetzt direkt die Krankmeldung des Kindes – wie die Zeile unter „Nachrichten“ (Pfeil rechts).

@@ -52,7 +52,9 @@ String _iso(DateTime d) =>
 /// gemeldet“) geht vor Verspätung am selben Tag. Ende: letzter Schultag, an
 /// dem eine Krankmeldung gilt, auch über mehrere Einträge und Wochenenden
 /// hinweg; freie Tage der Datei überspringt die Kette ([_nextSchoolDay]).
-/// Grenze: ein Feiertag, den der Kalender nicht als frei führt, beendet sie.
+/// Grenze: ein Feiertag, den der Kalender nicht als frei führt, beendet sie;
+/// ohne geladenen Kalender (Hintergrund-Lauf, notify_task.dart `events`
+/// null) kennt die Kette gar keine freien Tage und endet davor.
 List<Map<String, Object?>> widgetDaysWithAbsences(
   List<Map<String, Object?>> days, {
   required List<AbsenceEntry> entries,
@@ -88,8 +90,9 @@ List<Map<String, Object?>> widgetDaysWithAbsences(
           : t.widgetAbsentUntil(date.format(end));
       return {...day, 'absent': text, 'sick': true};
     }
-    if (lateOn(d))
+    if (lateOn(d)) {
       return {...day, 'absent': t.widgetLateReported, 'sick': false};
+    }
     return day;
   }
 

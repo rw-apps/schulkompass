@@ -307,12 +307,18 @@ Future<void> _run(
     // nächsten Lauf oder App-Start.
     var entries = const <AbsenceEntry>[];
     DateTime? absStand;
+    // Ohne Vornamen trifft keine Meldung zu (absenceIsFor) – die Liste gilt
+    // dann als nicht gelesen, sonst löschte ein frischer Stempel die
+    // Meldungen der Datei (Prüfung 05.11.26). Zeit vor dem Abruf wie in
+    // live_data.dart _loadExtras.
     if (accountType == AccountType.parent &&
+        firstName.trim().isNotEmpty &&
         offers(forkAbsenceApplet) &&
         await homeWidgetHasKid(tools.accountId)) {
+      final at = DateTime.now();
       try {
         entries = await loadAbsenceEntries(session);
-        absStand = DateTime.now();
+        absStand = at;
       } catch (e) {
         backgroundLogger.w('Krankmeldungen übersprungen: ${e.runtimeType}');
       }

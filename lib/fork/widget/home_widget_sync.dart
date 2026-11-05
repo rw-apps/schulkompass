@@ -202,7 +202,12 @@ Map<String, Object?>? liveKidEntry(
       ),
     ),
     lowBalance: lowMealBalance(meals) != null,
-    absStand: s.absences == null ? null : s.absencesAt,
+    // Ohne echten Vornamen (Ersatz t.yourChild) trifft keine Meldung zu –
+    // dann gilt die Liste als nicht gelesen und die Meldungen der Datei
+    // bleiben (Prüfung 05.11.26).
+    absStand: s.absences == null || s.firstName.trim().isEmpty
+        ? null
+        : s.absencesAt,
   );
 }
 

@@ -56,7 +56,9 @@ class WidgetLegend extends StatelessWidget {
             t.widgetLegendTime,
           ),
           // Haken in Kinderfarbe statt der Zeit (Abnahme 05.11.26); hier
-          // in der Farbe des ersten Kindes, weil die Legende keinem Kind gehört.
+          // in der Farbe des ersten Kindes, weil die Legende keinem Kind
+          // gehört. In der Tagesvorschau (4 × 4, day_sick) ist er
+          // tintenfarben – dort steht er in einem Rahmen ohne Kinderbezug.
           row(
             Icons.check_circle,
             k.kid(0).tint,

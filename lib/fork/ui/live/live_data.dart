@@ -701,12 +701,16 @@ class _LiveDataScopeState extends ConsumerState<LiveDataScope>
       // Konto vor dem Abruf merken: Ein Wechsel währenddessen (Prüfung
       // 05.11.26) hätte die Liste von Konto A bei Konto B abgelegt.
       final forAccount = _extrasFor;
+      // Zeit VOR dem Abruf (Prüfung 05.11.26): Die Liste ist mindestens so
+      // neu wie ihr Start; nach dem Abruf gestempelt, gewänne eine ältere
+      // Liste gegen eine, die der Hintergrund währenddessen las.
+      final at = DateTime.now();
       try {
         final list = await loadAbsenceEntries(session);
         if (mounted && _extrasFor == forAccount) {
           setState(() {
             _absences = list;
-            _absencesAt = DateTime.now();
+            _absencesAt = at;
           });
         }
       } catch (_) {}

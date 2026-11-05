@@ -677,15 +677,18 @@ class _ReportedStrip extends StatelessWidget {
   final KidTone tone;
 
   /// Öffnet die Krankmeldung (Anzeige der gesendeten Meldung,
-  /// absence_view.dart AbsenceOverview); null = nicht antippbar (Vorschau
-  /// ohne Krankmeldung, preview_shell.dart).
+  /// absence_view.dart AbsenceOverview); null = nicht antippbar (kein Kind
+  /// mit Krankmeldung, live_today_page.dart onReportAbsence – mit Band
+  /// praktisch nur in Tests).
   final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final k = Kit.of(context);
     final t = context.t;
-    final late = kind.toLowerCase().startsWith('versp');
+    // Wie absenceIsLate (absence_today.dart), damit Band und Auswahl in
+    // reportedAbsenceFor dieselbe Art erkennen (Prüfung 05.11.26).
+    final late = kind.toLowerCase().contains('versp');
     final content = Padding(
       padding: const EdgeInsets.symmetric(horizontal: Sp.m, vertical: Sp.s),
       child: Row(
@@ -705,7 +708,8 @@ class _ReportedStrip extends StatelessWidget {
               ],
             ),
           ),
-          if (onTap != null) Icon(Icons.chevron_right, color: tone.meta),
+          if (onTap != null)
+            Icon(Icons.chevron_right, size: Sz.icon, color: tone.meta),
         ],
       ),
     );

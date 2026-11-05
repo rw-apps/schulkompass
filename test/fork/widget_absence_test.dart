@@ -189,5 +189,60 @@ void main() {
       expect(day0(gone.single).containsKey('absent'), isFalse);
       expect(gone.single['absStand'], '2026-11-05T07:40:00.000');
     });
+
+    test('ältere Liste im Hintergrund ersetzt die Datei nicht', () {
+      final old = {
+        'v': homeWidgetVersion,
+        'kids': [
+          kid(
+            '2026-11-05T07:20:00',
+            absStand: '2026-11-05T07:26:00',
+            sick: true,
+          ),
+        ],
+      };
+      final r = mergeWidgetKid(
+        old,
+        account: 3,
+        days: [
+          {'date': '2026-11-05', 'timed': true},
+        ],
+        stand: DateTime(2026, 11, 5, 7, 40),
+        absStand: DateTime(2026, 11, 5, 7, 25),
+      )!;
+      expect(day0(r.single)['absent'], 'krank gemeldet');
+      expect(r.single['absStand'], '2026-11-05T07:26:00');
+    });
+
+    test('Datei in Plan und Meldungen neuer: ganz die Datei', () {
+      final r = newerWidgetKid(
+        kid('2026-11-05T07:20:00', absStand: '2026-11-05T07:20:00'),
+        kid('2026-11-05T07:30:00', absStand: '2026-11-05T07:30:00', sick: true),
+      )!;
+      expect(day0(r)['from'], '2026-11-05T07:30:00');
+      expect(day0(r)['sick'], true);
+      expect(r['absStand'], '2026-11-05T07:30:00');
+    });
+
+    test('App mit neuerer leerer Liste entfernt die Meldung', () {
+      final r = newerWidgetKid(
+        kid('2026-11-05T07:20:00', absStand: '2026-11-05T07:40:00'),
+        kid('2026-11-05T07:30:00', absStand: '2026-11-05T07:30:00', sick: true),
+      )!;
+      expect(day0(r)['from'], '2026-11-05T07:30:00');
+      expect(day0(r).containsKey('absent'), isFalse);
+    });
+
+    test('freie Tage werden beim Zusammenführen nicht markiert', () {
+      final r = overlayWidgetAbsences(
+        [
+          {'date': '2026-11-06', 'free': 'Studientag'},
+        ],
+        [
+          {'date': '2026-11-06', 'absent': 'krank gemeldet', 'sick': true},
+        ],
+      );
+      expect(r.single, {'date': '2026-11-06', 'free': 'Studientag'});
+    });
   });
 }
