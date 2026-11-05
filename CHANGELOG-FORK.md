@@ -1,5 +1,12 @@
 ## Schulkompass (rw-apps, bis 9472 „Schulportal“) – Änderungen gegenüber Lanis-Mobile
 
+**4.1.0+9486** – Krankmeldung im Startbildschirm-Widget
+
+- **Widget zeigt gemeldete Abwesenheit:** Statt der Unterrichtszeit steht beim Kind ein Haken mit „krank gemeldet“, bei mehreren Tagen „krank bis 16.11.“ (letzter gemeldeter Schultag, auch über mehrere Meldungen und das Wochenende). Arbeit, Aufgaben und Essen sind an diesen Tagen blass; knappes Guthaben bleibt sichtbar. Im großen Widget steht in der Tagesvorschau „krank“ statt der Symbole.
+- **Verspätung:** „verspätet gemeldet“ statt der Zeit, die Symbole bleiben.
+- **Auch im Hintergrund:** Die Aktualisierung im Hintergrund liest bei Elternkonten die Meldungen mit, damit das Widget das Kind nicht nach einer Weile wieder mit vollem Plan zeigt.
+- Die Erklärung der Widget-Symbole in den Einstellungen nennt den Haken.
+
 **4.1.0+9485** – Gesendete Krankmeldung als Anzeige
 
 - **Krankmeldung öffnen nach dem Melden:** Gibt es schon eine Meldung ab heute, zeigt die Seite sie nur an (Kind, Art, Tag, Eintragszeit, Kommentar). Darunter „Auch Fr 6.11. melden“ (nächster Schultag, vorausgefüllt) und „Andere Meldung“ für einen anderen Tag oder eine Verspätung.

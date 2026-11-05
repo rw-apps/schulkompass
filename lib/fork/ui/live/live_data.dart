@@ -196,6 +196,7 @@ class LiveSnapshot {
     this.photo,
     this.electionOpen = false,
     this.absences,
+    this.absencesAt,
     this.substitutionHistory = SubstitutionHistory.empty,
   });
 
@@ -229,6 +230,12 @@ class LiveSnapshot {
   /// „Aktuelle und zukünftige Meldungen“ der Krankmeldung (Elternkonto,
   /// _loadExtras); null = nicht gelesen.
   final List<AbsenceEntry>? absences;
+
+  /// Zeitpunkt, an dem [absences] gelesen wurde (null = nicht gelesen).
+  /// Für das Widget (home_widget_data.dart, newerWidgetKid): Welche
+  /// Meldungsliste neuer ist – App oder Hintergrund-Lauf – entscheidet sich
+  /// daran, nicht am Vertretungsplan (Prüfung 05.11.26).
+  final DateTime? absencesAt;
 
   /// Von Hand eingetragene Klasse (class_choice.dart), null = keine gültige.
   final ClassChoice? classChoice;
@@ -370,6 +377,7 @@ class _LiveDataScopeState extends ConsumerState<LiveDataScope>
 
   /// Meldungsliste der Krankmeldung (Elternkonto), null = nicht gelesen.
   List<AbsenceEntry>? _absences;
+  DateTime? _absencesAt;
   DateTime? _electionChecked;
   MensaAddresses _mensa = const MensaAddresses({});
   int? _settingsFor;
@@ -510,6 +518,7 @@ class _LiveDataScopeState extends ConsumerState<LiveDataScope>
       _electionOpen = false;
       _electionChecked = null;
       _absences = null;
+      _absencesAt = null;
     }
     final s = ref.read(accountSpecificSettingsProvider);
     if (s == null) return;
@@ -695,7 +704,10 @@ class _LiveDataScopeState extends ConsumerState<LiveDataScope>
       try {
         final list = await loadAbsenceEntries(session);
         if (mounted && _extrasFor == forAccount) {
-          setState(() => _absences = list);
+          setState(() {
+            _absences = list;
+            _absencesAt = DateTime.now();
+          });
         }
       } catch (_) {}
     }
@@ -834,6 +846,7 @@ class _LiveDataScopeState extends ConsumerState<LiveDataScope>
       photo: _photo,
       electionOpen: _electionOpen,
       absences: _absences,
+      absencesAt: _absencesAt,
       setClass: (name) {
         final s = ref.read(accountSpecificSettingsProvider);
         if (s == null || !mounted) return;

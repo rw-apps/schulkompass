@@ -25,6 +25,7 @@ import '../ui/live/live_data.dart';
 import '../ui/plan/plan_model.dart';
 import '../ui/today/today_from_lanis.dart' show freeDaysAhead, freeDaysFrom;
 import 'home_widget_data.dart';
+import 'widget_absence.dart';
 
 /// Widget-Klassen in Kotlin (android/app/src/main/kotlin/com/example/app/
 /// widget/SchoolWidget.kt). Voll ausgeschrieben, weil das Paket der App
@@ -151,7 +152,7 @@ Map<String, Object?>? liveKidEntry(
   if (live == null) return null;
   final className = liveClassName(s);
   final events = s.calendar.content ?? const <CalendarEvent>[];
-  final days = widgetDays(
+  final planned = widgetDays(
     plan: live.plan,
     choice: effectiveChoice(live.auto, s.userChoice),
     days: s.substitutionDaysFromToday(now),
@@ -161,6 +162,16 @@ Map<String, Object?>? liveKidEntry(
         ? freeDaysFrom(events, now, className: className, days: freeDaysAhead)
         : const {},
     className: className,
+  );
+  // Gemeldete Abwesenheit (widget_absence.dart, Abnahme 05.11.26): dieselbe
+  // Liste und derselbe Vorname wie das Band auf Heute (live_today_page.dart,
+  // reportedAbsenceFor). Ohne geladene Liste (Schülerkonto, Modul fehlt,
+  // Abruf läuft) bleiben die Tage unverändert.
+  final days = widgetDaysWithAbsences(
+    planned,
+    entries: s.absences ?? const [],
+    firstName: live.plan.firstName,
+    t: t,
   );
   final exams = upcomingExamsOf(
     scan: s.courseScan?.upcoming(now) ?? const [],
@@ -191,6 +202,7 @@ Map<String, Object?>? liveKidEntry(
       ),
     ),
     lowBalance: lowMealBalance(meals) != null,
+    absStand: s.absences == null ? null : s.absencesAt,
   );
 }
 
@@ -325,6 +337,12 @@ Future<void> _writeKids(
   await writeHomeWidget(homeWidgetPayload(kids: kids, now: now, t: t));
 }
 
+/// Steht das Konto [account] im Widget? Der Hintergrund-Lauf fragt das vor
+/// dem Abruf der Krankmeldungen (Prüfung 05.11.26: sonst ein Abruf je Lauf,
+/// den [mergeWidgetKid] danach verwirft).
+Future<bool> homeWidgetHasKid(int account) async =>
+    widgetKidsOf(await readHomeWidget()).any((k) => k['account'] == account);
+
 /// Hintergrund-Lauf (notify_task.dart, je Konto): Widget mit dem eben
 /// geladenen Vertretungsplan erneuern – nur den Eintrag DIESES Kontos,
 /// die übrigen Kinder bleiben ([mergeWidgetKid]).
@@ -338,6 +356,7 @@ Future<void> updateHomeWidgetInBackground({
   required ForkL10n t,
   required List<Map<String, Object?>> days,
   required DateTime now,
+  DateTime? absStand,
 }) async {
   final kids = mergeWidgetKid(
     await readHomeWidget(),
@@ -345,6 +364,7 @@ Future<void> updateHomeWidgetInBackground({
     days: days,
     stand: now,
     color: storedKidColor(account),
+    absStand: absStand,
   );
   if (kids == null) return;
   await writeHomeWidget(homeWidgetPayload(kids: kids, now: now, t: t));

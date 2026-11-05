@@ -11,7 +11,8 @@ import '../ui/kit.dart';
 /// einer Stelle nachlesen können. Dieselben Symbole und Farben wie in Kotlin
 /// (SchoolWidget.kt): Ausfall rot, Arbeit blau (onNavSelected), Aufgaben
 /// neutral, Essen/Vertretung/Raum gelb. Seit 31.10.26 zeigen alle Konten
-/// alle Symbole (vorher Vertretung/Raum nur beim Schülerkonto).
+/// alle Symbole (vorher Vertretung/Raum nur beim Schülerkonto). Seit
+/// 05.11.26 auch der Haken der gemeldeten Abwesenheit (widget_absence.dart).
 class WidgetLegend extends StatelessWidget {
   const WidgetLegend({super.key});
 
@@ -53,6 +54,14 @@ class WidgetLegend extends StatelessWidget {
             k.p.cancel.bg,
             k.p.cancel.strong,
             t.widgetLegendTime,
+          ),
+          // Haken in Kinderfarbe statt der Zeit (Abnahme 05.11.26); hier
+          // in der Farbe des ersten Kindes, weil die Legende keinem Kind gehört.
+          row(
+            Icons.check_circle,
+            k.kid(0).tint,
+            k.kid(0).accent,
+            t.widgetLegendAbsent,
           ),
           row(
             Icons.edit_note,

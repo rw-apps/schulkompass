@@ -1949,6 +1949,20 @@
     }
   },
   "widgetFreeDate": "EEE d.M.",
+  "widgetAbsent": "krank gemeldet",
+  "widgetAbsentUntil": "krank bis {date}",
+  "@widgetAbsentUntil": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "widgetAbsentDate": "d.M.",
+  "widgetLateReported": "verspätet gemeldet",
+  "widgetLateShort": "verspätet",
+  "widgetSick": "krank",
+  "widgetLegendAbsent": "Krankmeldung oder Verspätung gemeldet – statt der Zeit; an Krankheitstagen bleiben die Symbole blass",
   "widgetLegendTitle": "Symbole im Widget",
   "widgetLegendTime": "Zeit des Tages – rot mit Symbol, wenn Stunden am Anfang oder Ende ausfallen; dahinter Ausfälle mitten am Tag.",
   "widgetLegendExam": "Arbeit am gezeigten Tag",

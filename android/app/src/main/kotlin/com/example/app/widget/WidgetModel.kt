@@ -47,6 +47,11 @@ enum class Layout { ONE_WIDE, ROWS, ONE_LIST, TWO_SMALL, GRID, DAYS }
  * alle vier Zeichen an fester Stelle – Ausfall, Arbeit, Aufgaben (Zahl),
  * Essen. [free] = Ferientext statt Zeichen; [first] = gezeigter Tag
  * (hinterlegt). [bang] = Guthaben knapp (Marke „!“ am Essen, nur erster Tag).
+ * [sick] = krank gemeldet: Haken + Text statt der Zeichen (Abnahme
+ * 05.11.26, widget_day_cell*.xml day_sick); der Text („krank“, labels.sick)
+ * steht dann in [free], weil beide Fälle die Zeichen ersetzen. Grenze: Ist
+ * der gezeigte Tag ein Krankheitstag, fehlt im 4 × 4 das knappe Guthaben –
+ * die Kopfzeile dort hat keine Symbole, und die Zelle zeigt nur „krank“.
  */
 data class DayCell(
     val date: LocalDate,
@@ -58,6 +63,7 @@ data class DayCell(
     val hw: Int,
     val meal: Boolean,
     val bang: Boolean,
+    val sick: Boolean = false,
 )
 
 /** Stunde mit Ende (Ausfall mitten am Tag, Vertretung, Raum). [end] null = Schule ohne Uhrzeiten. */
@@ -80,6 +86,14 @@ class Day(
     val rooms: List<Lesson>,
     /** Tag ohne Unterricht (Ferien, frei) mit fertigem Text; null = Schultag. */
     val free: String?,
+    /**
+     * Gemeldete Abwesenheit mit fertigem Text („krank bis 16.11.“,
+     * „verspätet gemeldet“; lib/fork/widget/widget_absence.dart); null =
+     * keine. Steht mit Haken statt des Zeitraums ([whenText]).
+     */
+    val absent: String? = null,
+    /** Krank (nicht nur verspätet): alle Symbole blass außer Guthaben-„!“ ([slotsFor]). */
+    val sick: Boolean = false,
 )
 
 class Kid(
@@ -107,6 +121,8 @@ class Labels(private val o: JSONObject?) {
     val range = s("range")
     val slot = s("slot").ifEmpty { "%s" }
     val off = s("off")
+    val sick = s("sick")
+    val lateShort = s("lateShort")
     val stale = s("stale").ifEmpty { "%s" }
     val staleText = s("staleText")
     val exam = s("exam")
@@ -152,7 +168,20 @@ class Payload(val version: Int, val generatedAt: LocalDateTime?, val kids: List<
  * event_busy davor; [mid] = Ausfall mitten am Tag („4.“, „4. +1“), rot mit
  * Symbol dahinter; leer = keiner.
  */
-data class When(val text: String, val red: Boolean, val busy: Boolean, val mid: String)
+data class When(
+    val text: String,
+    val red: Boolean,
+    val busy: Boolean,
+    val mid: String,
+    /** Gemeldete Abwesenheit ([Day.absent]): Haken in Kinderfarbe davor, Text fett in Kinderfarbe. */
+    val reported: Boolean = false,
+    /**
+     * Kurzform für das Raster-Feld (cell4, ~78 dp): „krank“ bzw. „verspätet“.
+     * Ursache (Prüfung 05.11.26): „krank bis 16.11.“ würde dort am Datum
+     * abgeschnitten. Leer = keine Meldung.
+     */
+    val short: String = "",
+)
 
 /** Ein Symbol der Reihe für den gezeigten Tag. */
 data class SlotState(
@@ -178,7 +207,7 @@ class KidView(
     val slots: List<SlotState>,
 ) {
     /** Abweichung oder ein leuchtendes Symbol – für die Auswahl bei Platzmangel ([WidgetModel.plan]). */
-    val relevant: Boolean get() = !stale && (time.red || time.mid.isNotEmpty() || slots.any { it.on })
+    val relevant: Boolean get() = !stale && (time.red || time.reported || time.mid.isNotEmpty() || slots.any { it.on })
 }
 
 /**
@@ -296,6 +325,8 @@ object WidgetModel {
             rooms = lessons(o.optJSONArray("rooms")),
             // JSON null kommt bei optString als „null“ – deshalb isNull zuerst.
             free = if (o.isNull("free")) null else o.optString("free").ifEmpty { null },
+            absent = if (o.isNull("absent")) null else o.optString("absent").ifEmpty { null },
+            sick = o.optBoolean("sick", false),
         )
     }
 
@@ -372,6 +403,13 @@ object WidgetModel {
         val t = now.toLocalTime()
         if (d.date != today) {
             kid.days.firstOrNull { it.date == today }?.free?.let { return When(it, red = false, busy = false, mid = "") }
+        }
+        // Gemeldete Abwesenheit vor Ausfällen: Für Eltern zählt dann nicht
+        // mehr, wann Unterricht ist (Abnahme 05.11.26). Ferien davor
+        // (oben) bleiben, weil die App freie Tage nie markiert.
+        d.absent?.let {
+            val short = if (d.sick) l.sick else l.lateShort
+            return When(it, red = false, busy = false, mid = "", reported = true, short = short.ifEmpty { it })
         }
         if (d.allOff) return When(l.off, red = true, busy = true, mid = "")
         val mid = midText(d, today, t)
@@ -458,6 +496,10 @@ object WidgetModel {
         val t = now.toLocalTime()
         return signalsFor(kid).map { s ->
             if (stale || d == null) return@map off(s, l)
+            // Krank gemeldet: alles blass wie der gedämpfte Plan auf Heute
+            // (Abnahme 05.11.26, auch die Arbeit). Grenze: knappes Guthaben
+            // bleibt sichtbar – es gilt unabhängig vom Tag.
+            if (d.sick && !(s == Signal.MEAL && kid.lowBalance)) return@map off(s, l)
             when (s) {
                 Signal.EXAM ->
                     if (d.date in kid.exams) SlotState(s, true, "", l.exam, l.exam, l.cdExam, Target.EXAMS) else off(s, l)
@@ -469,7 +511,7 @@ object WidgetModel {
                     }
                 }
                 Signal.MEAL -> {
-                    val open = d.date in kid.mealOpen
+                    val open = !d.sick && d.date in kid.mealOpen
                     if (!open && !kid.lowBalance) off(s, l) else {
                         // Beides: Bestellen ist die Handlung des Tages, „!“ sagt
                         // zusätzlich, dass das Guthaben knapp ist.
@@ -529,6 +571,9 @@ object WidgetModel {
             val label = l.weekdays.getOrNull(d.date.dayOfWeek.value - 1).orEmpty()
             if (d.free != null) {
                 DayCell(d.date, label, i == 0, l.off, false, false, 0, false, false)
+            } else if (d.sick) {
+                // Krank gemeldet: „krank“ statt der Zeichen (Abnahme 05.11.26).
+                DayCell(d.date, label, i == 0, l.sick, false, false, 0, false, false, sick = true)
             } else {
                 DayCell(
                     date = d.date,

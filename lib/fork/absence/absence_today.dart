@@ -17,7 +17,8 @@ final _time = RegExp(r'\b(\d{1,2}):(\d{2})\b');
 
 /// Erster und letzter Tag des Zeitraums; null, wenn kein Datum lesbar ist.
 /// Ohne Jahr gilt das Jahr von [now] (Meldungen liegen heute oder später;
-/// ein Januar-Datum im Dezember zählt zum nächsten Jahr).
+/// ein Januar-Datum im Dezember zählt zum nächsten Jahr, ein Dezember-Datum
+/// im Januar zum Vorjahr).
 ({DateTime from, DateTime to})? absencePeriodDays(
   String period, {
   DateTime? now,
@@ -33,6 +34,10 @@ final _time = RegExp(r'\b(\d{1,2}):(\d{2})\b');
         ? 2000 + int.parse(m[3]!)
         : int.parse(m[3]!);
     if (m[3] == null && ref.month == 12 && mo == 1) y++;
+    // Umgekehrt im Januar: ein Dezember-Datum ohne Jahr gehört zum Vorjahr
+    // („21.12.–08.01.“ am 04.01.; Prüfung 05.11.26, sonst 21.12. als Ende
+    // nach dem 08.01. und die Meldung galt nicht mehr).
+    if (m[3] == null && ref.month == 1 && mo == 12) y--;
     days.add(DateTime(y, mo, d));
   }
   if (days.isEmpty) return null;

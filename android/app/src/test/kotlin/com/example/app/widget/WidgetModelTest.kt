@@ -25,7 +25,7 @@ class WidgetModelTest {
           "weekdaysLong": ["MONTAG","DIENSTAG","MITTWOCH","DONNERSTAG","FREITAG","SAMSTAG","SONNTAG"],
           "weekdays": ["Mo","Di","Mi","Do","Fr","Sa","So"],
           "from": "ab %s", "until": "bis %s", "range": "%1${'$'}s–%2${'$'}s", "slot": "%s Std.",
-          "off": "frei", "stale": "Stand %s", "staleText": "App öffnen",
+          "off": "frei", "sick": "krank", "lateShort": "verspätet", "stale": "Stand %s", "staleText": "App öffnen",
           "exam": "Arbeit", "homework": "Aufgaben", "homeworkN": ["1 Aufgabe", "%d Aufgaben"],
           "meal": "Essen", "mealOrder": "Essen bestellen", "balance": "Guthaben aufladen",
           "sub": "Vertretung", "subAt": "Vertretung %s", "room": "Raum", "roomAt": "Raum %s",
@@ -465,5 +465,78 @@ class WidgetModelTest {
     fun vorschauLeerWennVeraltet() {
         val (k, l) = one(kid(1, "Lena", day(mon), stand = "2026-10-29T06:30:00.000"))
         assertTrue(WidgetModel.daysFor(k, at(7), l).isEmpty())
+    }
+
+    // ---- Gemeldete Abwesenheit (Abnahme 05.11.26) ------------------------------------
+
+    /** Tag [json] (day/untimed) mit gemeldeter Abwesenheit, wie widget_absence.dart sie schreibt. */
+    private fun reported(json: String, text: String, sick: Boolean) =
+        json.replace("\"free\": null}", "\"free\": null, \"absent\": \"$text\", \"sick\": $sick}")
+
+    @Test
+    fun krankGemeldetStattZeitraumUndAllesBlass() {
+        val k = kid(
+            1, "Lena",
+            reported(day(mon, start = "09:50", mid = """{"slot": "4.", "end": "11:30"}"""), "krank bis 3.11.", true) +
+                "," + reported(day(tue), "krank gemeldet", true),
+            hwDue = "\"$mon\"", exams = "\"$mon\"", mealOpen = "\"$mon\"",
+        )
+        val v = view(k, at(7))
+        // Text statt des (verschobenen) Zeitraums, nicht rot, kein Ausfall mitten.
+        assertEquals(When("krank bis 3.11.", red = false, busy = false, mid = "", reported = true, short = "krank"), v.time)
+        // Arbeit, Aufgaben und Essen blass (Abnahme: auch die Arbeit).
+        assertTrue(v.slots.none { it.on })
+        // Eine Meldung ist eine relevante Zeile (Platzmangel, WidgetModel.plan).
+        assertTrue(v.relevant)
+        // Tag läuft weiter bis zum Ende des Unterrichts, dann der nächste.
+        assertEquals(tue, WidgetModel.shownDay(one(k).first, at(14))?.date)
+    }
+
+    @Test
+    fun krankGemeldetBehaeltKnappesGuthaben() {
+        val v = view(kid(1, "Lena", reported(day(mon), "krank gemeldet", true), mealOpen = "\"$mon\"", lowBalance = true), at(7))
+        val meal = v.slots.first { it.signal == Signal.MEAL }
+        assertTrue(meal.on)
+        // Nur das Guthaben, nicht „Essen bestellen“ für den Krankheitstag.
+        assertEquals("Guthaben aufladen", meal.text)
+        assertEquals("!", meal.mark)
+    }
+
+    @Test
+    fun verspaetungZeigtTextUndBehaeltSymbole() {
+        val v = view(kid(1, "Jonas", reported(day(mon), "verspätet gemeldet", false), hwDue = "\"$mon\""), at(7))
+        assertEquals("verspätet gemeldet", v.time.text)
+        assertEquals("verspätet", v.time.short)
+        assertTrue(v.time.reported)
+        assertTrue(v.slots.first { it.signal == Signal.HOMEWORK }.on)
+    }
+
+    @Test
+    fun vorschauZeigtKrankStattZeichen() {
+        val wed = mon.plusDays(2)
+        val (k, l) = one(
+            kid(
+                1, "Lena",
+                listOf(
+                    reported(day(mon), "krank bis 3.11.", true),
+                    reported(day(tue), "krank gemeldet", true),
+                    day(wed),
+                ).joinToString(","),
+                exams = "\"$tue\"",
+            ),
+        )
+        val c = WidgetModel.daysFor(k, at(7), l)
+        assertTrue(c[0].sick && c[1].sick && !c[2].sick)
+        assertEquals("krank", c[0].free)
+        // Arbeit am Krankheitstag nicht markiert.
+        assertFalse(c[1].exam)
+    }
+
+    @Test
+    fun ohneMeldungUnveraendert() {
+        val (k, _) = one(kid(1, "Jonas", day(mon)))
+        assertNull(k.days[0].absent)
+        assertFalse(k.days[0].sick)
+        assertFalse(view(kid(1, "Jonas", day(mon)), at(7)).time.reported)
     }
 }

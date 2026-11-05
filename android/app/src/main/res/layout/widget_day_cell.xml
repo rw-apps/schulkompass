@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Ein Tag der Vorschau im 4 × 4 (Abnahme 30.10.26): Kürzel oben, darunter
      immer alle vier Symbole an fester Stelle – Ausfall · Arbeit · Aufgaben ·
-     Essen –, leuchtend wenn zutreffend, sonst blass; Ferien „frei“. Rahmen
+     Essen –, leuchtend wenn zutreffend, sonst blass; Ferien „frei“;
+     gemeldete Abwesenheit Haken + „krank“ (day_sick, Abnahme 05.11.26). Rahmen
      widget_day(_first). Ursache: Fehlende Symbole wirkten verwirrend
      (Rückmeldung 30.10.26: „wir sollten schon alle Icons anzeigen“).
      Klein: drei bis vier Kinder. -->
@@ -39,6 +40,20 @@
         android:gravity="center"
         android:importantForAccessibility="no"
         android:textColor="@color/widget_muted"
+        android:textSize="@dimen/widget_text_11"
+        android:visibility="gone" />
+
+    <TextView
+        android:id="@+id/day_sick"
+        style="@style/WidgetText.Bold"
+        android:layout_width="wrap_content"
+        android:layout_height="@dimen/widget_day_slot"
+        android:layout_marginTop="@dimen/widget_gap_3"
+        android:gravity="center"
+        android:drawableStart="@drawable/ic_widget_check_ink"
+        android:drawablePadding="@dimen/widget_gap_3"
+        android:importantForAccessibility="no"
+        android:textColor="@color/widget_ink"
         android:textSize="@dimen/widget_text_11"
         android:visibility="gone" />
 

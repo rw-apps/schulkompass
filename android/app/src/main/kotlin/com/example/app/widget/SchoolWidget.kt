@@ -114,6 +114,12 @@ internal object SchoolWidgetRenderer {
         R.color.widget_kid2_label, R.color.widget_kid3_label,
     )
 
+    /** Haken der gemeldeten Abwesenheit je Kinderfarbe (gleiche Reihenfolge wie [kidLabels]). */
+    private val kidChecks = intArrayOf(
+        R.drawable.ic_widget_check_kid0, R.drawable.ic_widget_check_kid1,
+        R.drawable.ic_widget_check_kid2, R.drawable.ic_widget_check_kid3,
+    )
+
     fun payload(ctx: Context): Payload? =
         WidgetModel.parse(ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(WidgetModel.PAYLOAD_KEY, null))
 
@@ -372,6 +378,13 @@ internal object SchoolWidgetRenderer {
         textColor(ctx, r, R.id.day_label, if (c.first) R.color.widget_ink else R.color.widget_muted)
         r.setInt(R.id.day, "setBackgroundResource", if (c.first) R.drawable.widget_day_first else R.drawable.widget_day)
         r.setOnClickPendingIntent(R.id.day, launch(ctx, kv.kid.account, Target.TODAY))
+        if (c.sick) {
+            r.setTextViewText(R.id.day_sick, c.free.orEmpty())
+            r.setViewVisibility(R.id.day_sick, View.VISIBLE)
+            r.setViewVisibility(R.id.day_slots, View.GONE)
+            r.setContentDescription(R.id.day, "${c.label}: ${c.free.orEmpty()}")
+            return r
+        }
         if (c.free != null) {
             r.setTextViewText(R.id.day_free, c.free)
             r.setViewVisibility(R.id.day_free, View.VISIBLE)
@@ -436,6 +449,9 @@ internal object SchoolWidgetRenderer {
     private fun cell4(ctx: Context, kv: KidView, l: Labels, tail: Int): RemoteViews {
         val r = RemoteViews(ctx.packageName, R.layout.widget_cell4)
         head(ctx, r, kv, l, tail)
+        // Kurzform der Meldung (When.short): Das Feld ist zu schmal für
+        // „krank bis 16.11.“.
+        if (kv.time.reported) r.setTextViewText(R.id.time_rep, kv.time.short)
         for (s in kv.slots.filter { it.signal == Signal.EXAM || it.signal == Signal.HOMEWORK || it.signal == Signal.MEAL }) {
             r.addView(R.id.slots, slot(ctx, R.layout.widget_slot_20, kv, s))
         }
@@ -445,7 +461,10 @@ internal object SchoolWidgetRenderer {
     /**
      * Name (Kinderfarbe), Zeitraum und Klick → today (Vertrag Punkt 5). Alle
      * Kind-Layouts nutzen dieselben Kennungen (row, name, busy, time,
-     * time_red, mid_busy, mid, more; gen_widget_layouts10.py).
+     * time_red, rep, time_rep, mid_busy, mid, more). Grenze: Die Layouts
+     * entstanden mit gen_widget_layouts10.py (nicht im Repo); rep/time_rep
+     * (gemeldete Abwesenheit, 05.11.26) sind von Hand ergänzt – bei neuem
+     * Erzeugen müssen sie wieder hinein, sonst stürzt head() ab.
      */
     private fun head(ctx: Context, r: RemoteViews, kv: KidView, l: Labels, tail: Int) {
         r.setTextViewText(R.id.name, kv.kid.name)
@@ -456,10 +475,19 @@ internal object SchoolWidgetRenderer {
         r.setContentDescription(R.id.busy, l.cdCancel)
         // Geändert: eigenes Textfeld rot/fett statt Farbe zur Laufzeit –
         // so löst der Startbildschirm hell/dunkel selbst auf, auch vor Android 12.
-        r.setTextViewText(R.id.time, if (t.red) "" else t.text)
+        r.setTextViewText(R.id.time, if (t.red || t.reported) "" else t.text)
         r.setTextViewText(R.id.time_red, if (t.red) t.text else "")
-        r.setViewVisibility(R.id.time, if (t.red || t.text.isEmpty()) View.GONE else View.VISIBLE)
+        r.setViewVisibility(R.id.time, if (t.red || t.reported || t.text.isEmpty()) View.GONE else View.VISIBLE)
         r.setViewVisibility(R.id.time_red, if (t.red) View.VISIBLE else View.GONE)
+        // Gemeldete Abwesenheit (Abnahme 05.11.26): Haken und Text in der
+        // Kinderfarbe. Je Farbe ein eigenes Bild (ic_widget_check_kid0–3)
+        // statt Einfärben, damit hell/dunkel ohne Neuzeichnen stimmt.
+        val kidIx = Math.floorMod(kv.kid.color, kidLabels.size)
+        r.setImageViewResource(R.id.rep, kidChecks[kidIx])
+        r.setViewVisibility(R.id.rep, if (t.reported) View.VISIBLE else View.GONE)
+        r.setTextViewText(R.id.time_rep, if (t.reported) t.text else "")
+        textColor(ctx, r, R.id.time_rep, kidLabels[kidIx])
+        r.setViewVisibility(R.id.time_rep, if (t.reported) View.VISIBLE else View.GONE)
         val mid = t.mid.isNotEmpty()
         r.setViewVisibility(R.id.mid_busy, if (mid) View.VISIBLE else View.GONE)
         r.setContentDescription(R.id.mid_busy, l.cdCancel)

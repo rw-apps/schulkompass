@@ -221,6 +221,8 @@ List<Map<String, Object?>> widgetDays({
 /// Aufgaben bleibt bei Nicht-Abhakern dauerhaft stehen und sagt nichts mehr.
 /// [exams]: Tage mit Arbeit; [mealOpen]: Tage, für die Essen bestellt werden
 /// muss (mealReminderDays); [lowBalance]: Guthaben unter der Grenze.
+/// [absStand]: wann die Krankmeldungen gelesen wurden, die in [days]
+/// stehen (widget_absence.dart); null = nicht gelesen ([newerWidgetKid]).
 Map<String, Object?> widgetKidEntry({
   required int account,
   required String name,
@@ -233,6 +235,7 @@ Map<String, Object?> widgetKidEntry({
   List<DateTime> exams = const [],
   List<DateTime> mealOpen = const [],
   bool lowBalance = false,
+  DateTime? absStand,
 }) => {
   'account': account,
   'name': name.trim(),
@@ -245,6 +248,7 @@ Map<String, Object?> widgetKidEntry({
   'exams': {for (final d in exams) isoDate(d)}.toList()..sort(),
   'mealOpen': {for (final d in mealOpen) isoDate(d)}.toList()..sort(),
   'lowBalance': lowBalance,
+  if (absStand != null) 'absStand': absStand.toIso8601String(),
 };
 
 /// Kinder einer vorhandenen Datei (nur Version 3, sonst leer).
@@ -272,16 +276,28 @@ List<Map<String, Object?>>? mergeWidgetKid(
   required List<Map<String, Object?>> days,
   required DateTime stand,
   int? color,
+  DateTime? absStand,
 }) {
   final kids = widgetKidsOf(old);
   final i = kids.indexWhere((k) => k['account'] == account);
   if (i < 0) return null;
+  // Meldungsliste nicht gelesen (Schülerkonto, Abruf fehlgeschlagen):
+  // Meldungen der Datei behalten statt sie zu löschen (Prüfung 05.11.26).
+  // Eine ÄLTERE Liste als die der Datei ersetzt sie ebenfalls nicht.
+  final keep = DateTime.tryParse('${kids[i]['absStand'] ?? ''}');
+  final fresh = absStand != null && (keep == null || !keep.isAfter(absStand));
   return [
     for (final (j, k) in kids.indexed)
       if (j != i)
         k
       else
-        {...k, 'days': days, 'stand': stand.toIso8601String(), 'color': ?color},
+        {
+          ...k,
+          'days': fresh ? days : overlayWidgetAbsences(days, k['days']),
+          'stand': stand.toIso8601String(),
+          'color': ?color,
+          if (fresh) 'absStand': absStand.toIso8601String(),
+        },
   ];
 }
 
@@ -326,6 +342,9 @@ List<Map<String, Object?>>? widgetKidsWithout(
 /// Ursache (Prüfung 28.10.26): Die offene App schrieb sonst den älteren Plan
 /// über einen neueren aus dem Hintergrund. Grenze: Ohne `stand` (oder nicht
 /// lesbar) gilt [app].
+///
+/// Meldungen (`absent`/`sick` je Tag) folgen dem neueren `absStand`, nicht
+/// dem Vertretungsplan ([overlayWidgetAbsences]).
 Map<String, Object?>? newerWidgetKid(
   Map<String, Object?>? app,
   Map<String, Object?>? old,
@@ -333,8 +352,49 @@ Map<String, Object?>? newerWidgetKid(
   if (app == null || old == null) return app ?? old;
   final a = DateTime.tryParse('${app['stand'] ?? ''}');
   final o = DateTime.tryParse('${old['stand'] ?? ''}');
-  if (a == null || o == null || !o.isAfter(a)) return app;
-  return {...app, 'days': old['days'], 'stand': old['stand']};
+  final planOld = a != null && o != null && o.isAfter(a);
+  final base = planOld ? old : app;
+  // Krankmeldungen getrennt vom Plan (Prüfung 05.11.26): Sonst gewann der
+  // Hintergrund-Lauf mit dem neueren Vertretungsplan auch mit seiner
+  // älteren Meldungsliste – eine eben in der App gesendete Meldung fehlte
+  // im Widget bis zum nächsten Lauf. Kennt die App die Liste noch nicht
+  // (Start, Abruf fehlgeschlagen: kein `absStand`), bleiben die Meldungen
+  // der Datei.
+  final aa = DateTime.tryParse('${app['absStand'] ?? ''}');
+  final oa = DateTime.tryParse('${old['absStand'] ?? ''}');
+  final absOld = oa != null && (aa == null || oa.isAfter(aa));
+  final abs = absOld ? old : app;
+  if (!planOld && !absOld) return app;
+  return {
+    ...app,
+    'days': overlayWidgetAbsences(base['days'], abs['days']),
+    'stand': base['stand'],
+    'absStand': ?abs['absStand'],
+  };
+}
+
+/// Tage [days] mit `absent`/`sick` aus [from] (je Datum); Kennzeichen in
+/// [days] selbst werden zuvor entfernt. Für Einträge, deren Plan und
+/// Meldungsliste aus verschiedenen Quellen stammen ([newerWidgetKid],
+/// [mergeWidgetKid]). Grenze: Tage, die nur in [from] stehen, kommen nicht
+/// hinzu – ohne Plan kein Tag im Widget.
+List<Map<String, Object?>> overlayWidgetAbsences(Object? days, Object? from) {
+  final marks = <String, Map<Object?, Object?>>{
+    for (final d in from is List ? from : const [])
+      if (d is Map && d['absent'] != null) '${d['date']}': d,
+  };
+  return [
+    for (final d in days is List ? days : const [])
+      if (d is Map)
+        {
+          for (final e in d.entries)
+            if (e.key != 'absent' && e.key != 'sick') '${e.key}': e.value,
+          if (marks['${d['date']}'] case final m?) ...{
+            'absent': m['absent'],
+            'sick': m['sick'] ?? false,
+          },
+        },
+  ];
 }
 
 /// Die ganze Datei für Kotlin (JSON-fähige Map), Version 3.
@@ -374,6 +434,8 @@ Map<String, Object?> homeWidgetPayload({
       'range': '%1\$s–%2\$s',
       'slot': t.widgetSlotLabel('%s'),
       'off': t.widgetOff,
+      'sick': t.widgetSick,
+      'lateShort': t.widgetLateShort,
       'stale': t.asOf('%s'),
       'staleText': t.widgetStaleText,
       'exam': t.widgetExam,

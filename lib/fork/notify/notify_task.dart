@@ -10,6 +10,9 @@ import 'package:lanis/background_service.dart';
 import 'package:lanis/utils/applet_settings.dart';
 import 'package:lanis/utils/logger.dart';
 
+import '../absence/absence_form.dart' show AbsenceEntry;
+import '../absence/absence_parser.dart'
+    show forkAbsenceApplet, loadAbsenceEntries;
 import '../courses_scan.dart';
 import '../kid_name.dart';
 import '../exams.dart';
@@ -34,7 +37,9 @@ import '../ui/today/today_from_lanis.dart' show applySubstitutions;
 import '../ui/today/today_model.dart'
     show ChangeItem, DayLesson, hasTime, minutesOf;
 import '../widget/home_widget_data.dart' show widgetDays;
-import '../widget/home_widget_sync.dart' show updateHomeWidgetInBackground;
+import '../widget/home_widget_sync.dart'
+    show homeWidgetHasKid, updateHomeWidgetInBackground;
+import '../widget/widget_absence.dart';
 import 'notices.dart';
 import 'notify_keys.dart';
 import 'summary.dart';
@@ -278,25 +283,52 @@ Future<void> _run(
   // Benachrichtigungen und im Zeitfenster (background_service.dart); sonst
   // erneuert nur die offene App das Widget.
   try {
+    final planned = widgetDays(
+      plan: plan.withTeacherNames(ownNames),
+      choice: effectiveChoice(auto, userChoice),
+      days: subDays,
+      now: now,
+      t: t,
+      free: freeDaysFrom(
+        events ?? const [],
+        now,
+        className: className,
+        days: freeDaysAhead,
+      ),
+      className: className,
+    );
+    // Gemeldete Abwesenheit (widget_absence.dart, Abnahme 05.11.26). Ursache:
+    // Ohne sie schriebe der Lauf die Tage ohne Krankmeldung über die der
+    // App (mergeWidgetKid ersetzt `days`) – das Widget zeigte das kranke
+    // Kind nach 15–60 Min. wieder mit vollem Plan. Ein Abruf mehr je Lauf,
+    // nur Elternkonten mit dem Modul (wie live_data.dart _loadExtras).
+    // Schlägt er fehl, bleiben die Meldungen der Datei stehen (absStand
+    // null → mergeWidgetKid übernimmt sie); nur Neues fehlt bis zum
+    // nächsten Lauf oder App-Start.
+    var entries = const <AbsenceEntry>[];
+    DateTime? absStand;
+    if (accountType == AccountType.parent &&
+        offers(forkAbsenceApplet) &&
+        await homeWidgetHasKid(tools.accountId)) {
+      try {
+        entries = await loadAbsenceEntries(session);
+        absStand = DateTime.now();
+      } catch (e) {
+        backgroundLogger.w('Krankmeldungen übersprungen: ${e.runtimeType}');
+      }
+    }
     await updateHomeWidgetInBackground(
       account: s,
       accountId: tools.accountId,
       t: t,
-      days: widgetDays(
-        plan: plan.withTeacherNames(ownNames),
-        choice: effectiveChoice(auto, userChoice),
-        days: subDays,
-        now: now,
+      days: widgetDaysWithAbsences(
+        planned,
+        entries: entries,
+        firstName: plan.firstName,
         t: t,
-        free: freeDaysFrom(
-          events ?? const [],
-          now,
-          className: className,
-          days: freeDaysAhead,
-        ),
-        className: className,
       ),
       now: now,
+      absStand: absStand,
     );
   } catch (e) {
     backgroundLogger.w('Widget übersprungen: ${e.runtimeType}');

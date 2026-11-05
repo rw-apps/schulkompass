@@ -34,6 +34,9 @@ void main() {
       absencePeriodDays('05.01.', now: DateTime(2026, 12, 30))!.from,
       DateTime(2027, 1, 5),
     );
+    // Im Januar gehört ein Dezember-Datum ohne Jahr zum Vorjahr.
+    final w = absencePeriodDays('21.12. - 08.01.', now: DateTime(2027, 1, 4))!;
+    expect((w.from, w.to), (DateTime(2026, 12, 21), DateTime(2027, 1, 8)));
   });
 
   test('Kind, Tag, Art, Eintragszeit', () {

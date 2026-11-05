@@ -6,19 +6,26 @@ import '../../l10n/l10n.dart';
 import '../messages/messages_page.dart' show AbsenceReportItem;
 import 'live_data.dart';
 
-/// Band „Heute krank gemeldet“ (KidCard): erster Eintrag dieses Kindes,
-/// der heute gilt. Ohne passenden Eintrag null.
+/// Band „Heute krank gemeldet“ (KidCard): Eintrag dieses Kindes, der heute
+/// gilt – eine Krankmeldung vor einer Verspätung am selben Tag, wie im
+/// Widget (widget_absence.dart; Prüfung 05.11.26: vorher galt der erste
+/// Eintrag der Liste, Heute und Widget konnten sich widersprechen). Ohne
+/// passenden Eintrag null.
 ({String kind, String detail})? reportedAbsenceFor(
   List<AbsenceEntry> entries,
   String firstName,
   DateTime now,
   ForkL10n t,
 ) {
+  AbsenceEntry? late;
   for (final e in entries) {
     if (!absenceIsFor(e, firstName) || !absenceCovers(e, now)) continue;
-    return (kind: e.kind, detail: absenceDetail(e, t));
+    if (!absenceIsLate(e)) return (kind: e.kind, detail: absenceDetail(e, t));
+    late ??= e;
   }
-  return null;
+  return late == null
+      ? null
+      : (kind: late.kind, detail: absenceDetail(late, t));
 }
 
 /// „Do 5.11. · eingetragen 07:40“ bzw. „Do 5.11. bis Fr 6.11. · …“.

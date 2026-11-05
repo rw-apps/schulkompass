@@ -50,6 +50,24 @@
             android:visibility="gone" />
 
         <ImageView
+            android:id="@+id/rep"
+            android:layout_width="@dimen/widget_busy_14"
+            android:layout_height="@dimen/widget_busy_14"
+            android:layout_marginEnd="@dimen/widget_gap_3"
+            android:importantForAccessibility="no"
+            android:src="@drawable/ic_widget_check_kid0"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/time_rep"
+            style="@style/WidgetText.Bold"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@color/widget_ink"
+            android:textSize="@dimen/widget_text_10_5"
+            android:visibility="gone" />
+
+        <ImageView
             android:id="@+id/mid_busy"
             android:layout_width="@dimen/widget_busy_14"
             android:layout_height="@dimen/widget_busy_14"
