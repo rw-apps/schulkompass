@@ -469,7 +469,17 @@ class KidCard extends StatelessWidget {
           // damit man ohne Öffnen sieht, dass sie erledigt ist.
           if (kid.reportedAbsence case final a?) ...[
             const SizedBox(height: Sp.m),
-            _ReportedStrip(kind: a.kind, detail: a.detail, tone: tone),
+            _ReportedStrip(
+              kind: a.kind,
+              detail: a.detail,
+              tone: tone,
+              // Antippen öffnet die Krankmeldung dieses Kindes wie
+              // „Gemeldet“ unten und die Zeile unter „Nachrichten“
+              // (Wunsch 05.11.26).
+              onTap: onReportAbsence == null
+                  ? null
+                  : () => onReportAbsence!(kid),
+            ),
           ],
           // Ohne Hinweise entfallen Überschrift und Abschnitt ganz.
           if (showNext) ...[
@@ -659,23 +669,25 @@ class _ReportedStrip extends StatelessWidget {
     required this.kind,
     required this.detail,
     required this.tone,
+    this.onTap,
   });
 
   final String kind;
   final String detail;
   final KidTone tone;
 
+  /// Öffnet die Krankmeldung (Anzeige der gesendeten Meldung,
+  /// absence_view.dart AbsenceOverview); null = nicht antippbar (Vorschau
+  /// ohne Krankmeldung, preview_shell.dart).
+  final VoidCallback? onTap;
+
   @override
   Widget build(BuildContext context) {
     final k = Kit.of(context);
     final t = context.t;
     final late = kind.toLowerCase().startsWith('versp');
-    return Container(
+    final content = Padding(
       padding: const EdgeInsets.symmetric(horizontal: Sp.m, vertical: Sp.s),
-      decoration: BoxDecoration(
-        color: tone.tint,
-        borderRadius: BorderRadius.circular(Rad.signal),
-      ),
       child: Row(
         children: [
           Icon(Icons.check_circle, size: Sz.icon, color: tone.accent),
@@ -693,8 +705,24 @@ class _ReportedStrip extends StatelessWidget {
               ],
             ),
           ),
+          if (onTap != null) Icon(Icons.chevron_right, color: tone.meta),
         ],
       ),
+    );
+    final radius = BorderRadius.circular(Rad.signal);
+    return Material(
+      color: tone.tint,
+      borderRadius: radius,
+      child: onTap == null
+          ? content
+          : Semantics(
+              button: true,
+              child: InkWell(
+                borderRadius: radius,
+                onTap: onTap,
+                child: content,
+              ),
+            ),
     );
   }
 }

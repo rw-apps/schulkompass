@@ -1,5 +1,9 @@
 ## Schulkompass (rw-apps, bis 9472 „Schulportal“) – Änderungen gegenüber Lanis-Mobile
 
+**4.1.0+9487** – Krankmeldung von „Heute“ aus öffnen
+
+- **Antippen:** Das Band „Heute krank gemeldet“ auf „Heute“ öffnet jetzt direkt die Krankmeldung des Kindes – wie die Zeile unter „Nachrichten“ (Pfeil rechts).
+
 **4.1.0+9486** – Krankmeldung im Startbildschirm-Widget
 
 - **Widget zeigt gemeldete Abwesenheit:** Statt der Unterrichtszeit steht beim Kind ein Haken mit „krank gemeldet“, bei mehreren Tagen „krank bis 16.11.“ (letzter gemeldeter Schultag, auch über mehrere Meldungen und das Wochenende). Arbeit, Aufgaben und Essen sind an diesen Tagen blass; knappes Guthaben bleibt sichtbar. Im großen Widget steht in der Tagesvorschau „krank“ statt der Symbole.

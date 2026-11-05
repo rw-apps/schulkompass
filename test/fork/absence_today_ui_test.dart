@@ -96,6 +96,49 @@ void main() {
     },
   );
 
+  testWidgets('Band antippen öffnet die Krankmeldung des Kindes', (t) async {
+    t.view.physicalSize = const Size(1080, 4000);
+    t.view.devicePixelRatio = 2.5;
+    addTearDown(t.view.reset);
+    final opened = <String>[];
+    await t.pumpWidget(
+      app(
+        SingleChildScrollView(
+          child: KidCard(
+            kid: kid(reported: (kind: 'krank', detail: 'Do 5.11.')),
+            now: now,
+            onReportAbsence: (c) => opened.add(c.firstName),
+          ),
+        ),
+      ),
+    );
+    await t.tap(find.text(de.absenceReportedToday));
+    expect(opened, [kid().firstName]);
+    // Ohne Ziel (Vorschau) nicht antippbar: kein Pfeil.
+    await t.pumpWidget(
+      app(
+        SingleChildScrollView(
+          child: KidCard(
+            kid: kid(reported: (kind: 'krank', detail: 'Do 5.11.')),
+            now: now,
+          ),
+        ),
+      ),
+    );
+    expect(
+      find.descendant(
+        of: find
+            .ancestor(
+              of: find.text(de.absenceReportedToday),
+              matching: find.byType(Material),
+            )
+            .first,
+        matching: find.byIcon(Icons.chevron_right),
+      ),
+      findsNothing,
+    );
+  });
+
   test('Band-Daten aus der Liste: Kind, Tag, Eintragszeit', () {
     const entries = [
       AbsenceEntry(
