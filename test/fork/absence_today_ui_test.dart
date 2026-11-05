@@ -147,6 +147,32 @@ void main() {
     await t.tap(find.text('Lena – krank'));
     expect(opened, 1);
 
+    // Eigene Ziele je Zeile (Familienansicht): jede öffnet ihr Konto.
+    final hits = <String>[];
+    await t.pumpWidget(
+      app(
+        MessagesPage(
+          items: const [],
+          reports: [
+            AbsenceReportItem(
+              title: 'Lena – krank',
+              meta: 'x',
+              onTap: () => hits.add('A'),
+            ),
+            AbsenceReportItem(
+              title: 'Jonas – krank',
+              meta: 'y',
+              onTap: () => hits.add('B'),
+            ),
+          ],
+          onOpenReports: () => hits.add('gemeinsam'),
+        ),
+      ),
+    );
+    await t.tap(find.text('Jonas – krank'));
+    await t.tap(find.text('Lena – krank'));
+    expect(hits, ['B', 'A']);
+
     await t.pumpWidget(app(const MessagesPage(items: [])));
     expect(find.text(de.absenceReportsTitle.toUpperCase()), findsNothing);
   });

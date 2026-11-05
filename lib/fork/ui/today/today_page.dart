@@ -377,8 +377,9 @@ class KidCard extends StatelessWidget {
         !kid.reportedAbsence!.kind.toLowerCase().contains('versp');
     final shown = absentToday
         ? [
+            // Guthaben (ohne Tag) bleibt wie beim nächsten Schultag.
             for (final h in hints)
-              if (h.day != null && dayDiff(now, h.day!) > 0) h,
+              if (h.day == null || dayDiff(now, h.day!) > 0) h,
           ]
         : !showNext
         ? hints

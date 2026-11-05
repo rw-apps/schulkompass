@@ -40,7 +40,14 @@ class AbsenceReportItem {
     required this.meta,
     this.kidName,
     this.kidColor = 0,
+    this.onTap,
   });
+
+  /// Öffnet die Krankmeldung des Kontos, dem die Meldung gehört. Ursache
+  /// (Prüfung 05.11.26): Mit einem gemeinsamen onOpenReports öffnete in
+  /// „Alle“ jede Zeile das erste Konto. Ohne eigenes onTap gilt
+  /// MessagesPage.onOpenReports.
+  final VoidCallback? onTap;
 
   /// „Lena – krank“.
   final String title;
@@ -151,7 +158,7 @@ class MessagesPage extends StatelessWidget {
                   ),
                   for (final (i, r) in reports.indexed) ...[
                     if (i > 0) const SizedBox(height: Sp.s),
-                    _ReportRow(item: r, onTap: onOpenReports),
+                    _ReportRow(item: r, onTap: r.onTap ?? onOpenReports),
                   ],
                 ],
               ),

@@ -689,9 +689,14 @@ class _LiveDataScopeState extends ConsumerState<LiveDataScope>
     // lassen den alten Stand stehen.
     if (session.accountTypeOrNull == AccountType.parent &&
         _supported.contains('abwesenheitsmeldung.php')) {
+      // Konto vor dem Abruf merken: Ein Wechsel währenddessen (Prüfung
+      // 05.11.26) hätte die Liste von Konto A bei Konto B abgelegt.
+      final forAccount = _extrasFor;
       try {
         final list = await loadAbsenceEntries(session);
-        if (mounted) setState(() => _absences = list);
+        if (mounted && _extrasFor == forAccount) {
+          setState(() => _absences = list);
+        }
       } catch (_) {}
     }
     if (!mounted) return;

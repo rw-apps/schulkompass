@@ -31,6 +31,17 @@ class LiveMessagesPage extends ConsumerWidget {
         final k = Kit.of(context);
         final t = context.t;
         if (!s.offers('nachrichten.php')) {
+          // Ohne Postfach trotzdem die Krankmeldungen zeigen (Prüfung
+          // 05.11.26: sie fehlten sonst ganz).
+          final reports = absenceReportsOf(s, DateTime.now(), t);
+          if (reports.isNotEmpty) {
+            return MessagesPage(
+              items: const [],
+              reports: reports,
+              onOpenReports: () =>
+                  pushFullScreen<void>(context, (_) => const AbsencePage()),
+            );
+          }
           return SafeArea(
             child: Padding(
               padding: const EdgeInsets.all(Sp.xl),
@@ -168,28 +179,22 @@ class LiveAllMessagesPage extends StatelessWidget {
       }
     }
 
-    // Krankmeldungen aller Elternkonten (Wunsch 05.11.26); Antippen öffnet
-    // die Krankmeldung des Kontos, dem die erste Meldung gehört.
-    final withReports = [
-      for (final m in members)
-        if (absenceReportsOf(m.snapshot, now, context.t).isNotEmpty) m,
-    ];
+    // Krankmeldungen aller Elternkonten (Wunsch 05.11.26); jede Zeile öffnet
+    // die Krankmeldung IHRES Kontos (FamilyMember.scope).
     return MessagesPage(
       reports: [
-        for (final m in withReports)
+        for (final m in members)
           ...absenceReportsOf(
             m.snapshot,
             now,
             context.t,
             colorIndex: m.colorIndex,
+            onTap: () => pushFullScreen<void>(
+              context,
+              (_) => m.scope(const AbsencePage()),
+            ),
           ),
       ],
-      onOpenReports: withReports.isEmpty
-          ? null
-          : () => pushFullScreen<void>(
-              context,
-              (_) => withReports.first.scope(const AbsencePage()),
-            ),
       items: [for (final r in rows) r.$2],
       loading: withMessages.any(
         (m) => m.snapshot.conversations.content == null,

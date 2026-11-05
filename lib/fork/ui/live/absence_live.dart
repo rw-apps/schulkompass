@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart' show VoidCallback;
+
 import '../../absence/absence_form.dart';
 import '../../absence/absence_today.dart';
 import '../../l10n/l10n.dart';
@@ -43,6 +45,7 @@ List<AbsenceReportItem> absenceReportsOf(
   ForkL10n t, {
   int colorIndex = 0,
   String? kidName,
+  VoidCallback? onTap,
 }) => [
   for (final e in currentAbsences(s.absences ?? const [], now))
     AbsenceReportItem(
@@ -50,5 +53,6 @@ List<AbsenceReportItem> absenceReportsOf(
       meta: absenceDetail(e, t),
       kidColor: colorIndex,
       kidName: kidName,
+      onTap: onTap,
     ),
 ];
