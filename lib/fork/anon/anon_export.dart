@@ -42,6 +42,12 @@ List<DebugExportPresetId> anonPresetsFor(AccountType? type) => [
   ],
   DebugExportPresetId.studyGroups,
   DebugExportPresetId.dataStorage,
+  // Stundenplan je Kind (Geschwister im Elternkonto, 05.11.26): klärt, ob
+  // das Portal den Plan eines zweiten Kindes über `p=` liefert. Gleiche
+  // Wörter bleiben gleich verwürfelt, die Pläne der Kinder lassen sich also
+  // vergleichen. Die Reihenfolge des Abrufs gibt debugExportPresets vor
+  // (dort zuletzt, Sitzungsrisiko), nicht diese Liste.
+  if (type == AccountType.parent) DebugExportPresetId.timetableKids,
 ];
 
 String _typeName(AccountType? t) => switch (t) {
@@ -106,6 +112,13 @@ Future<AnonExport> runAnonExport({
   }
 
   final body = StringBuffer();
+  if (presets.any((p) => p.id == DebugExportPresetId.timetableKids) &&
+      !sections.any((x) => x.$1.startsWith('timetableKids'))) {
+    body
+      ..writeln('=== timetableKids: übersprungen ===')
+      ..writeln('Keine Kinder in „mein Unterricht“ gefunden (data-pupil).')
+      ..writeln();
+  }
   for (final (i, (name, request)) in sections.indexed) {
     onProgress?.call(i, sections.length);
     body.writeln('=== $name: ${request.method} ${_shortUrl(a, request)} ===');
@@ -114,12 +127,31 @@ Future<AnonExport> runAnonExport({
       body.writeln('Fehler beim Abruf');
     } else {
       final ct = r.headers.value('content-type') ?? '';
+      // Weitergeleitet: Ziel (verwürfelt) nennen – bei timetableKids die
+      // eigentliche Antwort auf die Frage (Kind 2 oder zurück zu Kind 1).
+      // requestOptions.path ist die an dio übergebene Adresse, ohne
+      // queryParameters (Prüfung 05.11.26: uri enthielt sie, der Pfeil stand
+      // dann auch ohne Weiterleitung). Grenze: höchstens zwei Sprünge
+      // (_request); beim dritten 302 zeigt der Pfeil den zweiten.
+      final to = r.requestOptions.path;
+      if (to != request.url) {
+        body.writeln('→ ${a.url(to.replaceFirst('$sphBase/', ''))}');
+      }
       body.writeln('Status ${r.statusCode} · $ct');
       body.writeln(a.body(_asString(r.data), contentType: ct));
     }
     body.writeln();
   }
   onProgress?.call(sections.length, sections.length);
+  // Kinder-Kennungen durch „KIND1“, „KIND2“ ersetzen (Prüfung 05.11.26):
+  // Zahlen bleiben sonst unverändert (Anonymizer); für die Frage zählt nur,
+  // welches Kind, nicht seine Kennung. Grenze: nur Kennungen ab vier
+  // Ziffern, damit keine Stunden- oder Datumszahl getroffen wird.
+  var text = body.toString();
+  for (final (i, id) in parsePupilIds(ctx.lessonsHtml ?? '').indexed) {
+    if (id.length < 4) continue;
+    text = text.replaceAll(RegExp('(?<!\\d)$id(?!\\d)'), 'KIND${i + 1}');
+  }
 
   out
     ..writeln('$forkAppName-App – anonymer Export')
@@ -132,7 +164,7 @@ Future<AnonExport> runAnonExport({
     ..writeln('Unverändert: Seitenaufbau, Zahlen, Uhrzeiten, Daten und:')
     ..writeln(a.kept.join(', '))
     ..writeln()
-    ..write(body);
+    ..write(text);
   return AnonExport(text: out.toString(), kept: a.kept.toList());
 }
 

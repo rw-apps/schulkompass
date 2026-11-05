@@ -1,5 +1,9 @@
 ## Schulkompass (rw-apps, bis 9472 „Schulportal“) – Änderungen gegenüber Lanis-Mobile
 
+**4.1.0+9493** – Anonymer Export: Stundenplan je Kind
+
+- **Für Geschwister-Familien:** Der „Anonyme Export“ in den Einstellungen ruft bei Elternkonten jetzt auch den Stundenplan je Kind ab und nennt Weiterleitungen. So kann eine Familie mit zwei Kindern an einer Schule die nötige Auskunft schicken, ohne echte Namen preiszugeben.
+
 **4.1.0+9492** – Fehlerexport: Stundenplan je Kind
 
 - **Vorbereitung für Geschwister:** Der Fehlerexport kann bei einem Elternkonto mit mehreren Kindern zusätzlich den Stundenplan je Kind abrufen („Stundenplan je Kind“). Damit lässt sich klären, ob das Portal den Plan eines zweiten Kindes liefert – Voraussetzung für eine eigene Karte je Kind. An der Anzeige ändert sich nichts.

@@ -52,6 +52,47 @@ class _FakePortal implements HttpClientAdapter {
   void close({bool force = false}) {}
 }
 
+/// Elternkonto mit zwei Kindern: „mein Unterricht“ nennt beide, der Plan
+/// für Kind 2 leitet auf Kind 1 um (so könnte das Portal antworten).
+class _ParentPortal implements HttpClientAdapter {
+  @override
+  Future<ResponseBody> fetch(
+    RequestOptions o,
+    Stream<Uint8List>? requestStream,
+    Future<void>? cancelFuture,
+  ) async {
+    final q = o.uri.query;
+    if (o.uri.path == '/meinunterricht.php') {
+      return ResponseBody.fromString(
+        '<h2 data-pupil="555111">Lena</h2><h2 data-pupil="555222">Jonas</h2>',
+        200,
+        headers: {
+          Headers.contentTypeHeader: ['text/html'],
+        },
+      );
+    }
+    if (o.uri.path == '/stundenplan.php' && q == 'p=555222') {
+      return ResponseBody.fromString(
+        '',
+        302,
+        headers: {
+          'location': ['stundenplan.php?a=detail_klasse&k=G5b&p=555111'],
+        },
+      );
+    }
+    return ResponseBody.fromString(
+      '<html><body><h1>Plan</h1></body></html>',
+      200,
+      headers: {
+        Headers.contentTypeHeader: ['text/html'],
+      },
+    );
+  }
+
+  @override
+  void close({bool force = false}) {}
+}
+
 void main() {
   test('Lehrkraft: nur lesende Seiten, alles anonym, nichts doppelt', () async {
     final portal = _FakePortal();
@@ -103,4 +144,45 @@ void main() {
       isNot(contains(DebugExportPresetId.lessonsCourseDetail)),
     );
   });
+
+  test('Elternkonto: Stundenplan je Kind dabei, sonst nicht', () {
+    // Die Reihenfolge des Abrufs prüft debug_export_filter_test (zuletzt).
+    expect(
+      anonPresetsFor(AccountType.parent),
+      contains(DebugExportPresetId.timetableKids),
+    );
+    expect(
+      anonPresetsFor(AccountType.student),
+      isNot(contains(DebugExportPresetId.timetableKids)),
+    );
+  });
+
+  test(
+    'Elternkonto: Plan je Kind mit Weiterleitung, Kennungen ersetzt',
+    () async {
+      final dio = Dio()..httpClientAdapter = _ParentPortal();
+      final r = await runAnonExport(
+        dio: dio,
+        type: AccountType.parent,
+        schoolId: 9999,
+        travelMenu: const [
+          {'link': 'meinunterricht.php'},
+          {'link': 'stundenplan.php'},
+        ],
+        version: '4.1.0+1',
+        now: DateTime(2026, 11, 5),
+      );
+      expect(r.text, contains('=== timetableKids#2:'));
+      // Kind 2 wird auf Kind 1 umgeleitet – der Pfeil zeigt es.
+      final kid2 = r.text.split('=== timetableKids#2:')[1].split('\n===')[0];
+      expect(kid2, contains('→ '));
+      expect(kid2, contains('KIND1'));
+      // Ohne Weiterleitung kein Pfeil, Kennungen nirgends im Klartext.
+      final kid1 = r.text.split('=== timetableKids#1:')[1].split('\n===')[0];
+      expect(kid1, isNot(contains('→ ')));
+      expect(r.text, isNot(contains('555111')));
+      expect(r.text, isNot(contains('555222')));
+      expect(r.text, isNot(contains('G5b')));
+    },
+  );
 }
