@@ -30,6 +30,8 @@ import '../plan/plan_from_lanis.dart';
 import '../plan/plan_model.dart';
 import '../../kid_name.dart';
 export '../../kid_name.dart' show shortFirstName;
+import '../../absence/absence_days.dart'
+    show absenceSickDaysByKid, storeSickDays;
 import '../../absence/absence_form.dart' show AbsenceEntry;
 import '../../absence/absence_parser.dart' show loadAbsenceEntries;
 import '../../class_choice.dart';
@@ -701,6 +703,10 @@ class _LiveDataScopeState extends ConsumerState<LiveDataScope>
       // Konto vor dem Abruf merken: Ein Wechsel währenddessen (Prüfung
       // 05.11.26) hätte die Liste von Konto A bei Konto B abgelegt.
       final forAccount = _extrasFor;
+      // Einstellungen ebenfalls vorher (Prüfung 05.11.26): Der Provider
+      // liefert nach einem Kontowechsel sofort Konto B, die Prüfung
+      // _extrasFor greift erst im nächsten build.
+      final st = ref.read(accountSpecificSettingsProvider);
       // Zeit VOR dem Abruf (Prüfung 05.11.26): Die Liste ist mindestens so
       // neu wie ihr Start; nach dem Abruf gestempelt, gewänne eine ältere
       // Liste gegen eine, die der Hintergrund währenddessen las.
@@ -712,6 +718,17 @@ class _LiveDataScopeState extends ConsumerState<LiveDataScope>
             _absences = list;
             _absencesAt = at;
           });
+          // Krankheitstage je Kind für die Sammelmeldung merken
+          // (absence_days.dart): Die Essens-Zeilen entstehen im Hintergrund
+          // ohne Meldungsliste. Kinder aus dem Unterricht (lastKids); ohne
+          // sie bleibt die alte Ablage.
+          final p = _lessons.parser;
+          final kids = p is LessonsParentAwareParser
+              ? p.lastKids
+              : const <ChildLessons>[];
+          if (st != null && kids.isNotEmpty) {
+            storeSickDays(st, absenceSickDaysByKid(list, kids, DateTime.now()));
+          }
         }
       } catch (_) {}
     }

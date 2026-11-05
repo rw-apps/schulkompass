@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:liblanis/liblanis.dart'
     show AccountType, sharedOverAccountSettingsProvider;
 
+import 'package:lanis/fork/absence/absence_days.dart' show absenceSickOn;
 import 'package:lanis/fork/absence/absence_view.dart';
 
 import '../../l10n/l10n.dart';
@@ -459,11 +460,25 @@ class _LiveTodayPageState extends State<LiveTodayPage> {
               multiAccount: family.length > 1,
               parent: s.session.accountTypeOrNull == AccountType.parent,
             );
-            if (s.substitutions.content != null) {
+            // Krank gemeldete Tage: keine Ausfälle/Vertretungen und kein
+            // „Essen bestellen“ – wie der Hintergrund (absence_days.dart,
+            // Wunsch 05.11.26). Liste noch nicht geladen (Start,
+            // Kontowechsel): Plan und Essen dieses Kontos noch nicht
+            // abgleichen – „nur Geladenes“ wie oben. Ursache (Prüfung
+            // 05.11.26): Sonst kämen die Zeilen der Krankheitstage kurz
+            // zurück, nach dem Wegwischen sogar als neue Meldung.
+            final absKnown =
+                !s.offers('abwesenheitsmeldung.php') || s.absences != null;
+            bool sick(DateTime d, String name) =>
+                absenceSickOn(s.absences ?? const [], name, d);
+            if (s.substitutions.content != null && absKnown) {
               sources['${m.accountId}/plan'] = changeSummaryItems(
                 scope: '${m.accountId}',
                 name: name,
-                changes: kid.changes,
+                changes: [
+                  for (final c in kid.changes)
+                    if (!sick(c.day, kid.firstName)) c,
+                ],
                 now: now,
                 next: next,
                 t: t,
@@ -473,16 +488,27 @@ class _LiveTodayPageState extends State<LiveTodayPage> {
                 },
               );
             }
-            if (s.mensaUrl != null) {
+            if (s.mensaUrl != null && absKnown) {
               final owner = s.mensaOwner(s.mensaKid);
+              // Name des Essens-Kindes (mensaKid), nicht des Plan-Kindes.
+              final mealName = shortFirstName(
+                s.kids
+                        .where((k) => k.pupilId == s.mensaKid)
+                        .firstOrNull
+                        ?.firstName ??
+                    kid.firstName,
+              );
               sources['${m.accountId}/meals'] = mealSummaryItems(
                 name: name,
                 owner: owner,
-                days: mealReminderDays(
-                  MealCache.instance.ofSite(owner, s.mensaUrl),
-                  now,
-                  weekdays: mealRemindDays(shared, owner),
-                ),
+                days: [
+                  for (final d in mealReminderDays(
+                    MealCache.instance.ofSite(owner, s.mensaUrl),
+                    now,
+                    weekdays: mealRemindDays(shared, owner),
+                  ))
+                    if (!sick(d, mealName)) d,
+                ],
                 t: t,
               );
             }

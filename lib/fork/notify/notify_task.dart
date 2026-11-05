@@ -10,6 +10,7 @@ import 'package:lanis/background_service.dart';
 import 'package:lanis/utils/applet_settings.dart';
 import 'package:lanis/utils/logger.dart';
 
+import '../absence/absence_days.dart';
 import '../absence/absence_form.dart' show AbsenceEntry;
 import '../absence/absence_parser.dart'
     show forkAbsenceApplet, loadAbsenceEntries;
@@ -37,8 +38,7 @@ import '../ui/today/today_from_lanis.dart' show applySubstitutions;
 import '../ui/today/today_model.dart'
     show ChangeItem, DayLesson, hasTime, minutesOf;
 import '../widget/home_widget_data.dart' show widgetDays;
-import '../widget/home_widget_sync.dart'
-    show homeWidgetHasKid, updateHomeWidgetInBackground;
+import '../widget/home_widget_sync.dart' show updateHomeWidgetInBackground;
 import '../widget/widget_absence.dart';
 import 'notices.dart';
 import 'notify_keys.dart';
@@ -222,6 +222,41 @@ Future<void> _run(
   }
   final subDays = history.fromToday(subs.days, now);
 
+  // Krankmeldungen (Elternkonto mit Modul): für die Sammelmeldung (keine
+  // Ausfälle/Vertretungen/Essens-Erinnerungen an Krankheitstagen,
+  // absence_days.dart; Wunsch 05.11.26) und das Widget (weiter unten). Ein
+  // Abruf je Lauf. Ohne Vornamen trifft keine Meldung zu (absenceIsFor) –
+  // dann gilt die Liste als nicht gelesen, sonst löschte ein frischer
+  // Stempel die Meldungen der Widget-Datei (Prüfung 05.11.26). Zeit vor dem
+  // Abruf wie in live_data.dart _loadExtras. Grenze: Schlägt er fehl, gelten
+  // die zuletzt gemerkten Krankheitstage (readSickDays).
+  var entries = const <AbsenceEntry>[];
+  DateTime? absStand;
+  if (accountType == AccountType.parent &&
+      firstName.trim().isNotEmpty &&
+      offers(forkAbsenceApplet)) {
+    final at = DateTime.now();
+    try {
+      entries = await loadAbsenceEntries(session);
+      absStand = at;
+      // Je Kind gemerkt (für die Essens-Zeilen in showForkSummary); ohne
+      // geladene Kinder (Unterricht fehlgeschlagen) bleibt die alte Ablage.
+      if (kids.isNotEmpty) {
+        storeSickDays(s, absenceSickDaysByKid(entries, kids, now));
+      }
+    } catch (e) {
+      backgroundLogger.w('Krankmeldungen übersprungen: ${e.runtimeType}');
+    }
+  }
+  // Tage des Kindes, dessen Plan dieses Konto zeigt (plan.firstName =
+  // kids.first): frisch gelesen nach Name, sonst die gemerkten.
+  final sickDays = absStand != null
+      ? absenceSickDays(entries, firstName, now).toSet()
+      : (kids.isEmpty
+            ? const <DateTime>{}
+            : readSickDays(s, now)[kids.first.pupilId] ?? const <DateTime>{});
+  bool sick(DateTime d) => sickDays.contains(DateTime(d.year, d.month, d.day));
+
   // Sammel-Benachrichtigung (summary.dart, Wunsch 27.10.26): Ausfälle und
   // Vertretungen von heute und dem nächsten Schultag als aktueller Stand
   // dieses Kontos. Die Einzelmeldungen zu Änderungen entfallen dafür
@@ -260,7 +295,12 @@ Future<void> _run(
                 multiAccount: tools.multiAccount,
                 parent: accountType == AccountType.parent,
               ),
-              changes: r.changes,
+              // Krank gemeldet: Ausfälle und Vertretungen betreffen das
+              // Kind an dem Tag nicht (Wunsch 05.11.26).
+              changes: [
+                for (final c in r.changes)
+                  if (!sick(c.day)) c,
+              ],
               now: now,
               next: nextSchoolDay(now),
               t: t,
@@ -297,32 +337,11 @@ Future<void> _run(
       ),
       className: className,
     );
-    // Gemeldete Abwesenheit (widget_absence.dart, Abnahme 05.11.26). Ursache:
-    // Ohne sie schriebe der Lauf die Tage ohne Krankmeldung über die der
-    // App (mergeWidgetKid ersetzt `days`) – das Widget zeigte das kranke
-    // Kind nach 15–60 Min. wieder mit vollem Plan. Ein Abruf mehr je Lauf,
-    // nur Elternkonten mit dem Modul (wie live_data.dart _loadExtras).
-    // Schlägt er fehl, bleiben die Meldungen der Datei stehen (absStand
-    // null → mergeWidgetKid übernimmt sie); nur Neues fehlt bis zum
-    // nächsten Lauf oder App-Start.
-    var entries = const <AbsenceEntry>[];
-    DateTime? absStand;
-    // Ohne Vornamen trifft keine Meldung zu (absenceIsFor) – die Liste gilt
-    // dann als nicht gelesen, sonst löschte ein frischer Stempel die
-    // Meldungen der Datei (Prüfung 05.11.26). Zeit vor dem Abruf wie in
-    // live_data.dart _loadExtras.
-    if (accountType == AccountType.parent &&
-        firstName.trim().isNotEmpty &&
-        offers(forkAbsenceApplet) &&
-        await homeWidgetHasKid(tools.accountId)) {
-      final at = DateTime.now();
-      try {
-        entries = await loadAbsenceEntries(session);
-        absStand = at;
-      } catch (e) {
-        backgroundLogger.w('Krankmeldungen übersprungen: ${e.runtimeType}');
-      }
-    }
+    // Gemeldete Abwesenheit (widget_absence.dart, Abnahme 05.11.26): die
+    // oben gelesene Liste. Ursache: Ohne sie schriebe der Lauf die Tage ohne
+    // Krankmeldung über die der App (mergeWidgetKid ersetzt `days`). Schlug
+    // der Abruf fehl, bleiben die Meldungen der Datei (absStand null →
+    // mergeWidgetKid übernimmt sie).
     await updateHomeWidgetInBackground(
       account: s,
       accountId: tools.accountId,
@@ -724,6 +743,8 @@ Future<void> showForkSummary(
         legacy: acc.getString('fork/$mensaUrlSetting'),
       );
       final items = <SummaryItem>[];
+      // Krankheitstage je Kind (absence_days.dart), Schlüssel wie e.key.
+      final sickByKid = readSickDays(acc, now);
       for (final e in meals.entries) {
         if (!e.key.startsWith('$id:')) continue;
         final kid = e.key.substring('$id:'.length);
@@ -738,11 +759,20 @@ Future<void> showForkSummary(
               parent: parents.contains(id),
             ),
             owner: e.key,
-            days: mealReminderDays(
-              mealEntryFor(e.value, address),
-              now,
-              weekdays: mealRemindDays(shared, e.key),
-            ),
+            // Kein „Essen bestellen“ für krank gemeldete Tage
+            // (absence_days.dart, Wunsch 05.11.26).
+            days: [
+              for (final d in mealReminderDays(
+                mealEntryFor(e.value, address),
+                now,
+                weekdays: mealRemindDays(shared, e.key),
+              ))
+                if (!(sickByKid[kid]?.contains(
+                      DateTime(d.year, d.month, d.day),
+                    ) ??
+                    false))
+                  d,
+            ],
             t: t,
           ),
         );

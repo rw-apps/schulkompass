@@ -342,12 +342,6 @@ Future<void> _writeKids(
   await writeHomeWidget(homeWidgetPayload(kids: kids, now: now, t: t));
 }
 
-/// Steht das Konto [account] im Widget? Der Hintergrund-Lauf fragt das vor
-/// dem Abruf der Krankmeldungen (Prüfung 05.11.26: sonst ein Abruf je Lauf,
-/// den [mergeWidgetKid] danach verwirft).
-Future<bool> homeWidgetHasKid(int account) async =>
-    widgetKidsOf(await readHomeWidget()).any((k) => k['account'] == account);
-
 /// Hintergrund-Lauf (notify_task.dart, je Konto): Widget mit dem eben
 /// geladenen Vertretungsplan erneuern – nur den Eintrag DIESES Kontos,
 /// die übrigen Kinder bleiben ([mergeWidgetKid]).

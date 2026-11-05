@@ -1,5 +1,10 @@
 ## Schulkompass (rw-apps, bis 9472 „Schulportal“) – Änderungen gegenüber Lanis-Mobile
 
+**4.1.0+9489** – Keine Erinnerungen für krank gemeldete Kinder
+
+- **Benachrichtigungen:** Für Tage, an denen ein Kind krank gemeldet ist, meldet die Sammel-Benachrichtigung keine Ausfälle und Vertretungen mehr und erinnert nicht ans Essen-Bestellen. Bei einer Verspätung bleibt alles wie bisher.
+- Bei Geschwistern in einem Elternkonto gilt das nur für das gemeldete Kind.
+
 **4.1.0+9488** – Widget-Krankmeldung abgesichert
 
 - **Behoben:** In seltenen Fällen konnte eine gerade gesendete Krankmeldung im Widget kurz fehlen – wenn die Aktualisierung im Hintergrund gleichzeitig eine ältere Liste las oder der Name des Kindes noch nicht bekannt war. Bekannte Meldungen bleiben jetzt stehen, bis eine neuere Liste da ist.
