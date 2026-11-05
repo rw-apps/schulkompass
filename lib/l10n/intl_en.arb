@@ -221,6 +221,7 @@
   "debugExportPresetAbsences": "Absences (sick notes, view only)",
   "debugExportPresetLessonsCourseDetail": "My lessons: course pages (2 courses)",
   "debugExportPresetTimetable": "Timetable",
+  "debugExportPresetTimetableKids": "Timetable per child (siblings, parent account)",
   "debugExportPresetCalendarMain": "Calendar (main page)",
   "debugExportPresetLessonsStudent": "Lessons / Mein Unterricht (student)",
   "debugExportPresetLessonsTeacher": "Lessons / Mein Unterricht (teacher)",

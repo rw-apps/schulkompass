@@ -1,5 +1,9 @@
 ## Schulkompass (rw-apps, bis 9472 „Schulportal“) – Änderungen gegenüber Lanis-Mobile
 
+**4.1.0+9492** – Fehlerexport: Stundenplan je Kind
+
+- **Vorbereitung für Geschwister:** Der Fehlerexport kann bei einem Elternkonto mit mehreren Kindern zusätzlich den Stundenplan je Kind abrufen („Stundenplan je Kind“). Damit lässt sich klären, ob das Portal den Plan eines zweiten Kindes liefert – Voraussetzung für eine eigene Karte je Kind. An der Anzeige ändert sich nichts.
+
 **4.1.0+9491** – Krankmeldung: Ferien und Geschwister
 
 - **Ferien:** „Krank melden“ nach Schulschluss und „Auch … melden“ in der Krankmeldung schlagen keinen Ferien- oder Studientag mehr vor, sondern den nächsten Schultag laut Schulkalender.

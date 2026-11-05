@@ -190,6 +190,7 @@
   "debugExportPresetAbsences": "Abwesenheiten (Krankmeldung, nur Ansicht)",
   "debugExportPresetLessonsCourseDetail": "Mein Unterricht: Kursseiten (2 Kurse)",
   "debugExportPresetTimetable": "Stundenplan",
+  "debugExportPresetTimetableKids": "Stundenplan je Kind (Geschwister, Elternkonto)",
   "debugExportPresetCalendarMain": "Kalender (Hauptseite)",
   "debugExportPresetLessonsStudent": "Mein Unterricht (Schüler)",
   "debugExportPresetLessonsTeacher": "Mein Unterricht (Lehrkraft)",

@@ -26,6 +26,7 @@ enum DebugExportPresetId {
   calendarMain,
   lessonsStudent,
   lessonsCourseDetail,
+  timetableKids,
   lessonsTeacher,
   dataStorage,
   dataStorageFolders,
@@ -93,7 +94,8 @@ class DebugExportPresetContext {
   String? substitutionsHtml;
 
   /// Fork: Antwort von meinunterricht.php (gesetzt im Runner nach dem Preset
-  /// lessonsStudent), Quelle der Kurs-Links für [parseCourseDetailLinks].
+  /// lessonsStudent), Quelle der Kurs-Links für [parseCourseDetailLinks] und
+  /// der Kinder-Kennungen für [parsePupilIds] (timetableKids).
   String? lessonsHtml;
 
   /// Fork: Antwort von dateispeicher.php (Startordner), Quelle der Ordner für
@@ -111,6 +113,21 @@ List<int> parseDataStorageFolders(String html, {int max = 3}) {
   for (final m in RegExp(r'data-dir="(\d+)"').allMatches(html)) {
     final id = int.parse(m.group(1)!);
     if (id == 0 || ids.contains(id)) continue;
+    ids.add(id);
+    if (ids.length >= max) break;
+  }
+  return ids;
+}
+
+/// Fork: Kinder-Kennungen der Eltern-Ansicht von meinunterricht.php
+/// (`h2[data-pupil="…"]`, parseParentLessons in lib/fork/lessons_parent.dart),
+/// in der Reihenfolge der Seite. Grenze: höchstens [max]; `data-pupil-id`
+/// (Krankmelde-Formular) zählt nicht.
+List<String> parsePupilIds(String html, {int max = 4}) {
+  final ids = <String>[];
+  for (final m in RegExp(r'data-pupil="(\d+)"').allMatches(html)) {
+    final id = m.group(1)!;
+    if (ids.contains(id)) continue;
     ids.add(id);
     if (ids.length >= max) break;
   }
@@ -458,6 +475,42 @@ final debugExportPresets = <DebugExportPreset>[
         name: '${DebugExportPresetId.profile.name}Autologins',
         request: _get('benutzerverwaltung.php?a=userAutologins'),
       ),
+    ],
+  ),
+  // Fork: Stundenplan je Kind eines Elternkontos (nur GET). Ursache (Frage
+  // 05.11.26, Geschwister an einer Schule): `stundenplan.php` leitet Eltern
+  // auf `?a=detail_klasse&e=1&k=<Klasse>&p=<Kind>` des ERSTEN Kindes um
+  // (Export Schule A 16.10.26); ob das Portal den Plan eines zweiten Kindes
+  // über `p=` liefert, umleitet oder eine Auswahl zeigt, ist unbelegt – die
+  // Klasse des zweiten Kindes kennt die App nicht. Darum je Kind zwei
+  // Varianten ohne Klasse; die Umleitungen hält der Export fest. Zum Schluss
+  // noch einmal `stundenplan.php` ohne `p=`: zeigt, ob sich das Portal ein
+  // per `p=` gewähltes Kind in der Sitzung merkt. Braucht lessonsStudent
+  // (Kinder-Kennungen, ctx.lessonsHtml); ohne Kinder keine Abschnitte, der
+  // Runner vermerkt das (debug_export.dart). Grenze: Steht am ENDE der
+  // Liste – `detail_klasse` ohne `k=` erzeugt das Portal selbst nie; kippt
+  // eine Fehlerseite die Sitzung (wie beim Dateispeicher, oben), gehen so
+  // keine anderen Abschnitte verloren.
+  DebugExportPreset(
+    id: DebugExportPresetId.timetableKids,
+    modulePhp: 'stundenplan.php',
+    label: (l) => l.debugExportPresetTimetableKids,
+    buildSections: (ctx) => [
+      for (final (i, id) in parsePupilIds(ctx.lessonsHtml ?? '').indexed) ...[
+        DebugExportSection(
+          name: '${DebugExportPresetId.timetableKids.name}#${i + 1}',
+          request: _get('stundenplan.php?p=$id'),
+        ),
+        DebugExportSection(
+          name: '${DebugExportPresetId.timetableKids.name}#${i + 1}detail',
+          request: _get('stundenplan.php?a=detail_klasse&e=1&p=$id'),
+        ),
+      ],
+      if (parsePupilIds(ctx.lessonsHtml ?? '').isNotEmpty)
+        DebugExportSection(
+          name: '${DebugExportPresetId.timetableKids.name}#nachher',
+          request: _get('stundenplan.php'),
+        ),
     ],
   ),
 ];

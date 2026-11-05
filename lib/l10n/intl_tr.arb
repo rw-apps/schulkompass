@@ -221,6 +221,7 @@
   "debugExportPresetAbsences": "Devamsızlıklar (hastalık bildirimleri, yalnızca görüntüleme)",
   "debugExportPresetLessonsCourseDetail": "Derslerim: kurs sayfaları (2 kurs)",
   "debugExportPresetTimetable": "Ders programı",
+  "debugExportPresetTimetableKids": "Çocuk başına ders programı (kardeşler, veli hesabı)",
   "debugExportPresetCalendarMain": "Takvim (ana sayfa)",
   "debugExportPresetLessonsStudent": "Dersler / Mein Unterricht (öğrenci)",
   "debugExportPresetLessonsTeacher": "Dersler / Mein Unterricht (öğretmen)",

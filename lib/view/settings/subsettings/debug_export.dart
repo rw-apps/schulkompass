@@ -525,7 +525,19 @@ Future<String> runDebugExportPresets({
     // Already executed above when needsSubstitutionHtml is true.
     if (preset.id == DebugExportPresetId.substitutionsMain) continue;
 
-    for (final section in preset.buildSections(ctx)) {
+    final sections = preset.buildSections(ctx);
+    // Fork: Presets, die auf eine frühere Antwort bauen (Kursseiten, Stundenplan
+    // je Kind), ergeben ohne sie nichts – sonst stand im Export nur der Name
+    // ohne Grund (Prüfung 05.11.26).
+    if (sections.isEmpty &&
+        (preset.id == DebugExportPresetId.lessonsCourseDetail ||
+            preset.id == DebugExportPresetId.timetableKids)) {
+      report.log(
+        'SKIPPED ${preset.id.name}: no input from lessonsStudent '
+        '(not selected, page unreadable or no data-pupil)',
+      );
+    }
+    for (final section in sections) {
       final body = await appendRequestSection(
         report: report,
         sectionName: section.name,
@@ -533,8 +545,8 @@ Future<String> runDebugExportPresets({
         request: section.request,
         note: section.note,
       );
-      // Fork: Übersicht merken für lessonsCourseDetail (läuft danach, da
-      // debugExportPresets die Reihenfolge vorgibt).
+      // Fork: Übersicht merken für lessonsCourseDetail und timetableKids
+      // (laufen danach, da debugExportPresets die Reihenfolge vorgibt).
       if (preset.id == DebugExportPresetId.lessonsStudent) {
         ctx.lessonsHtml = body;
       }

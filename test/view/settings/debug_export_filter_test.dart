@@ -71,4 +71,34 @@ void main() {
         '<a data-dir="6"></a><a data-dir="2"></a>';
     expect(parseDataStorageFolders(html), [6, 2]);
   });
+
+  test('Kinder-Kennungen und Stundenplan je Kind', () {
+    const html =
+        '<h2 data-pupil="7">A</h2><h2 data-pupil="7">A</h2>'
+        '<h2 data-pupil="8">B</h2>';
+    expect(parsePupilIds(html), ['7', '8']);
+    final p = debugExportPresets.firstWhere(
+      (p) => p.id == DebugExportPresetId.timetableKids,
+    );
+    final ctx = DebugExportPresetContext()..lessonsHtml = html;
+    expect(
+      [for (final s in p.buildSections(ctx)) s.request.url],
+      [
+        for (final id in ['7', '8']) ...[
+          '$sphBase/stundenplan.php?p=$id',
+          '$sphBase/stundenplan.php?a=detail_klasse&e=1&p=$id',
+        ],
+        '$sphBase/stundenplan.php',
+      ],
+    );
+    expect(p.buildSections(DebugExportPresetContext()), isEmpty);
+    // Nach lessonsStudent und als letztes Preset (Sitzungsrisiko).
+    final ids = [for (final p in debugExportPresets) p.id];
+    expect(
+      ids.indexOf(DebugExportPresetId.lessonsStudent),
+      lessThan(ids.indexOf(DebugExportPresetId.timetableKids)),
+    );
+    expect(ids.last, DebugExportPresetId.timetableKids);
+    expect(parsePupilIds('<div data-pupil-id="9"></div>'), isEmpty);
+  });
 }
