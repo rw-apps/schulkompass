@@ -251,7 +251,7 @@ void main() {
               ],
             ),
           ],
-          onCancelMeal: days.add,
+          onCancelMeal: (_, d) => days.add(d),
         ),
       ),
     );

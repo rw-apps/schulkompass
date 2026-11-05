@@ -1,5 +1,10 @@
 ## Schulkompass (rw-apps, bis 9472 „Schulportal“) – Änderungen gegenüber Lanis-Mobile
 
+**4.1.0+9491** – Krankmeldung: Ferien und Geschwister
+
+- **Ferien:** „Krank melden“ nach Schulschluss und „Auch … melden“ in der Krankmeldung schlagen keinen Ferien- oder Studientag mehr vor, sondern den nächsten Schultag laut Schulkalender.
+- **Geschwister in einem Elternkonto:** „Daran denken“ in der Krankmeldung nennt Essen und Arbeiten für jedes gemeldete Kind, mit Namen; „Abbestellen“ öffnet die Essensseite des richtigen Kindes.
+
 **4.1.0+9490** – Krankmeldung: Essen abbestellen, verpasste Arbeit, nächster Tag
 
 - **Essen abbestellen:** Ist für einen Krankheitstag Essen bestellt und die Frist noch offen, steht auf „Heute“ „Essen abbestellen bis 08:30“. Antippen öffnet die Essensseite gleich mit der Rückfrage für genau diesen Tag – abbestellt wird erst nach deiner Bestätigung. In der Krankmeldung steht dasselbe unter „Daran denken“ mit einem Knopf je Tag. (Nur wenn „Bestellen und Abbestellen in der App“ eingeschaltet ist; sonst ein Hinweis.)

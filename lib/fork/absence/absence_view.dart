@@ -7,12 +7,14 @@ import 'package:lanis/widgets/combined_applet_builder.dart';
 
 import '../demo/demo_mode.dart' show demoActive;
 import '../ui/live/absence_live.dart' show absenceDetail;
-import '../ui/live/live_data.dart' show LiveData, LiveSnapshot;
+import '../ui/live/live_data.dart'
+    show LiveData, LiveSnapshot, liveClassName, shortFirstName;
 import '../ui/messages/compose_model.dart' show candidatesFrom;
 import '../ui/messages/compose_page.dart'
     show ComposeBackend, ComposePage, portalBackend;
 import '../ui/nav.dart' show pushFullScreen;
-import '../ui/today/kid_hints.dart' show nextSchoolDay;
+import '../ui/today/kid_hints.dart' show nextSchoolDayFree;
+import '../ui/today/today_from_lanis.dart' show freeDaysFrom;
 import '../ui/today/live_today_page.dart' show openMensa;
 import '../mensa_store.dart' show MealCache;
 import 'absence_reminders.dart';
@@ -134,10 +136,21 @@ class _AbsencePageState extends ConsumerState<AbsencePage> {
           suggestDay: widget.suggestDay,
           // Essensseite des Kindes mit der Rückfrage für den Tag (wie
           // „Essen abbestellen“ auf Heute, openMensa cancelDay).
-          onCancelMeal: live == null || live.mensaUrl == null
+          onCancelMeal: live == null
               ? null
-              : (day) =>
-                    openMensa(context, live, live.mensaKid, cancelDay: day),
+              : (kid, day) => openMensa(
+                  context,
+                  live,
+                  kid,
+                  // Bei Geschwistern den Namen im Titel (wie Heute).
+                  name: live.kids.length > 1
+                      ? live.kids
+                            .where((k) => k.pupilId == kid)
+                            .map((k) => shortFirstName(k.firstName))
+                            .firstOrNull
+                      : null,
+                  cancelDay: day,
+                ),
           ui: _ui,
           refresh: refresh,
           onChange: () => _change(live, backend),
@@ -246,8 +259,9 @@ class _AbsenceScreen extends StatelessWidget {
   /// Stand des Kontos für „Daran denken“ (absenceReminders); null = ohne.
   final LiveSnapshot? live;
 
-  /// Abbestellen eines Tages (Essensseite mit Rückfrage); null = ohne Knopf.
-  final void Function(DateTime day)? onCancelMeal;
+  /// Abbestellen eines Tages (Essensseite des Kindes mit Rückfrage);
+  /// null = ohne Knopf.
+  final void Function(String kid, DateTime day)? onCancelMeal;
 
   /// Siehe [AbsencePage.suggestDay].
   final DateTime? suggestDay;
@@ -307,6 +321,7 @@ class _AbsenceScreen extends StatelessWidget {
                       ? const []
                       : absenceReminders(live!, current, t, DateTime.now()),
                   onCancelMeal: onCancelMeal,
+                  free: live == null ? const {} : absenceFreeDays(live!),
                 ),
               )
             : AbsenceFormView(
@@ -346,6 +361,7 @@ class AbsenceOverview extends StatelessWidget {
     required this.onOther,
     this.reminders = const [],
     this.onCancelMeal,
+    this.free = const {},
   });
 
   final AbsenceForm form;
@@ -355,9 +371,13 @@ class AbsenceOverview extends StatelessWidget {
   /// Arbeit. Leer = Abschnitt entfällt.
   final List<AbsenceReminder> reminders;
 
-  /// „Abbestellen“ je bestelltem Tag (Essensseite mit Rückfrage für den
-  /// Tag); null = ohne Knöpfe (keine Essensseite).
-  final void Function(DateTime day)? onCancelMeal;
+  /// „Abbestellen“ je bestelltem Tag (Essensseite des Kindes [kid] mit
+  /// Rückfrage für den Tag); null = ohne Knöpfe (keine Essensseite).
+  final void Function(String kid, DateTime day)? onCancelMeal;
+
+  /// Schulfreie Tage (Kalender, freeDaysFrom) – „Auch … melden“ schlägt
+  /// keinen Ferientag vor (Wunsch 05.11.26).
+  final Map<DateTime, String> free;
   final void Function(({DateTime day, String pupilName, String kind}) p)
   onRepeat;
   final VoidCallback onOther;
@@ -386,7 +406,7 @@ class AbsenceOverview extends StatelessWidget {
       final p = absencePeriodDays(e.period);
       if (p != null && p.to.isAfter(end!)) end = p.to;
     }
-    final day = nextSchoolDay(end!);
+    final day = nextSchoolDayFree(end!, free);
     final r = form.fromRange;
     if (r != null && day.isAfter(r.last)) return null;
     final pupil = form.allowedPupils.where(
@@ -494,7 +514,8 @@ class AbsenceOverview extends StatelessWidget {
                                 // Bildschirmleser mit Tag.
                                 if (onCancelMeal != null)
                                   TextButton(
-                                    onPressed: () => onCancelMeal!(m.day),
+                                    onPressed: () =>
+                                        onCancelMeal!(r.kid, m.day),
                                     // Nur der Text bekommt die Ansage mit
                                     // Tag – um den Knopf gelegt, verwarf
                                     // excludeSemantics seine Tipp-Aktion
@@ -1122,3 +1143,18 @@ class _DateTile extends StatelessWidget {
     );
   }
 }
+
+/// Schulfreie Tage der nächsten Wochen aus dem Kalender des Kontos (für
+/// „Auch … melden“ und den Vorschlag nach Schulschluss). 60 Tage, damit
+/// auch die Sommerferien (6 Wochen, bis 44 Tage) ganz darin liegen; der
+/// Kalender lädt ohnehin rund ein Jahr voraus (CalendarParser.getHome).
+/// Grenze: Klassenfilter über liveClassName – bei Geschwistern in einem
+/// Elternkonto gilt die Klasse des Plans; ein nur für eine andere Klasse
+/// freier Tag wird dann womöglich falsch gezählt.
+Map<DateTime, String> absenceFreeDays(LiveSnapshot s, {DateTime? now}) =>
+    freeDaysFrom(
+      s.calendar.content ?? const [],
+      now ?? DateTime.now(),
+      className: liveClassName(s),
+      days: 60,
+    );

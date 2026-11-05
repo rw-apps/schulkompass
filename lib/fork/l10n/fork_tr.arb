@@ -844,6 +844,8 @@
   "hintExamMissedDetail": "Hasta bildirildi – kaçırılan bir sınav için okul doktor raporu isteyebilir.",
   "absenceRemindTitle": "Unutmayın",
   "absenceRemindMeal": "Yemek sipariş edildi",
+  "absenceRemindMealFor": "{name} için yemek sipariş edildi",
+  "absenceRemindExamFor": "{day}: {subject} ({name})",
   "absenceRemindMealDay": "{day}: {until} saatine kadar iptal edilebilir",
   "absenceRemindMealCancel": "{day} iptal et",
   "mealCancelNotOrdered": "Bu gün için (artık) yemek sipariş edilmemiş.",

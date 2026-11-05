@@ -2153,6 +2153,28 @@
   "hintExamMissedDetail": "Krank gemeldet – für eine versäumte Arbeit kann die Schule ein ärztliches Attest verlangen.",
   "absenceRemindTitle": "Daran denken",
   "absenceRemindMeal": "Essen ist bestellt",
+  "absenceRemindMealFor": "Essen für {name} ist bestellt",
+  "@absenceRemindMealFor": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "absenceRemindExamFor": "{day}: {subject} ({name})",
+  "@absenceRemindExamFor": {
+    "placeholders": {
+      "day": {
+        "type": "String"
+      },
+      "subject": {
+        "type": "String"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "absenceRemindMealDay": "{day}: abbestellbar bis {until}",
   "@absenceRemindMealDay": {
     "placeholders": {

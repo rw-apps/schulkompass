@@ -181,6 +181,19 @@ DateTime nextSchoolDay(DateTime now) {
   return d;
 }
 
+/// Nächster Schultag nach [now] ohne die schulfreien Tage [free]
+/// (freeDaysFrom). Für Vorschläge zum Melden (Wunsch 05.11.26: vor Ferien
+/// schlug „Krank melden“ nachmittags sonst einen Ferientag vor). Grenze:
+/// höchstens 60 Schultag-Sprünge (rund 12 Wochen); was der Kalender nicht
+/// als frei führt, zählt als Schultag.
+DateTime nextSchoolDayFree(DateTime now, Map<DateTime, String> free) {
+  var d = nextSchoolDay(now);
+  for (var i = 0; i < 60 && free.containsKey(d); i++) {
+    d = nextSchoolDay(d);
+  }
+  return d;
+}
+
 /// Folge des Ausfalls von Abschnitt [i] in [lessons] (Tag, zeitlich
 /// sortiert): [start] = Beginn der ersten stattfindenden Stunde, wenn vor
 /// [i] nichts mehr stattfindet („Beginn erst 09:45“); sonst [end] = Ende der

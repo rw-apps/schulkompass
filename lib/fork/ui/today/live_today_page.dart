@@ -35,7 +35,7 @@ import '../mensa/meal_refresh.dart';
 import '../courses/homework_due.dart' show liveOpenHomework;
 import '../mensa/meal_hub_page.dart' show editMensa;
 import '../mensa/meal_week_page.dart';
-import 'kid_hints.dart' show nextSchoolDay;
+import 'kid_hints.dart' show nextSchoolDay, nextSchoolDayFree;
 import 'today_page.dart';
 import '../nav.dart';
 
@@ -428,7 +428,14 @@ class _LiveTodayPageState extends State<LiveTodayPage> {
                   pushFullScreen<void>(
                     context,
                     (_) => m.scope(
-                      AbsencePage(suggestDay: over ? nextSchoolDay(now) : null),
+                      AbsencePage(
+                        suggestDay: over
+                            ? nextSchoolDayFree(
+                                now,
+                                absenceFreeDays(m.snapshot, now: now),
+                              )
+                            : null,
+                      ),
                     ),
                   );
                 }

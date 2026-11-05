@@ -844,6 +844,8 @@
   "hintExamMissedDetail": "Reported absent – the school may ask for a doctor’s note for a missed test.",
   "absenceRemindTitle": "Don’t forget",
   "absenceRemindMeal": "A meal is ordered",
+  "absenceRemindMealFor": "A meal is ordered for {name}",
+  "absenceRemindExamFor": "{day}: {subject} ({name})",
   "absenceRemindMealDay": "{day}: can be cancelled until {until}",
   "absenceRemindMealCancel": "Cancel {day}",
   "mealCancelNotOrdered": "No meal is ordered for this day (anymore).",
