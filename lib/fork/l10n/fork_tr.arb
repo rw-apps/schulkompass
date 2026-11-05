@@ -825,5 +825,11 @@
   "absenceSentText": "Bildirim artık portalda:",
   "absenceUnclearTitle": "Gönderildiğinden emin değiliz",
   "absenceUnclearText": "Uygulama yeni bildirimi listede bulamadı. Lütfen hemen tekrar gönderme – önce portala bak.",
-  "absenceOpenPortal": "Portalda aç"
+  "absenceOpenPortal": "Portalda aç",
+  "absenceReported": "Bildirildi",
+  "absenceReportedToday": "Bugün hasta bildirildi",
+  "absenceReportedLateToday": "Bugün gecikme bildirildi",
+  "absenceReportsTitle": "Devamsızlık bildirimleri",
+  "absenceReportBy": "Devamsızlık bildirimi",
+  "absenceEnteredAt": "kaydedildi {time}"
 }

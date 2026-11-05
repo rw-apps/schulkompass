@@ -6,6 +6,7 @@ import 'package:lanis/utils/safe_launch.dart';
 import 'package:lanis/widgets/combined_applet_builder.dart';
 
 import '../demo/demo_mode.dart' show demoActive;
+import '../ui/live/live_data.dart' show LiveData;
 
 import '../l10n/l10n.dart';
 import 'absence_form.dart';
@@ -84,7 +85,12 @@ class AbsencePage extends ConsumerWidget {
               parser.stopAutoRefresh();
             } else {
               parser.startAutoRefresh();
-              if (sent) refresh?.call();
+              if (sent) {
+                refresh?.call();
+                // „Heute“ und „Nachrichten“ zeigen die neue Meldung erst
+                // nach dem nächsten Durchgang (live_data.dart, _loadExtras).
+                LiveData.of(context)?.refresh();
+              }
             }
           },
         ),

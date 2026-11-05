@@ -10,6 +10,8 @@ import '../login_errors.dart';
 import '../kit.dart';
 import '../nav.dart';
 import '../live/family.dart';
+import '../../absence/absence_view.dart' show AbsencePage;
+import '../live/absence_live.dart';
 import '../live/live_data.dart';
 import 'compose_model.dart';
 import 'compose_page.dart';
@@ -62,7 +64,19 @@ class LiveMessagesPage extends ConsumerWidget {
         // versuchen“) statt unbehandelt, und kein zweiter Durchgang läuft
         // parallel (Prüfbefund 17.10.26).
         final reload = s.refreshMessages;
+        final me = FamilyData.of(
+          context,
+        ).where((m) => identical(m.snapshot, s)).firstOrNull;
         return MessagesPage(
+          // Krankmeldungen über dem Postfach (Wunsch 05.11.26).
+          reports: absenceReportsOf(
+            s,
+            DateTime.now(),
+            t,
+            colorIndex: me?.colorIndex ?? 0,
+          ),
+          onOpenReports: () =>
+              pushFullScreen<void>(context, (_) => const AbsencePage()),
           items: items,
           loading: s.conversations.content == null,
           onRefresh: reload,
@@ -154,7 +168,28 @@ class LiveAllMessagesPage extends StatelessWidget {
       }
     }
 
+    // Krankmeldungen aller Elternkonten (Wunsch 05.11.26); Antippen öffnet
+    // die Krankmeldung des Kontos, dem die erste Meldung gehört.
+    final withReports = [
+      for (final m in members)
+        if (absenceReportsOf(m.snapshot, now, context.t).isNotEmpty) m,
+    ];
     return MessagesPage(
+      reports: [
+        for (final m in withReports)
+          ...absenceReportsOf(
+            m.snapshot,
+            now,
+            context.t,
+            colorIndex: m.colorIndex,
+          ),
+      ],
+      onOpenReports: withReports.isEmpty
+          ? null
+          : () => pushFullScreen<void>(
+              context,
+              (_) => withReports.first.scope(const AbsencePage()),
+            ),
       items: [for (final r in rows) r.$2],
       loading: withMessages.any(
         (m) => m.snapshot.conversations.content == null,

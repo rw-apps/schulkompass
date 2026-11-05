@@ -825,5 +825,11 @@
   "absenceSentText": "The report is now in the portal:",
   "absenceUnclearTitle": "Not sure it was sent",
   "absenceUnclearText": "The app could not find the new report in the list afterwards. Please don't send it again right away – check the portal first.",
-  "absenceOpenPortal": "Open in portal"
+  "absenceOpenPortal": "Open in portal",
+  "absenceReported": "Reported",
+  "absenceReportedToday": "Reported absent today",
+  "absenceReportedLateToday": "Late arrival reported today",
+  "absenceReportsTitle": "Absence reports",
+  "absenceReportBy": "Absence report",
+  "absenceEnteredAt": "entered {time}"
 }

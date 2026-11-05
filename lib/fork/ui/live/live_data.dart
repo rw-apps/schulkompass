@@ -30,6 +30,8 @@ import '../plan/plan_from_lanis.dart';
 import '../plan/plan_model.dart';
 import '../../kid_name.dart';
 export '../../kid_name.dart' show shortFirstName;
+import '../../absence/absence_form.dart' show AbsenceEntry;
+import '../../absence/absence_parser.dart' show loadAbsenceEntries;
 import '../../class_choice.dart';
 import '../../portal_extras.dart';
 import '../today/today_from_lanis.dart' show classFromCourses;
@@ -193,6 +195,7 @@ class LiveSnapshot {
     this.setClass,
     this.photo,
     this.electionOpen = false,
+    this.absences,
     this.substitutionHistory = SubstitutionHistory.empty,
   });
 
@@ -222,6 +225,10 @@ class LiveSnapshot {
 
   /// Im Wahltool ist eine Wahl offen (portal_extras.dart).
   final bool electionOpen;
+
+  /// „Aktuelle und zukünftige Meldungen“ der Krankmeldung (Elternkonto,
+  /// _loadExtras); null = nicht gelesen.
+  final List<AbsenceEntry>? absences;
 
   /// Von Hand eingetragene Klasse (class_choice.dart), null = keine gültige.
   final ClassChoice? classChoice;
@@ -360,6 +367,9 @@ class _LiveDataScopeState extends ConsumerState<LiveDataScope>
   bool _classExpired = false;
   Uint8List? _photo;
   bool _electionOpen = false;
+
+  /// Meldungsliste der Krankmeldung (Elternkonto), null = nicht gelesen.
+  List<AbsenceEntry>? _absences;
   DateTime? _electionChecked;
   MensaAddresses _mensa = const MensaAddresses({});
   int? _settingsFor;
@@ -499,6 +509,7 @@ class _LiveDataScopeState extends ConsumerState<LiveDataScope>
       _photo = null;
       _electionOpen = false;
       _electionChecked = null;
+      _absences = null;
     }
     final s = ref.read(accountSpecificSettingsProvider);
     if (s == null) return;
@@ -673,6 +684,17 @@ class _LiveDataScopeState extends ConsumerState<LiveDataScope>
         if (mounted) setState(() => _electionOpen = open);
       } catch (_) {}
     }
+    // Krankmeldungen für „Heute“ und „Nachrichten“ (Wunsch 05.11.26): ein
+    // kurzer Abruf je Durchgang, nur Elternkonten mit dem Modul. Fehler
+    // lassen den alten Stand stehen.
+    if (session.accountTypeOrNull == AccountType.parent &&
+        _supported.contains('abwesenheitsmeldung.php')) {
+      try {
+        final list = await loadAbsenceEntries(session);
+        if (mounted) setState(() => _absences = list);
+      } catch (_) {}
+    }
+    if (!mounted) return;
     final showPhotos =
         ref
             .read(sharedOverAccountSettingsProvider)
@@ -806,6 +828,7 @@ class _LiveDataScopeState extends ConsumerState<LiveDataScope>
       classExpired: _classExpired,
       photo: _photo,
       electionOpen: _electionOpen,
+      absences: _absences,
       setClass: (name) {
         final s = ref.read(accountSpecificSettingsProvider);
         if (s == null || !mounted) return;

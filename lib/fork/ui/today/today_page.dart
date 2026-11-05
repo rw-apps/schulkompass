@@ -367,7 +367,20 @@ class KidCard extends StatelessWidget {
     // (groupHints), deren Kopf dem Kartenkopf nicht widerspricht.
     final shownDay = showNext ? nextDate! : now;
     final openDay = onOpenDay == null ? null : () => onOpenDay!(kid, shownDay);
-    final shown = !showNext
+    // Für heute krank gemeldet (nicht nur verspätet): heutige Hinweise
+    // (Essen nicht bestellt, Arbeit, Änderungen) entfallen und der Plan ist
+    // gedämpft (Wunsch 05.11.26) – das Kind ist ja zu Hause. Grenze: Die
+    // Hintergrund-Erinnerungen (notify_task.dart) kennen die Meldung nicht.
+    final absentToday =
+        !showNext &&
+        kid.reportedAbsence != null &&
+        !kid.reportedAbsence!.kind.toLowerCase().contains('versp');
+    final shown = absentToday
+        ? [
+            for (final h in hints)
+              if (h.day != null && dayDiff(now, h.day!) > 0) h,
+          ]
+        : !showNext
         ? hints
         : [
             for (final h in hints)
@@ -451,6 +464,12 @@ class KidCard extends StatelessWidget {
               ),
             ],
           ),
+          // Krankmeldung für heute (Wunsch 05.11.26): gleich unter dem Kopf,
+          // damit man ohne Öffnen sieht, dass sie erledigt ist.
+          if (kid.reportedAbsence case final a?) ...[
+            const SizedBox(height: Sp.m),
+            _ReportedStrip(kind: a.kind, detail: a.detail, tone: tone),
+          ],
           // Ohne Hinweise entfallen Überschrift und Abschnitt ganz.
           if (showNext) ...[
             const SizedBox(height: Sp.m),
@@ -484,39 +503,42 @@ class KidCard extends StatelessWidget {
           ),
           // Rahmen statt Fläche: gefüllt = Hinweis, umrandet = Plan. Die
           // ganze umrandete Fläche öffnet den Tag (alle Stunden, Pausen).
-          Material(
-            color: k.p.card,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(Rad.row),
-              side: BorderSide(color: k.p.faint, width: Sz.frame),
-            ),
-            child: InkWell(
-              customBorder: RoundedRectangleBorder(
+          Opacity(
+            opacity: absentToday ? 0.45 : 1,
+            child: Material(
+              color: k.p.card,
+              shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(Rad.row),
+                side: BorderSide(color: k.p.faint, width: Sz.frame),
               ),
-              onTap: openDay,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(
-                  Sp.m,
-                  Sp.s + Sp.xxs,
-                  Sp.m,
-                  Sp.m,
+              child: InkWell(
+                customBorder: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(Rad.row),
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    _NowPanel(
-                      kid: planKid,
-                      status: planStatus,
-                      nextDay: showNext,
-                    ),
-                    // Ohne stattfindende Stunde (alle fallen aus, schulfrei)
-                    // keine Leiste: Sie hätte nur rote bzw. keine Abschnitte.
-                    if (planKid.lessons.any((x) => !x.cancelled)) ...[
-                      const SizedBox(height: Sp.m),
-                      _DayBar(kid: planKid, status: planStatus, now: planNow),
+                onTap: openDay,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    Sp.m,
+                    Sp.s + Sp.xxs,
+                    Sp.m,
+                    Sp.m,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _NowPanel(
+                        kid: planKid,
+                        status: planStatus,
+                        nextDay: showNext,
+                      ),
+                      // Ohne stattfindende Stunde (alle fallen aus, schulfrei)
+                      // keine Leiste: Sie hätte nur rote bzw. keine Abschnitte.
+                      if (planKid.lessons.any((x) => !x.cancelled)) ...[
+                        const SizedBox(height: Sp.m),
+                        _DayBar(kid: planKid, status: planStatus, now: planNow),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
               ),
             ),
@@ -590,8 +612,10 @@ class KidCard extends StatelessWidget {
         ),
       if (kid.canReportAbsence)
         _ActionButton(
-          icon: Icons.thermostat,
-          label: t.reportSick,
+          icon: kid.reportedAbsence != null
+              ? Icons.check_circle_outline
+              : Icons.thermostat,
+          label: kid.reportedAbsence != null ? t.absenceReported : t.reportSick,
           onTap: onReportAbsence == null ? null : () => onReportAbsence!(kid),
         ),
     ];
@@ -625,6 +649,52 @@ class KidCard extends StatelessWidget {
       const SizedBox(height: Sp.s),
       row(items.sublist(2)),
     ];
+  }
+}
+
+/// Band „Heute krank gemeldet“ in der Kinderkarte (KidCard).
+class _ReportedStrip extends StatelessWidget {
+  const _ReportedStrip({
+    required this.kind,
+    required this.detail,
+    required this.tone,
+  });
+
+  final String kind;
+  final String detail;
+  final KidTone tone;
+
+  @override
+  Widget build(BuildContext context) {
+    final k = Kit.of(context);
+    final t = context.t;
+    final late = kind.toLowerCase().startsWith('versp');
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: Sp.m, vertical: Sp.s),
+      decoration: BoxDecoration(
+        color: tone.tint,
+        borderRadius: BorderRadius.circular(Rad.signal),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.check_circle, size: Sz.icon, color: tone.accent),
+          const SizedBox(width: Sp.s),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  late ? t.absenceReportedLateToday : t.absenceReportedToday,
+                  style: k.planSubject(tone.onTint),
+                ),
+                if (detail.isNotEmpty)
+                  Text(detail, style: k.planMeta(tone.meta)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 

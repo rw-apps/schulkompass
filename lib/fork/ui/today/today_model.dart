@@ -96,6 +96,7 @@ class ChildToday {
     this.lunch,
     this.mealUnordered,
     this.lowBalance,
+    this.reportedAbsence,
   });
 
   /// Guthaben beim Caterer unter 15 € („12,50“), sonst null
@@ -137,6 +138,12 @@ class ChildToday {
 
   /// Schule bietet die Krankmeldung im Portal an (Modul in der App-Liste).
   final bool canReportAbsence;
+
+  /// Für heute gemeldete Abwesenheit aus „Aktuelle und zukünftige
+  /// Meldungen“ (abwesenheitsmeldung.php, Wunsch 05.11.26): [kind] wie im
+  /// Portal („krank“, „verspätet“), [detail] Zeitraum bzw. Eintragszeit.
+  /// null = nichts gemeldet oder (Schülerkonto) nicht lesbar.
+  final ({String kind, String detail})? reportedAbsence;
 
   /// „Heute: Kein Essen für alle Jg.!“ aus dem Schulkalender.
   final String? mealHint;

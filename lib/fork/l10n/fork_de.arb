@@ -2099,5 +2099,18 @@
   "absenceSentText": "Die Meldung steht jetzt im Portal:",
   "absenceUnclearTitle": "Nicht sicher, ob gemeldet",
   "absenceUnclearText": "Die App konnte die neue Meldung danach nicht in der Liste finden. Bitte nicht gleich noch einmal senden – sieh zuerst im Portal nach.",
-  "absenceOpenPortal": "Im Portal ansehen"
+  "absenceOpenPortal": "Im Portal ansehen",
+  "absenceReported": "Gemeldet",
+  "absenceReportedToday": "Heute krank gemeldet",
+  "absenceReportedLateToday": "Heute Verspätung gemeldet",
+  "absenceReportsTitle": "Krankmeldungen",
+  "absenceReportBy": "Krankmeldung",
+  "absenceEnteredAt": "eingetragen {time}",
+  "@absenceEnteredAt": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  }
 }

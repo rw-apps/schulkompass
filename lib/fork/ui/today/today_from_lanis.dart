@@ -631,6 +631,7 @@ ChildToday childTodayFromLanis({
   String? lunch,
   DateTime? mealUnordered,
   String? lowBalance,
+  ({String kind, String detail})? reportedAbsence,
 }) {
   final r = applySubstitutions(
     plan: plan,
@@ -663,6 +664,7 @@ ChildToday childTodayFromLanis({
     lunch: freeLabel != null ? null : lunch,
     mealUnordered: mealUnordered,
     lowBalance: lowBalance,
+    reportedAbsence: reportedAbsence,
   );
 }
 

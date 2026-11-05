@@ -30,6 +30,27 @@ class MessageItem {
   final bool unread;
 }
 
+/// Eine Krankmeldung über dem Postfach (Wunsch 05.11.26). Keine Nachricht:
+/// Das Portal führt sie unter abwesenheitsmeldung.php, nicht im Postfach;
+/// die Zeile zeigt sie trotzdem dort, wo man den Austausch mit der Schule
+/// sucht.
+class AbsenceReportItem {
+  const AbsenceReportItem({
+    required this.title,
+    required this.meta,
+    this.kidName,
+    this.kidColor = 0,
+  });
+
+  /// „Lena – krank“.
+  final String title;
+
+  /// Zeitraum und Eintragszeit wie im Portal.
+  final String meta;
+  final String? kidName;
+  final int kidColor;
+}
+
 /// Bereich „Nachrichten“: nur der Austausch mit der Schule (Konzept
 /// 17.10.26). Oben „Neue Nachricht“, darunter die Unterhaltungen,
 /// ungelesene fett mit Punkt.
@@ -41,7 +62,13 @@ class MessagesPage extends StatelessWidget {
     this.onCompose,
     this.onRefresh,
     this.loading = false,
+    this.reports = const [],
+    this.onOpenReports,
   });
+
+  /// Aktuelle und zukünftige Krankmeldungen (oben, eigener Abschnitt).
+  final List<AbsenceReportItem> reports;
+  final VoidCallback? onOpenReports;
 
   final List<MessageItem> items;
   final void Function(MessageItem item)? onOpen;
@@ -108,6 +135,28 @@ class MessagesPage extends StatelessWidget {
           ),
       ],
       slivers: [
+        if (reports.isNotEmpty)
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: Sp.l),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(left: Sp.xs, bottom: Sp.s),
+                    child: Text(
+                      t.absenceReportsTitle.toUpperCase(),
+                      style: k.dateCaps,
+                    ),
+                  ),
+                  for (final (i, r) in reports.indexed) ...[
+                    if (i > 0) const SizedBox(height: Sp.s),
+                    _ReportRow(item: r, onTap: onOpenReports),
+                  ],
+                ],
+              ),
+            ),
+          ),
         items.isEmpty
             ? SliverToBoxAdapter(
                 child: Padding(
@@ -125,6 +174,49 @@ class MessagesPage extends StatelessWidget {
                     _Row(item: items[i], onTap: onOpen),
               ),
       ],
+    );
+  }
+}
+
+class _ReportRow extends StatelessWidget {
+  const _ReportRow({required this.item, this.onTap});
+
+  final AbsenceReportItem item;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final k = Kit.of(context);
+    final tone = k.kid(item.kidColor);
+    return Material(
+      color: k.p.card,
+      borderRadius: BorderRadius.circular(Rad.signal),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(Rad.signal),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: Sp.l, vertical: Sp.m),
+          child: Row(
+            children: [
+              Icon(Icons.thermostat, size: Sz.icon, color: tone.accent),
+              const SizedBox(width: Sp.m),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(item.title, style: k.rowSubject(k.p.ink)),
+                    Text(
+                      '${context.t.absenceReportBy} · ${item.meta}',
+                      style: k.planMeta(k.p.muted),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(Icons.chevron_right, color: k.p.muted),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

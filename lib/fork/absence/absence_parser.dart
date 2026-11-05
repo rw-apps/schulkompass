@@ -47,6 +47,21 @@ class AbsenceParser extends AppletParser<AbsenceForm> {
   }
 }
 
+/// Nur die Meldungsliste, für „Heute“ und „Nachrichten“ (live_data.dart,
+/// _loadExtras). Gleicher Abruf wie [AbsenceParser.getHome]; ohne Formular
+/// (Sitzung verloren) eine Ausnahme – der Aufrufer behält dann den alten
+/// Stand.
+Future<List<AbsenceEntry>> loadAbsenceEntries(LanisSession session) async {
+  final r = await session.dio.get(
+    '$_absenceUrl?cacheBreaker=${DateTime.now().millisecondsSinceEpoch}',
+  );
+  final form = parseAbsenceForm(parse(r.data.toString()));
+  if (form == null) {
+    throw UnknownException('abwesenheitsmeldung.php: kein meldungForm');
+  }
+  return form.entries;
+}
+
 final absenceParserProvider = Provider<AbsenceParser>((ref) {
   final ctx = ref.watch(appletContextProvider);
   final parser = AbsenceParser(

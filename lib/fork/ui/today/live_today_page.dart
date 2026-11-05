@@ -9,6 +9,7 @@ import 'package:lanis/fork/absence/absence_view.dart';
 
 import '../../l10n/l10n.dart';
 import '../live/family.dart';
+import '../live/absence_live.dart';
 import '../live/live_data.dart';
 import '../live/stale_notice.dart';
 import '../plan/plan_from_lanis.dart' show subjectFullName;
@@ -193,6 +194,14 @@ class _LiveTodayPageState extends State<LiveTodayPage> {
             )
           : null,
       lowBalance: day == null ? lowMealBalance(meals) : null,
+      reportedAbsence: day == null
+          ? reportedAbsenceFor(
+              s.absences ?? const [],
+              live.plan.firstName,
+              now,
+              context.t,
+            )
+          : null,
     );
   }
 
