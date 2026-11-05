@@ -23,7 +23,7 @@ import 'live_data.dart';
 
 /// „Do 5.11. · eingetragen 07:40“ bzw. „Do 5.11. bis Fr 6.11. · …“.
 String absenceDetail(AbsenceEntry e, ForkL10n t) {
-  final p = absencePeriodDays(e.period);
+  final p = absencePeriodDays(e.period, now: DateTime.now());
   final time = absenceEnteredTime(e.entered);
   String day(DateTime d) => formatDate(t, t.dateShort, d);
   return [
@@ -49,7 +49,7 @@ List<AbsenceReportItem> absenceReportsOf(
 }) => [
   for (final e in currentAbsences(s.absences ?? const [], now))
     AbsenceReportItem(
-      title: '${e.name.trim().split(RegExp(r'\s+')).first} – ${e.kind}',
+      title: '${absenceFirstName(e)} – ${e.kind}',
       meta: absenceDetail(e, t),
       kidColor: colorIndex,
       kidName: kidName,

@@ -716,4 +716,8 @@ bool sameLiveData(LiveSnapshot a, LiveSnapshot b) =>
     a.classExpired == b.classExpired &&
     identical(a.photo, b.photo) &&
     a.electionOpen == b.electionOpen &&
+    // Fehlte bis 9482 (Rückmeldung 05.11.26): Die neu gelesene Meldungsliste
+    // galt als „keine Änderung“, die Familie behielt den alten Stand –
+    // „Heute krank gemeldet“ und „Krankmeldungen“ erschienen nie.
+    identical(a.absences, b.absences) &&
     a.accountKey == b.accountKey;

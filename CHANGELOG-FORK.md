@@ -1,9 +1,10 @@
 ## Schulkompass (rw-apps, bis 9472 „Schulportal“) – Änderungen gegenüber Lanis-Mobile
 
-**4.1.0+9482** – Krankmeldung auf „Heute“ und bei den Nachrichten
+**4.1.0+9483** – Krankmeldung auf „Heute“ und bei den Nachrichten
 
 - **Heute:** Ist ein Kind für heute gemeldet, steht unter seinem Namen „Heute krank gemeldet“ (bzw. „Heute Verspätung gemeldet“) mit Tag und Eintragszeit; der Knopf heißt dann „Gemeldet“. Bei Krankmeldung ist der Stundenplan gedämpft, und die heutigen Hinweise (z. B. Essen nicht bestellt) entfallen.
 - **Nachrichten:** Über dem Postfach stehen unter „Krankmeldungen“ alle aktuellen und kommenden Meldungen; Antippen öffnet die Krankmeldung. Es sind keine Nachrichten – das Portal führt sie getrennt.
+- **Behoben:** In 9481/9482 erschienen die Meldungen nicht – die App las sie zwar, gab sie aber nicht an „Heute“ und „Nachrichten“ weiter.
 - In „Alle“ öffnet jede Meldung die Krankmeldung ihres eigenen Kontos; ohne Postfach der Schule stehen die Meldungen trotzdem unter „Nachrichten“. Das Guthaben bleibt an Kranktagen sichtbar.
 - Die Meldungen liest die App bei Elternkonten beim normalen Aktualisieren mit. Die Erinnerungen im Hintergrund (Benachrichtigungen) kennen sie noch nicht.
 

@@ -24,6 +24,16 @@ void main() {
       DateTime(2026, 11, 5),
     );
     expect(absencePeriodDays('heute'), isNull);
+    // Ohne oder mit zweistelligem Jahr.
+    expect(
+      absencePeriodDays('Do, 05.11.', now: now)!.from,
+      DateTime(2026, 11, 5),
+    );
+    expect(absencePeriodDays('05.11.26')!.from, DateTime(2026, 11, 5));
+    expect(
+      absencePeriodDays('05.01.', now: DateTime(2026, 12, 30))!.from,
+      DateTime(2027, 1, 5),
+    );
   });
 
   test('Kind, Tag, Art, Eintragszeit', () {
@@ -32,6 +42,10 @@ void main() {
     expect(absenceIsFor(x, 'jonas'), isTrue);
     expect(absenceIsFor(x, 'Lena'), isFalse);
     expect(absenceIsFor(x, ''), isFalse);
+    final rev = e('Beispiel, Jonas', '05.11.2026');
+    expect(absenceIsFor(rev, 'Jonas'), isTrue);
+    expect(absenceFirstName(rev), 'Jonas');
+    expect(absenceFirstName(x), 'Jonas');
     expect(absenceCovers(x, now), isTrue);
     expect(absenceCovers(x, DateTime(2026, 11, 6)), isFalse);
     expect(absenceIsLate(e('A B', '05.11.2026', kind: 'verspätet')), isTrue);
