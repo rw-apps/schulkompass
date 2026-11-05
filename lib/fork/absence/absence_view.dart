@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:liblanis/liblanis.dart';
 
+import 'package:lanis/utils/safe_launch.dart';
 import 'package:lanis/widgets/combined_applet_builder.dart';
 
 import '../l10n/l10n.dart';
@@ -51,6 +52,18 @@ class AbsencePage extends ConsumerWidget {
         body: AbsenceFormView(
           form: form,
           onCheck: (fields) => checkAbsence(session, fields),
+          onSubmit: (fields) async {
+            final r = await submitAbsence(
+              session,
+              fields,
+              before: form.entries,
+              reload: () => ref.read(absenceParserProvider).getHome(),
+            );
+            // Liste neu laden, damit die Meldung (oder ihr Fehlen) zu sehen
+            // ist – auch wenn das Ergebnis unklar war.
+            refresh?.call();
+            return r;
+          },
         ),
       ),
     );
@@ -65,9 +78,14 @@ class AbsenceFormView extends StatefulWidget {
     required this.form,
     this.now,
     this.onCheck,
+    this.onSubmit,
   });
 
   final AbsenceForm form;
+
+  /// Meldet wirklich ([submitAbsence]); null = Knopf gesperrt (Demo, Tests).
+  final Future<AbsenceSubmitResult> Function(Map<String, String> fields)?
+  onSubmit;
 
   /// Fragt das Portal, ob es die Meldung annehmen würde (sendet nichts).
   final Future<AbsenceCheck> Function(Map<String, String> fields)? onCheck;
@@ -88,6 +106,11 @@ class _AbsenceFormViewState extends State<AbsenceFormView> {
   late String _blockTo;
   final _comment = TextEditingController();
   bool _busy = false;
+
+  /// Felder der zuletzt gesendeten Meldung. Ursache: Ein zweites Tippen mit
+  /// denselben Angaben (z. B. weil die Liste noch nicht nachgeladen ist)
+  /// würde eine doppelte Meldung erzeugen – dann fragt die Maske nach.
+  String? _lastSent;
 
   AbsenceForm get f => widget.form;
   bool get _isLate => _kind == absenceKindLate;
@@ -248,6 +271,84 @@ class _AbsenceFormViewState extends State<AbsenceFormView> {
         actions: [
           FilledButton(
             onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _submit() async {
+    final onSubmit = widget.onSubmit;
+    if (onSubmit == null || _busy) return;
+    final t = context.t;
+    final fields = _draft.toFields(f);
+    final key = fields.entries.map((e) => '${e.key}=${e.value}').join('&');
+    final comment = _comment.text.trim();
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (c) => AlertDialog(
+        title: Text(t.absenceConfirmTitle),
+        content: Text(
+          [
+            if (key == _lastSent) t.absenceAlreadySent,
+            t.absenceConfirmText,
+            _summary(t),
+            if (comment.isNotEmpty) '„$comment“',
+          ].join('\n\n'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(c, false),
+            child: Text(t.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(c, true),
+            child: Text(t.absenceConfirmSend),
+          ),
+        ],
+      ),
+    );
+    if (ok != true || !mounted) return;
+    setState(() => _busy = true);
+    AbsenceSubmitResult r;
+    try {
+      r = await onSubmit(fields);
+    } catch (_) {
+      r = const AbsenceSubmitResult(AbsenceSent.unconfirmed);
+    }
+    if (!mounted) return;
+    setState(() {
+      _busy = false;
+      if (r.state != AbsenceSent.rejected) _lastSent = key;
+    });
+    final e = r.entry;
+    final (title, text) = switch (r.state) {
+      AbsenceSent.confirmed => (
+        t.absenceSentTitle,
+        '${t.absenceSentText}\n\n${e!.name} – ${e.kind}\n${e.period}',
+      ),
+      AbsenceSent.unconfirmed => (t.absenceUnclearTitle, t.absenceUnclearText),
+      AbsenceSent.rejected => (t.absenceRejected, r.errors.join('\n\n')),
+    };
+    await showDialog<void>(
+      context: context,
+      builder: (c) => AlertDialog(
+        title: Text(title),
+        content: Text(text),
+        actions: [
+          if (r.state == AbsenceSent.unconfirmed)
+            TextButton(
+              onPressed: () => safeLaunchUrl(
+                Uri.parse(
+                  'https://start.schulportal.hessen.de/abwesenheitsmeldung.php',
+                ),
+                context: c,
+              ),
+              child: Text(t.absenceOpenPortal),
+            ),
+          FilledButton(
+            onPressed: () => Navigator.pop(c),
             child: const Text('OK'),
           ),
         ],
@@ -514,8 +615,14 @@ class _AbsenceFormViewState extends State<AbsenceFormView> {
             ),
           ),
           const SizedBox(height: 16),
-          // Absenden kommt erst nach dem gemeinsamen Test, siehe AbsenceDraft.
-          FilledButton(onPressed: null, child: Text(t.absenceSendLater)),
+          // Echtes Absenden seit 05.11.26 (submitAbsence): Rückfrage, dann
+          // Prüfung + Speichern wie im Portal, danach Abgleich mit der Liste.
+          FilledButton(
+            onPressed: errors.isEmpty && !_busy && widget.onSubmit != null
+                ? _submit
+                : null,
+            child: Text(_isLate ? t.absenceSendLate : t.absenceSend),
+          ),
           const SizedBox(height: 8),
           if (_busy)
             const Padding(

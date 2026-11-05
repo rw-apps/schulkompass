@@ -716,7 +716,6 @@
   "absenceComment": "Kommentar (freiwillig)",
   "absenceNoHealthData": "Bitte keine Gesundheitsdaten eingeben.",
   "absenceSummary": "Zusammenfassung",
-  "absenceSendLater": "Absenden (folgt nach gemeinsamem Test)",
   "absenceCheck": "Beim Portal prüfen (sendet nichts)",
   "absencePreview": "Vorschau der Portal-Felder",
   "absenceEntries": "Aktuelle und zukünftige Meldungen",
@@ -2089,5 +2088,16 @@
     }
   },
   "setupFileTile": "Sicherungs-\ndatei",
-  "setupDeviceTile": "Anderes\nGerät"
+  "setupDeviceTile": "Anderes\nGerät",
+  "absenceSend": "Abwesenheit melden",
+  "absenceSendLate": "Verspätung melden",
+  "absenceConfirmTitle": "Verbindlich melden?",
+  "absenceConfirmText": "Die Meldung geht direkt an die Schule:",
+  "absenceConfirmSend": "Jetzt melden",
+  "absenceAlreadySent": "Genau diese Meldung wurde eben schon gesendet. Nur noch einmal senden, wenn sie im Portal fehlt.",
+  "absenceSentTitle": "Gemeldet",
+  "absenceSentText": "Die Meldung steht jetzt im Portal:",
+  "absenceUnclearTitle": "Nicht sicher, ob gemeldet",
+  "absenceUnclearText": "Die App konnte die neue Meldung danach nicht in der Liste finden. Bitte nicht gleich noch einmal senden – sieh zuerst im Portal nach.",
+  "absenceOpenPortal": "Im Portal ansehen"
 }

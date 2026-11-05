@@ -449,7 +449,9 @@ void main() {
       },
     );
 
-    testWidgets('Senden bleibt gesperrt', (t) async {
+    // Seit 05.11.26 gibt es echtes Absenden (submitAbsence); gesperrt
+    // bleibt der Knopf, solange keine Sende-Anbindung (onSubmit) da ist.
+    testWidgets('Senden ohne Anbindung gesperrt', (t) async {
       await _tall(t);
       await t.pumpWidget(
         _app(
@@ -461,10 +463,7 @@ void main() {
         ),
       );
       final send = t.widget<FilledButton>(
-        find.widgetWithText(
-          FilledButton,
-          'Absenden (folgt nach gemeinsamem Test)',
-        ),
+        find.widgetWithText(FilledButton, 'Abwesenheit melden'),
       );
       expect(send.onPressed, isNull);
     });

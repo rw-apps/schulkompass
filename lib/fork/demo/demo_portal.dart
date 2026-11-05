@@ -101,8 +101,13 @@ class DemoPortal implements HttpClientAdapter {
         return _json(appsJson(user));
       case '/benutzerverwaltung.php' when q['a'] == 'userData':
         return _html(userDataPage(user));
-      case '/abwesenheitsmeldung.php' when o.method == 'POST':
+      // Nur die Prüfung (`check=1`) beantwortet die Demo; das echte Absenden
+      // ist eine Schreibaktion und bekommt wie alle anderen einen Fehler.
+      case '/abwesenheitsmeldung.php'
+          when o.method == 'POST' && q['check'] == '1':
         return _text(absenceCheckJson);
+      case '/abwesenheitsmeldung.php' when o.method == 'POST':
+        return _status(403);
       case '/abwesenheitsmeldung.php':
         return _html(absencePage(user, _clock));
       case '/stundenplan.php':

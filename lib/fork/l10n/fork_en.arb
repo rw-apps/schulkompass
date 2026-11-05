@@ -269,7 +269,6 @@
   "absenceComment": "Comment (optional, read by the school in German)",
   "absenceNoHealthData": "Please do not enter health data.",
   "absenceSummary": "Summary",
-  "absenceSendLater": "Send (follows after a joint test)",
   "absenceCheck": "Check with the portal (sends nothing)",
   "absencePreview": "Preview of the portal fields",
   "absenceEntries": "Current and future notices",
@@ -815,5 +814,16 @@
   "restoreSchool": "School {id}",
   "restoreEmpty": "This file contains no account.",
   "setupFileTile": "Backup\nfile",
-  "setupDeviceTile": "Other\ndevice"
+  "setupDeviceTile": "Other\ndevice",
+  "absenceSend": "Report absence",
+  "absenceSendLate": "Report late arrival",
+  "absenceConfirmTitle": "Send this report?",
+  "absenceConfirmText": "The report goes straight to the school:",
+  "absenceConfirmSend": "Send now",
+  "absenceAlreadySent": "Exactly this report was just sent. Only send it again if it is missing in the portal.",
+  "absenceSentTitle": "Reported",
+  "absenceSentText": "The report is now in the portal:",
+  "absenceUnclearTitle": "Not sure it was sent",
+  "absenceUnclearText": "The app could not find the new report in the list afterwards. Please don't send it again right away – check the portal first.",
+  "absenceOpenPortal": "Open in portal"
 }

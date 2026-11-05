@@ -189,3 +189,99 @@ Future<AbsenceCheck> checkAbsenceWith({
   }
   return parseAbsenceCheck(r.data);
 }
+
+/// Ergebnis des echten Absendens.
+enum AbsenceSent {
+  /// Danach steht eine neue Meldung in der Liste des Portals.
+  confirmed,
+
+  /// Abgeschickt, aber die neue Meldung ist (noch) nicht zu sehen – oder die
+  /// Verbindung brach beim Absenden ab. Bewusst KEIN zweiter Versuch.
+  unconfirmed,
+
+  /// Die Prüfung (`check=1`) hat abgelehnt; gespeichert wurde nichts.
+  rejected,
+}
+
+class AbsenceSubmitResult {
+  const AbsenceSubmitResult(this.state, {this.errors = const [], this.entry});
+  final AbsenceSent state;
+
+  /// Gründe der Ablehnung ([AbsenceSent.rejected]).
+  final List<String> errors;
+
+  /// Die neue Meldung aus der Liste ([AbsenceSent.confirmed]).
+  final AbsenceEntry? entry;
+}
+
+String _entryKey(AbsenceEntry e) =>
+    [e.name, e.period, e.kind, e.entered, e.comment].join('\u0001');
+
+/// Meldet die Abwesenheit wirklich (freigeschaltet 05.11.26, erster echter
+/// Fall gemeinsam mit dem Auftraggeber).
+///
+/// Ablauf wie das Portal-Skript meldungEltern.js (Export 16.10.26): erst
+/// `check=1` per Ajax ([checkAbsence], mit einer Neuanmeldung bei verlorener
+/// Sitzung); nur bei `success` dieselben Felder OHNE `check` als normales
+/// Formular an `abwesenheitsmeldung.php` (`$form.submit()` – ohne
+/// Speichern-Knopf, daher kein `save`). Danach liest die App die Seite neu
+/// und sucht in „Aktuelle und zukünftige Meldungen“ (`tbody#liste`) einen
+/// Eintrag, der vorher nicht da war.
+///
+/// Grenze, bewusst: Das zweite Senden wird NIE wiederholt – auch nicht nach
+/// Neuanmeldung oder Verbindungsabbruch. Eine Wiederholung könnte eine
+/// doppelte Meldung bei der Schule erzeugen; bei Unklarheit lautet das
+/// Ergebnis [AbsenceSent.unconfirmed], und die Maske verweist aufs Portal.
+Future<AbsenceSubmitResult> submitAbsence(
+  LanisSession session,
+  Map<String, String> fields, {
+  required List<AbsenceEntry> before,
+  required Future<AbsenceForm?> Function() reload,
+}) => submitAbsenceWith(
+  fields: fields,
+  before: before,
+  check: (f) => checkAbsence(session, f),
+  save: (body) async {
+    final r = await session.dio.post(
+      _absenceUrl,
+      data: body,
+      options: Options(
+        contentType: Headers.formUrlEncodedContentType,
+        responseType: ResponseType.plain,
+        followRedirects: false,
+        validateStatus: (s) => s != null && s < 400,
+      ),
+    );
+    return (status: r.statusCode, data: r.data);
+  },
+  reload: reload,
+);
+
+/// Kern von [submitAbsence], ohne Portal testbar.
+Future<AbsenceSubmitResult> submitAbsenceWith({
+  required Map<String, String> fields,
+  required List<AbsenceEntry> before,
+  required Future<AbsenceCheck> Function(Map<String, String> fields) check,
+  required Future<AbsencePostResult> Function(Map<String, String> body) save,
+  required Future<AbsenceForm?> Function() reload,
+}) async {
+  final c = await check(fields);
+  if (!c.ok) return AbsenceSubmitResult(AbsenceSent.rejected, errors: c.errors);
+  final body = {
+    for (final e in fields.entries)
+      if (e.key != 'save' && e.key != 'check') e.key: e.value,
+  };
+  // Genau EIN Speichern-Aufruf; ein Fehler hier heißt nur „unklar“.
+  try {
+    await save(body);
+  } catch (_) {}
+  final known = {for (final e in before) _entryKey(e)};
+  try {
+    final after = await reload();
+    final added = after?.entries.where((e) => !known.contains(_entryKey(e)));
+    if (added != null && added.isNotEmpty) {
+      return AbsenceSubmitResult(AbsenceSent.confirmed, entry: added.first);
+    }
+  } catch (_) {}
+  return const AbsenceSubmitResult(AbsenceSent.unconfirmed);
+}

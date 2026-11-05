@@ -269,7 +269,6 @@
   "absenceComment": "Yorum (isteğe bağlı, okul Almanca okur)",
   "absenceNoHealthData": "Lütfen sağlık bilgisi girmeyin.",
   "absenceSummary": "Özet",
-  "absenceSendLater": "Gönder (ortak testten sonra)",
   "absenceCheck": "Portalda kontrol et (bir şey göndermez)",
   "absencePreview": "Portal alanlarının önizlemesi",
   "absenceEntries": "Güncel ve gelecek bildirimler",
@@ -815,5 +814,16 @@
   "restoreSchool": "Okul {id}",
   "restoreEmpty": "Bu dosyada hesap yok.",
   "setupFileTile": "Yedek\ndosyası",
-  "setupDeviceTile": "Başka\ncihaz"
+  "setupDeviceTile": "Başka\ncihaz",
+  "absenceSend": "Devamsızlık bildir",
+  "absenceSendLate": "Gecikme bildir",
+  "absenceConfirmTitle": "Bildirim gönderilsin mi?",
+  "absenceConfirmText": "Bildirim doğrudan okula gider:",
+  "absenceConfirmSend": "Şimdi gönder",
+  "absenceAlreadySent": "Tam bu bildirim az önce gönderildi. Yalnızca portalda yoksa tekrar gönder.",
+  "absenceSentTitle": "Bildirildi",
+  "absenceSentText": "Bildirim artık portalda:",
+  "absenceUnclearTitle": "Gönderildiğinden emin değiliz",
+  "absenceUnclearText": "Uygulama yeni bildirimi listede bulamadı. Lütfen hemen tekrar gönderme – önce portala bak.",
+  "absenceOpenPortal": "Portalda aç"
 }

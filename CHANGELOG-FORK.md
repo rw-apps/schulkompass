@@ -1,5 +1,11 @@
 ## Schulkompass (rw-apps, bis 9472 „Schulportal“) – Änderungen gegenüber Lanis-Mobile
 
+**4.1.0+9478** – Krankmeldung absenden
+
+- **Krankmeldung wirklich senden:** „Abwesenheit melden“ bzw. „Verspätung melden“ schickt die Meldung jetzt an die Schule – nach einer Rückfrage mit Zusammenfassung. Wie im Portal prüft das Portal zuerst, erst danach wird gespeichert.
+- **Kontrolle danach:** Die App lädt die Liste „Aktuelle und zukünftige Meldungen“ neu und zeigt, ob die Meldung dort steht. Ist das unklar (z. B. Verbindung weg), sendet sie nie von selbst noch einmal und verweist aufs Portal; wer dieselbe Meldung gleich noch einmal senden will, bekommt einen Hinweis.
+- **Umstieg von 4.1.0+9472 oder älter** (neue Signatur, einmalig): In der alten App Einstellungen → Daten → „Auf neues Gerät übertragen“ (dort noch der alte Name) → „Nur Eingaben per Datei“ → „Als Datei senden“. Alte App deinstallieren, in Obtainium „Installieren“, dann „Sicherungsdatei“.
+
 **4.1.0+9477** – Vollständiger Datenschutzhinweis
 
 - **Datenschutzhinweis neu:** Verantwortlicher mit Kontakt, alle Verbindungen der App, Rechtsgrundlagen, Speicherdauer der Fehlerberichte (spätestens 12 Monate), Übertragen zwischen Geräten, Kinder, deine Rechte und die zuständige Aufsichtsbehörde. Die App fragt deshalb einmal neu nach deiner Zustimmung.

@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:lanis/fork/l10n/l10n.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lanis/fork/absence/absence_form.dart';
-import 'package:lanis/fork/absence/absence_parser.dart' show AbsenceCheck;
+import 'package:lanis/fork/absence/absence_parser.dart'
+    show AbsenceCheck, AbsenceSent, AbsenceSubmitResult;
 import 'package:lanis/fork/absence/absence_view.dart';
 
 /// Erfundene Formulardaten, Aufbau wie abwesenheitsmeldung.php von Schule A.
@@ -60,12 +61,13 @@ void main() {
     expect(find.textContaining('spätestens bis 12:00'), findsOneWidget);
 
     final send = t.widget<FilledButton>(
-      find.widgetWithText(
-        FilledButton,
-        'Absenden (folgt nach gemeinsamem Test)',
-      ),
+      find.widgetWithText(FilledButton, 'Abwesenheit melden'),
     );
-    expect(send.onPressed, isNull, reason: 'Kein echtes Absenden vor dem Test');
+    expect(
+      send.onPressed,
+      isNull,
+      reason: 'ohne onSubmit (hier nicht übergeben) gesperrt',
+    );
 
     await t.tap(find.text('Verspätet'));
     await t.pump();
@@ -175,12 +177,70 @@ void main() {
     );
     expect(b.onPressed, isNull);
     final send = t.widget<FilledButton>(
-      find.widgetWithText(
-        FilledButton,
-        'Absenden (folgt nach gemeinsamem Test)',
+      find.widgetWithText(FilledButton, 'Abwesenheit melden'),
+    );
+    expect(send.onPressed, isNull, reason: 'ohne onSubmit gesperrt');
+  });
+
+  testWidgets('Melden: Rückfrage, Ergebnis, zweites Senden warnt', (t) async {
+    await _tall(t);
+    var calls = 0;
+    var result = AbsenceSubmitResult(
+      AbsenceSent.confirmed,
+      entry: const AbsenceEntry(
+        name: 'Jonas Beispiel',
+        period: '05.11.2026',
+        kind: 'krank',
+        entered: '05.11.2026 07:40',
+        comment: '',
       ),
     );
-    expect(send.onPressed, isNull, reason: 'Senden bleibt gesperrt');
+    await t.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: ForkL10n.localizationsDelegates,
+        supportedLocales: ForkL10n.supportedLocales,
+        locale: const Locale('de'),
+        home: Scaffold(
+          body: AbsenceFormView(
+            form: _form(),
+            onSubmit: (fields) async {
+              calls++;
+              expect(fields.containsKey('check'), isFalse);
+              return result;
+            },
+          ),
+        ),
+      ),
+    );
+    await t.tap(find.text('Abwesenheit melden'));
+    await t.pumpAndSettle();
+    expect(find.text('Verbindlich melden?'), findsOneWidget);
+    // Abbrechen sendet nichts.
+    await t.tap(find.text('Abbrechen'));
+    await t.pumpAndSettle();
+    expect(calls, 0);
+
+    await t.tap(find.text('Abwesenheit melden'));
+    await t.pumpAndSettle();
+    expect(find.textContaining('eben schon gesendet'), findsNothing);
+    await t.tap(find.text('Jetzt melden'));
+    await t.pumpAndSettle();
+    expect(calls, 1);
+    expect(find.text('Gemeldet'), findsOneWidget);
+    expect(find.textContaining('Jonas Beispiel – krank'), findsOneWidget);
+    await t.tap(find.text('OK'));
+    await t.pumpAndSettle();
+
+    // Gleiche Angaben noch einmal: Warnung in der Rückfrage.
+    result = const AbsenceSubmitResult(AbsenceSent.unconfirmed);
+    await t.tap(find.text('Abwesenheit melden'));
+    await t.pumpAndSettle();
+    expect(find.textContaining('eben schon gesendet'), findsOneWidget);
+    await t.tap(find.text('Jetzt melden'));
+    await t.pumpAndSettle();
+    expect(calls, 2);
+    expect(find.text('Nicht sicher, ob gemeldet'), findsOneWidget);
+    expect(find.text('Im Portal ansehen'), findsOneWidget);
   });
 
   for (final lang in ['en', 'tr']) {
