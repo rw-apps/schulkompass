@@ -3,7 +3,7 @@ import 'package:lanis/fork/l10n/l10n.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lanis/fork/absence/absence_form.dart';
 import 'package:lanis/fork/absence/absence_parser.dart'
-    show AbsenceCheck, AbsenceSent, AbsenceSubmitResult;
+    show AbsenceSent, AbsenceSubmitResult;
 import 'package:lanis/fork/absence/absence_view.dart';
 
 /// Erfundene Formulardaten, Aufbau wie abwesenheitsmeldung.php von Schule A.
@@ -37,11 +37,17 @@ Future<void> _tall(WidgetTester t) async {
   addTearDown(t.view.reset);
 }
 
-Widget _app(AbsenceForm f, {String lang = 'de'}) => MaterialApp(
+Widget _app(
+  AbsenceForm f, {
+  String lang = 'de',
+  Future<AbsenceSubmitResult> Function(Map<String, String>)? onSubmit,
+}) => MaterialApp(
   localizationsDelegates: ForkL10n.localizationsDelegates,
   supportedLocales: ForkL10n.supportedLocales,
   locale: Locale(lang),
-  home: Scaffold(body: AbsenceFormView(form: f)),
+  home: Scaffold(
+    body: AbsenceFormView(form: f, onSubmit: onSubmit),
+  ),
 );
 
 void main() {
@@ -77,26 +83,46 @@ void main() {
     expect(find.text('Bis'), findsNothing);
   });
 
-  testWidgets('Vorschau zeigt die Portal-Felder', (t) async {
+  testWidgets('Melden schickt die Portal-Felder ohne save', (t) async {
     await _tall(t);
-    await t.pumpWidget(_app(_form()));
-    await t.tap(find.text('Vorschau der Portal-Felder'));
+    absenceLastSent.value = null;
+    Map<String, String>? sent;
+    await t.pumpWidget(
+      _app(
+        _form(),
+        onSubmit: (f) async {
+          sent = f;
+          return const AbsenceSubmitResult(AbsenceSent.unconfirmed);
+        },
+      ),
+    );
+    await t.tap(find.text('Abwesenheit melden'));
     await t.pumpAndSettle();
-    expect(find.textContaining('selectedPupils = 111'), findsOneWidget);
-    expect(find.textContaining('von = 16.10.2026'), findsOneWidget);
-    expect(find.textContaining('save'), findsNothing);
+    await t.tap(find.text('Jetzt melden'));
+    await t.pumpAndSettle();
+    expect(sent!['selectedPupils'], '111');
+    expect(sent!['von'], '16.10.2026');
+    expect(sent!.containsKey('save'), isFalse);
+    expect(find.text('Beim Portal prüfen (sendet nichts)'), findsNothing);
+    expect(find.text('Vorschau der Portal-Felder'), findsNothing);
   });
 
-  testWidgets('ohne Kind keine Vorschau', (t) async {
+  testWidgets('ohne Kind kein Melden', (t) async {
     await _tall(t);
-    await t.pumpWidget(_app(_form()));
+    await t.pumpWidget(
+      _app(
+        _form(),
+        onSubmit: (_) async =>
+            const AbsenceSubmitResult(AbsenceSent.unconfirmed),
+      ),
+    );
     await t.tap(find.text('Anna Beispiel'));
     await t.pump();
     expect(find.text('Bitte ein Kind auswählen.'), findsOneWidget);
-    final preview = t.widget<TextButton>(
-      find.widgetWithText(TextButton, 'Vorschau der Portal-Felder'),
+    final send = t.widget<FilledButton>(
+      find.widgetWithText(FilledButton, 'Abwesenheit melden'),
     );
-    expect(preview.onPressed, isNull);
+    expect(send.onPressed, isNull);
   });
 
   testWidgets('Neuladen behält Eingaben', (t) async {
@@ -121,61 +147,15 @@ void main() {
     await t.pumpWidget(_app(_form()));
     await t.drag(find.byType(ListView), const Offset(0, -3000));
     await t.pumpAndSettle();
-    final button = find.widgetWithText(
-      TextButton,
-      'Vorschau der Portal-Felder',
-    );
+    final button = find.widgetWithText(FilledButton, 'Abwesenheit melden');
     final screenH = 1500 / 2.5;
     final insetH = 120 / 2.5;
     expect(t.getBottomLeft(button).dy, lessThanOrEqualTo(screenH - insetH));
   });
 
-  testWidgets('Prüfen: Antwort des Portals wird angezeigt, nichts gesendet', (
-    t,
-  ) async {
-    await _tall(t);
-    Map<String, String>? sent;
-    var answer = const AbsenceCheck(true, []);
-    await t.pumpWidget(
-      MaterialApp(
-        localizationsDelegates: ForkL10n.localizationsDelegates,
-        supportedLocales: ForkL10n.supportedLocales,
-        locale: const Locale('de'),
-
-        home: Scaffold(
-          body: AbsenceFormView(
-            form: _form(),
-            onCheck: (fields) async {
-              sent = fields;
-              return answer;
-            },
-          ),
-        ),
-      ),
-    );
-    await t.tap(find.text('Beim Portal prüfen (sendet nichts)'));
-    await t.pumpAndSettle();
-    expect(find.text('Prüfung bestanden'), findsOneWidget);
-    expect(find.textContaining('Gesendet wurde nichts'), findsOneWidget);
-    expect(sent!['selectedPupils'], '111');
-    expect(sent!.containsKey('save'), isFalse);
-    await t.tap(find.text('OK'));
-    await t.pumpAndSettle();
-
-    answer = const AbsenceCheck(false, ['Meldung nur bis 12:00 möglich']);
-    await t.tap(find.text('Beim Portal prüfen (sendet nichts)'));
-    await t.pumpAndSettle();
-    expect(find.text('Das Portal lehnt ab'), findsOneWidget);
-    expect(find.text('Meldung nur bis 12:00 möglich'), findsOneWidget);
-  });
-
-  testWidgets('ohne Prüf-Anbindung ist der Knopf gesperrt', (t) async {
+  testWidgets('ohne Sende-Anbindung ist der Knopf gesperrt', (t) async {
     await _tall(t);
     await t.pumpWidget(_app(_form()));
-    final b = t.widget<OutlinedButton>(
-      find.widgetWithText(OutlinedButton, 'Beim Portal prüfen (sendet nichts)'),
-    );
-    expect(b.onPressed, isNull);
     final send = t.widget<FilledButton>(
       find.widgetWithText(FilledButton, 'Abwesenheit melden'),
     );

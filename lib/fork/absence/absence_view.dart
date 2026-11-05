@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:liblanis/liblanis.dart';
 
@@ -60,7 +59,6 @@ class AbsencePage extends ConsumerWidget {
         ),
         body: AbsenceFormView(
           form: form,
-          onCheck: (fields) => checkAbsence(session, fields),
           // Demo: kein Senden (die Demo beantwortet Schreibaktionen ohnehin
           // mit Fehler; „unklar“ mit Link aufs echte Portal wäre irreführend).
           onSubmit: demoActive
@@ -102,7 +100,6 @@ class AbsenceFormView extends StatefulWidget {
     super.key,
     required this.form,
     this.now,
-    this.onCheck,
     this.onSubmit,
     this.onSending,
   });
@@ -116,9 +113,6 @@ class AbsenceFormView extends StatefulWidget {
   /// Meldet wirklich ([submitAbsence]); null = Knopf gesperrt (Demo, Tests).
   final Future<AbsenceSubmitResult> Function(Map<String, String> fields)?
   onSubmit;
-
-  /// Fragt das Portal, ob es die Meldung annehmen würde (sendet nichts).
-  final Future<AbsenceCheck> Function(Map<String, String> fields)? onCheck;
 
   /// Nur für Tests.
   final DateTime? now;
@@ -271,38 +265,6 @@ class _AbsenceFormViewState extends State<AbsenceFormView> {
     return '${names.isEmpty ? t.absenceNoChild : names} – $kind\n$when';
   }
 
-  Future<void> _check() async {
-    final onCheck = widget.onCheck;
-    if (onCheck == null) return;
-    final t = context.t;
-    setState(() => _busy = true);
-    String title;
-    List<String> lines;
-    try {
-      final r = await onCheck(_draft.toFields(f));
-      title = r.ok ? t.absenceCheckPassed : t.absenceRejected;
-      lines = r.ok ? [t.absenceWouldAccept, t.absenceNothingSent] : r.errors;
-    } catch (_) {
-      title = t.absenceCheckImpossible;
-      lines = [t.absenceNoConnection];
-    }
-    if (!mounted) return;
-    setState(() => _busy = false);
-    await showDialog<void>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(title),
-        content: Text(lines.join('\n\n')),
-        actions: [
-          FilledButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('OK'),
-          ),
-        ],
-      ),
-    );
-  }
-
   Future<void> _submit() async {
     final onSubmit = widget.onSubmit;
     if (onSubmit == null || _busy) return;
@@ -391,41 +353,6 @@ class _AbsenceFormViewState extends State<AbsenceFormView> {
       ),
     );
     return r.state != AbsenceSent.rejected;
-  }
-
-  void _showFields() {
-    final fields = _draft.toFields(f);
-    showDialog<void>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(context.t.absenceFieldsTitle),
-        content: SingleChildScrollView(
-          child: SelectableText(
-            fields.entries.map((e) => '${e.key} = ${e.value}').join('\n'),
-            style: const TextStyle(fontFamily: 'monospace'),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Clipboard.setData(
-                ClipboardData(
-                  text: fields.entries
-                      .map((e) => '${e.key}=${e.value}')
-                      .join('\n'),
-                ),
-              );
-              Navigator.pop(context);
-            },
-            child: Text(context.t.copy),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(context.t.close),
-          ),
-        ],
-      ),
-    );
   }
 
   @override
@@ -660,22 +587,15 @@ class _AbsenceFormViewState extends State<AbsenceFormView> {
                 : null,
             child: Text(_isLate ? t.absenceSendLate : t.absenceSend),
           ),
-          const SizedBox(height: 8),
+          // „Beim Portal prüfen“ und „Vorschau der Portal-Felder“ (Probephase
+          // bis 9477) entfallen: Rückmeldung 05.11.26 – man sah erst die
+          // Felder, dann die Rückfrage, und hielt beides für nötig. Die
+          // Prüfung (check=1) läuft in submitAbsence ohnehin vor jedem Senden.
           if (_busy)
             const Padding(
-              padding: EdgeInsets.only(bottom: 8),
+              padding: EdgeInsets.only(top: 8),
               child: LinearProgressIndicator(),
             ),
-          OutlinedButton(
-            onPressed: errors.isEmpty && !_busy && widget.onCheck != null
-                ? _check
-                : null,
-            child: Text(t.absenceCheck),
-          ),
-          TextButton(
-            onPressed: errors.isEmpty ? _showFields : null,
-            child: Text(t.absencePreview),
-          ),
           if (f.entries.isNotEmpty)
             section(
               t.absenceEntries,

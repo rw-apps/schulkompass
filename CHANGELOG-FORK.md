@@ -1,5 +1,9 @@
 ## Schulkompass (rw-apps, bis 9472 „Schulportal“) – Änderungen gegenüber Lanis-Mobile
 
+**4.1.0+9480** – Krankmeldung ohne Testknöpfe
+
+- **Einfacher:** „Beim Portal prüfen“ und „Vorschau der Portal-Felder“ aus der Probephase sind weg. Es gibt nur noch „Abwesenheit melden“ mit der Rückfrage – geprüft wird dabei automatisch.
+
 **4.1.0+9479** – Krankmeldung absenden (abgesichert)
 
 - **Krankmeldung wirklich senden:** „Abwesenheit melden“ bzw. „Verspätung melden“ schickt die Meldung jetzt an die Schule – nach einer Rückfrage mit Zusammenfassung. Wie im Portal prüft das Portal zuerst, erst danach wird gespeichert.
