@@ -260,4 +260,117 @@ void main() {
       expect(find.text('Zusammenfassung'), findsNothing);
     });
   }
+
+  testWidgets('Anzeige bestehender Meldung: Karte, „Auch … melden“ belegt vor', (
+    t,
+  ) async {
+    await _tall(t);
+    ({DateTime day, String pupilName, String kind})? got;
+    var other = 0;
+    const entry = AbsenceEntry(
+      name: 'Anna Beispiel',
+      period: '16.10.2026',
+      kind: 'krank',
+      entered: '16.10.2026 07:15',
+      comment: 'Bleibt zu Hause.',
+    );
+    await t.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: ForkL10n.localizationsDelegates,
+        supportedLocales: ForkL10n.supportedLocales,
+        locale: const Locale('de'),
+        home: Scaffold(
+          body: AbsenceOverview(
+            form: _form(),
+            entries: const [entry],
+            onRepeat: (p) => got = p,
+            onOther: () => other++,
+          ),
+        ),
+      ),
+    );
+    expect(find.text('Anna Beispiel – krank'), findsOneWidget);
+    expect(find.text('„Bleibt zu Hause.“'), findsOneWidget);
+    // Kein Formular in der Anzeige.
+    expect(find.byType(TextField), findsNothing);
+    // 16.10.2026 ist ein Freitag → nächster Schultag Mo 19.10. (in fromRange).
+    await t.tap(find.textContaining('Auch '));
+    expect(got!.day, DateTime(2026, 10, 19));
+    expect(got!.pupilName, 'Anna Beispiel');
+    expect(got!.kind, 'krank');
+    await t.tap(find.text('Andere Meldung (Tag, Verspätung)'));
+    expect(other, 1);
+  });
+
+  testWidgets('Verspätung oder außerhalb des Portal-Zeitraums: kein „Auch …“', (
+    t,
+  ) async {
+    await _tall(t);
+    Future<void> show(AbsenceEntry e) => t.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: ForkL10n.localizationsDelegates,
+        supportedLocales: ForkL10n.supportedLocales,
+        locale: const Locale('de'),
+        home: Scaffold(
+          body: AbsenceOverview(
+            form: _form(),
+            entries: [e],
+            onRepeat: (_) {},
+            onOther: () {},
+          ),
+        ),
+      ),
+    );
+    await show(
+      const AbsenceEntry(
+        name: 'Anna Beispiel',
+        period: '16.10.2026',
+        kind: 'verspätet',
+        entered: '',
+        comment: '',
+      ),
+    );
+    expect(find.textContaining('Auch '), findsNothing);
+    await show(
+      const AbsenceEntry(
+        name: 'Anna Beispiel',
+        period: '19.10.2026',
+        kind: 'krank',
+        entered: '',
+        comment: '',
+      ),
+    );
+    expect(find.textContaining('Auch '), findsNothing);
+  });
+
+  testWidgets('Vorbelegung im Formular: Tag und Kind', (t) async {
+    await _tall(t);
+    Map<String, String>? sent;
+    absenceLastSent.value = null;
+    await t.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: ForkL10n.localizationsDelegates,
+        supportedLocales: ForkL10n.supportedLocales,
+        locale: const Locale('de'),
+        home: Scaffold(
+          body: AbsenceFormView(
+            form: _form(),
+            initialFrom: DateTime(2026, 10, 19),
+            initialPupilName: 'Anna Beispiel',
+            initialKind: 'krank',
+            onSubmit: (f) async {
+              sent = f;
+              return const AbsenceSubmitResult(AbsenceSent.unconfirmed);
+            },
+          ),
+        ),
+      ),
+    );
+    await t.tap(find.text('Abwesenheit melden'));
+    await t.pumpAndSettle();
+    await t.tap(find.text('Jetzt melden'));
+    await t.pumpAndSettle();
+    expect(sent!['von'], '19.10.2026');
+    expect(sent!['bis'], '19.10.2026');
+  });
 }

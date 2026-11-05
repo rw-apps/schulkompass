@@ -1,5 +1,10 @@
 ## Schulkompass (rw-apps, bis 9472 „Schulportal“) – Änderungen gegenüber Lanis-Mobile
 
+**4.1.0+9484** – Gesendete Krankmeldung als Anzeige
+
+- **Krankmeldung öffnen nach dem Melden:** Gibt es schon eine Meldung ab heute, zeigt die Seite sie nur an (Kind, Art, Tag, Eintragszeit, Kommentar). Darunter „Auch Fr 6.11. melden“ (nächster Schultag, vorausgefüllt) und „Andere Meldung“ für einen anderen Tag oder eine Verspätung.
+- **„Ändern“ oben rechts:** Das Portal kennt für gesendete Meldungen weder Ändern noch Zurückziehen – „Ändern“ erklärt das und öffnet eine Nachricht an die Schule oder das Portal.
+
 **4.1.0+9483** – Krankmeldung auf „Heute“ und bei den Nachrichten
 
 - **Heute:** Ist ein Kind für heute gemeldet, steht unter seinem Namen „Heute krank gemeldet“ (bzw. „Heute Verspätung gemeldet“) mit Tag und Eintragszeit; der Knopf heißt dann „Gemeldet“. Bei Krankmeldung ist der Stundenplan gedämpft, und die heutigen Hinweise (z. B. Essen nicht bestellt) entfallen.

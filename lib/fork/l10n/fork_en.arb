@@ -831,5 +831,11 @@
   "absenceReportedLateToday": "Late arrival reported today",
   "absenceReportsTitle": "Absence reports",
   "absenceReportBy": "Absence report",
-  "absenceEnteredAt": "entered {time}"
+  "absenceEnteredAt": "entered {time}",
+  "absenceChange": "Change",
+  "absenceChangeTitle": "Change or withdraw",
+  "absenceChangeText": "A sent report cannot be changed or withdrawn in the portal. Write to the school what has changed – they will adjust it.",
+  "absenceWriteSchool": "Message the school",
+  "absenceRepeat": "Also report {day}",
+  "absenceOther": "Other report (day, late arrival)"
 }

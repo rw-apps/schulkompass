@@ -831,5 +831,11 @@
   "absenceReportedLateToday": "Bugün gecikme bildirildi",
   "absenceReportsTitle": "Devamsızlık bildirimleri",
   "absenceReportBy": "Devamsızlık bildirimi",
-  "absenceEnteredAt": "kaydedildi {time}"
+  "absenceEnteredAt": "kaydedildi {time}",
+  "absenceChange": "Değiştir",
+  "absenceChangeTitle": "Değiştir veya geri çek",
+  "absenceChangeText": "Gönderilen bir bildirim portalda değiştirilemez veya geri çekilemez. Okula neyin değiştiğini yaz – bildirimi onlar düzeltir.",
+  "absenceWriteSchool": "Okula mesaj",
+  "absenceRepeat": "{day} için de bildir",
+  "absenceOther": "Başka bildirim (gün, gecikme)"
 }

@@ -2112,5 +2112,18 @@
         "type": "String"
       }
     }
+  },
+  "absenceChange": "Ändern",
+  "absenceChangeTitle": "Ändern oder zurückziehen",
+  "absenceChangeText": "Eine gesendete Meldung lässt sich im Portal nicht ändern oder zurückziehen. Schreib der Schule, was sich geändert hat – sie passt die Meldung an.",
+  "absenceWriteSchool": "Nachricht an die Schule",
+  "absenceRepeat": "Auch {day} melden",
+  "absenceOther": "Andere Meldung (Tag, Verspätung)",
+  "@absenceRepeat": {
+    "placeholders": {
+      "day": {
+        "type": "String"
+      }
+    }
   }
 }

@@ -6,7 +6,13 @@ import 'package:lanis/utils/safe_launch.dart';
 import 'package:lanis/widgets/combined_applet_builder.dart';
 
 import '../demo/demo_mode.dart' show demoActive;
+import '../ui/live/absence_live.dart' show absenceDetail;
 import '../ui/live/live_data.dart' show LiveData;
+import '../ui/messages/compose_model.dart' show candidatesFrom;
+import '../ui/messages/compose_page.dart' show ComposePage, portalBackend;
+import '../ui/nav.dart' show pushFullScreen;
+import '../ui/today/kid_hints.dart' show nextSchoolDay;
+import 'absence_today.dart';
 
 import '../l10n/l10n.dart';
 import 'absence_form.dart';
@@ -45,56 +51,291 @@ class AbsencePage extends ConsumerWidget {
       accountType: AccountType.parent,
       showErrorAppBar: true,
       loadingAppBar: AppBar(leading: leading()),
-      builder: (context, form, _, _, _, refresh) => Scaffold(
-        appBar: AppBar(
-          leading: leading(),
-          title: Text(context.t.absenceTitle),
-          actions: [
-            if (refresh != null)
-              IconButton(
-                tooltip: context.t.reload,
-                icon: const Icon(Icons.refresh),
-                onPressed: refresh,
+      builder: (context, form, _, _, _, refresh) =>
+          _AbsenceScreen(form: form, session: session, refresh: refresh),
+    );
+  }
+}
+
+/// Seite um Maske und Anzeige: Gibt es schon Meldungen ab heute, zeigt sie
+/// diese zuerst nur an ([AbsenceOverview], Wunsch 05.11.26 – vorher sah
+/// eine erledigte Meldung aus, als müsse man noch etwas ausfüllen). Das
+/// Formular kommt über „Auch … melden“ (vorbelegt) oder „Andere Meldung“.
+/// „Ändern“ steht oben rechts (Rückmeldung 05.11.26): Das Portal kennt für
+/// gesendete Meldungen weder Ändern noch Zurückziehen (tbody#liste ohne
+/// Aktionsspalte, meldungEltern.js ohne Löschen) – es bleibt der Weg über
+/// die Schule.
+class _AbsenceScreen extends ConsumerStatefulWidget {
+  const _AbsenceScreen({
+    required this.form,
+    required this.session,
+    required this.refresh,
+  });
+
+  final AbsenceForm form;
+  final LanisSession session;
+  final VoidCallback? refresh;
+
+  @override
+  ConsumerState<_AbsenceScreen> createState() => _AbsenceScreenState();
+}
+
+class _AbsenceScreenState extends ConsumerState<_AbsenceScreen> {
+  /// Formular statt Anzeige; [_prefill] = vorbelegter Tag und Kind.
+  bool _formMode = false;
+  ({DateTime day, String pupilName, String kind})? _prefill;
+  int _formRound = 0;
+
+  void _openForm([({DateTime day, String pupilName, String kind})? p]) =>
+      setState(() {
+        _formMode = true;
+        _prefill = p;
+        _formRound++;
+      });
+
+  Future<void> _change(BuildContext context) async {
+    final t = context.t;
+    final live = LiveData.of(context);
+    final canWrite = live != null && live.offers('nachrichten.php');
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (c) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                t.absenceChangeTitle,
+                style: Theme.of(c).textTheme.titleLarge,
               ),
-          ],
-        ),
-        body: AbsenceFormView(
-          form: form,
-          // Demo: kein Senden (die Demo beantwortet Schreibaktionen ohnehin
-          // mit Fehler; „unklar“ mit Link aufs echte Portal wäre irreführend).
-          onSubmit: demoActive
-              ? null
-              : (fields) {
-                  final parser = ref.read(absenceParserProvider);
-                  return submitAbsence(
-                    session,
-                    fields,
-                    before: form.entries,
-                    reload: parser.getHome,
-                  );
-                },
-          // Ursache (Prüfung 05.11.26): Lud die Seite während Rückfrage,
-          // Senden oder Ergebnis neu (alle 5 Minuten oder direkt nach dem
-          // Senden), wurde die Maske abgebaut – „Jetzt melden“ tat nichts
-          // oder das Ergebnis erschien nie. Daher: Auto-Aktualisierung
-          // anhalten, solange gesendet wird, und erst nach dem
-          // Ergebnis-Dialog neu laden.
-          onSending: (active, {sent = false}) {
-            final parser = ref.read(absenceParserProvider);
-            if (active) {
-              parser.stopAutoRefresh();
-            } else {
-              parser.startAutoRefresh();
-              if (sent) {
-                refresh?.call();
-                // „Heute“ und „Nachrichten“ zeigen die neue Meldung erst
-                // nach dem nächsten Durchgang (live_data.dart, _loadExtras).
-                LiveData.of(context)?.refresh();
-              }
-            }
-          },
+              const SizedBox(height: 12),
+              Text(t.absenceChangeText),
+              const SizedBox(height: 20),
+              if (canWrite)
+                FilledButton.icon(
+                  icon: const Icon(Icons.edit_outlined),
+                  label: Text(t.absenceWriteSchool),
+                  onPressed: () {
+                    Navigator.pop(c);
+                    pushFullScreen<bool>(
+                      context,
+                      (_) => ComposePage(
+                        candidates: candidatesFrom(
+                          live.lessons.content ?? const [],
+                        ),
+                        backend: portalBackend(ref),
+                      ),
+                    );
+                  },
+                ),
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                icon: const Icon(Icons.open_in_new),
+                label: Text(t.absenceOpenPortal),
+                onPressed: () => safeLaunchUrl(
+                  Uri.parse(
+                    'https://start.schulportal.hessen.de/abwesenheitsmeldung.php',
+                  ),
+                  context: c,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.t;
+    final form = widget.form;
+    final refresh = widget.refresh;
+    final session = widget.session;
+    final current = currentAbsences(form.entries, DateTime.now());
+    final overview = current.isNotEmpty && !_formMode;
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(t.absenceTitle),
+        leading: _formMode && current.isNotEmpty
+            ? BackButton(onPressed: () => setState(() => _formMode = false))
+            : null,
+        actions: [
+          if (current.isNotEmpty)
+            TextButton(
+              onPressed: () => _change(context),
+              child: Text(t.absenceChange),
+            ),
+          if (refresh != null)
+            IconButton(
+              tooltip: t.reload,
+              icon: const Icon(Icons.refresh),
+              onPressed: refresh,
+            ),
+        ],
+      ),
+      body: overview
+          ? AbsenceOverview(
+              form: form,
+              entries: current,
+              onRepeat: _openForm,
+              onOther: () => _openForm(),
+            )
+          : AbsenceFormView(
+              key: ValueKey(_formRound),
+              form: form,
+              initialFrom: _prefill?.day,
+              initialPupilName: _prefill?.pupilName,
+              initialKind: _prefill?.kind,
+              // Demo: kein Senden (die Demo beantwortet Schreibaktionen ohnehin
+              // mit Fehler; „unklar“ mit Link aufs echte Portal wäre irreführend).
+              onSubmit: demoActive
+                  ? null
+                  : (fields) {
+                      final parser = ref.read(absenceParserProvider);
+                      return submitAbsence(
+                        session,
+                        fields,
+                        before: form.entries,
+                        reload: parser.getHome,
+                      );
+                    },
+              // Ursache (Prüfung 05.11.26): Lud die Seite während Rückfrage,
+              // Senden oder Ergebnis neu (alle 5 Minuten oder direkt nach dem
+              // Senden), wurde die Maske abgebaut – „Jetzt melden“ tat nichts
+              // oder das Ergebnis erschien nie. Daher: Auto-Aktualisierung
+              // anhalten, solange gesendet wird, und erst nach dem
+              // Ergebnis-Dialog neu laden.
+              onSending: (active, {sent = false}) {
+                final parser = ref.read(absenceParserProvider);
+                if (active) {
+                  parser.stopAutoRefresh();
+                } else {
+                  parser.startAutoRefresh();
+                  if (sent) {
+                    // Nach dem Senden wieder die Anzeige (mit der neuen Meldung).
+                    if (mounted) setState(() => _formMode = false);
+                    refresh?.call();
+                    // „Heute“ und „Nachrichten“ zeigen die neue Meldung erst
+                    // nach dem nächsten Durchgang (live_data.dart, _loadExtras).
+                    LiveData.of(context)?.refresh();
+                  }
+                }
+              },
+            ),
+    );
+  }
+}
+
+/// Bestehende Meldungen als reine Anzeige mit den sinnvollen nächsten
+/// Schritten: dasselbe für den nächsten Schultag oder eine andere Meldung.
+class AbsenceOverview extends StatelessWidget {
+  const AbsenceOverview({
+    super.key,
+    required this.form,
+    required this.entries,
+    required this.onRepeat,
+    required this.onOther,
+  });
+
+  final AbsenceForm form;
+  final List<AbsenceEntry> entries;
+  final void Function(({DateTime day, String pupilName, String kind}) p)
+  onRepeat;
+  final VoidCallback onOther;
+
+  /// Nächster Schultag nach der letzten Meldung dieses Kindes – sofern das
+  /// Portal ihn noch annimmt (fromRange, z. B. „die nächsten 5 Tage“) und
+  /// es keine Verspätung war.
+  ({DateTime day, String pupilName, String kind})? _repeat() {
+    final last = entries.last;
+    DateTime? end;
+    for (final e in entries) {
+      if (e.name != last.name) continue;
+      final p = absencePeriodDays(e.period);
+      if (p != null && (end == null || p.to.isAfter(end))) end = p.to;
+    }
+    if (end == null || absenceIsLate(last)) return null;
+    final day = nextSchoolDay(end);
+    final r = form.fromRange;
+    if (r != null && day.isAfter(r.last)) return null;
+    if (!form.allowedPupils.any((p) => p.name == last.name)) return null;
+    final kind = form.kinds
+        .map((k) => k.value)
+        .firstWhere((v) => v != absenceKindLate, orElse: () => '');
+    return (day: day, pupilName: last.name, kind: kind);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.t;
+    final th = Theme.of(context);
+    final cs = th.colorScheme;
+    final repeat = _repeat();
+    return ListView(
+      padding: EdgeInsets.fromLTRB(
+        16,
+        16,
+        16,
+        16 + MediaQuery.paddingOf(context).bottom,
+      ),
+      children: [
+        Text(t.absenceSentTitle, style: th.textTheme.titleLarge),
+        const SizedBox(height: 12),
+        for (final e in entries)
+          Card(
+            margin: const EdgeInsets.only(bottom: 12),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.check_circle, color: cs.primary),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          '${e.name} – ${e.kind}',
+                          style: th.textTheme.titleMedium,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  // Tag und Eintragszeit in einer Zeile (absenceDetail).
+                  Text(absenceDetail(e, t), style: th.textTheme.bodyLarge),
+                  if (e.comment.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      '„${e.comment}“',
+                      style: th.textTheme.bodyMedium?.copyWith(
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        const SizedBox(height: 8),
+        if (repeat != null) ...[
+          FilledButton.icon(
+            onPressed: () => onRepeat(repeat),
+            icon: const Icon(Icons.event_repeat),
+            label: Text(t.absenceRepeat(_shortDate(t, repeat.day))),
+          ),
+          const SizedBox(height: 8),
+        ],
+        OutlinedButton.icon(
+          onPressed: onOther,
+          icon: const Icon(Icons.add),
+          label: Text(t.absenceOther),
+        ),
+      ],
     );
   }
 }
@@ -108,7 +349,16 @@ class AbsenceFormView extends StatefulWidget {
     this.now,
     this.onSubmit,
     this.onSending,
+    this.initialFrom,
+    this.initialPupilName,
+    this.initialKind,
   });
+
+  /// Vorbelegung aus „Auch … melden“ (AbsenceOverview): Tag, Kind (Name wie
+  /// in der Liste), Art.
+  final DateTime? initialFrom;
+  final String? initialPupilName;
+  final String? initialKind;
 
   /// Beginn (true) und Ende (false) eines Sendevorgangs – von der Rückfrage
   /// bis zum geschlossenen Ergebnis; [sent]: es wurde gesendet.
@@ -186,6 +436,19 @@ class _AbsenceFormViewState extends State<AbsenceFormView> {
     _to = f.defaultTo ?? _from;
     _blockFrom = f.blocks.isNotEmpty ? f.blocks.first.value : '';
     _blockTo = f.blocks.isNotEmpty ? f.blocks.last.value : '';
+    if (widget.initialFrom case final d?) {
+      _from = d;
+      _to = d;
+      _clampToForm();
+    }
+    if (widget.initialPupilName case final n?) {
+      final p = allowed.where((p) => p.name == n);
+      if (p.isNotEmpty) _pupils = {p.first.id};
+    }
+    if (widget.initialKind case final k?
+        when f.kinds.any((x) => x.value == k)) {
+      _kind = k;
+    }
   }
 
   @override
