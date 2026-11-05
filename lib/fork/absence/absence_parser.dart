@@ -278,7 +278,17 @@ Future<AbsenceSubmitResult> submitAbsenceWith({
   final known = {for (final e in before) _entryKey(e)};
   try {
     final after = await reload();
-    final added = after?.entries.where((e) => !known.contains(_entryKey(e)));
+    // Neue Zeile UND passender erster Tag (TT.MM. aus `von`). Ursache
+    // (Prüfung 05.11.26): Eine Meldung, die zeitgleich jemand anderes
+    // einträgt (zweites Elternkonto, Schule), hätte sonst als „gemeldet“
+    // gegolten. Grenze: Der Aufbau einer gefüllten Liste ist noch nicht
+    // belegt (alle Exporte leer); passt das Datum nicht, lautet das Ergebnis
+    // lieber „unklar“ als „gemeldet“.
+    final von = fields['von'] ?? '';
+    final day = von.length >= 6 ? von.substring(0, 6) : von;
+    final added = after?.entries.where(
+      (e) => !known.contains(_entryKey(e)) && e.period.contains(day),
+    );
     if (added != null && added.isNotEmpty) {
       return AbsenceSubmitResult(AbsenceSent.confirmed, entry: added.first);
     }

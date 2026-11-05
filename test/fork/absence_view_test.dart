@@ -184,6 +184,8 @@ void main() {
 
   testWidgets('Melden: Rückfrage, Ergebnis, zweites Senden warnt', (t) async {
     await _tall(t);
+    absenceLastSent.value = null;
+    final sending = <String>[];
     var calls = 0;
     var result = AbsenceSubmitResult(
       AbsenceSent.confirmed,
@@ -208,6 +210,7 @@ void main() {
               expect(fields.containsKey('check'), isFalse);
               return result;
             },
+            onSending: (active, {sent = false}) => sending.add('$active/$sent'),
           ),
         ),
       ),
@@ -219,6 +222,8 @@ void main() {
     await t.tap(find.text('Abbrechen'));
     await t.pumpAndSettle();
     expect(calls, 0);
+    // Auto-Aktualisierung angehalten und wieder frei, ohne Neuladen.
+    expect(sending, ['true/false', 'false/false']);
 
     await t.tap(find.text('Abwesenheit melden'));
     await t.pumpAndSettle();
@@ -230,6 +235,26 @@ void main() {
     expect(find.textContaining('Jonas Beispiel – krank'), findsOneWidget);
     await t.tap(find.text('OK'));
     await t.pumpAndSettle();
+    expect(sending.sublist(2), ['true/false', 'false/true']);
+
+    // Maske neu aufgebaut (wie nach dem Neuladen): Warnung bleibt.
+    await t.pumpWidget(const SizedBox());
+    await t.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: ForkL10n.localizationsDelegates,
+        supportedLocales: ForkL10n.supportedLocales,
+        locale: const Locale('de'),
+        home: Scaffold(
+          body: AbsenceFormView(
+            form: _form(),
+            onSubmit: (fields) async {
+              calls++;
+              return result;
+            },
+          ),
+        ),
+      ),
+    );
 
     // Gleiche Angaben noch einmal: Warnung in der Rückfrage.
     result = const AbsenceSubmitResult(AbsenceSent.unconfirmed);

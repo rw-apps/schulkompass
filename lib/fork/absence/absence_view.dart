@@ -6,11 +6,20 @@ import 'package:liblanis/liblanis.dart';
 import 'package:lanis/utils/safe_launch.dart';
 import 'package:lanis/widgets/combined_applet_builder.dart';
 
+import '../demo/demo_mode.dart' show demoActive;
+
 import '../l10n/l10n.dart';
 import 'absence_form.dart';
 import 'absence_parser.dart';
 
 String _shortDate(ForkL10n t, DateTime d) => formatDate(t, t.dateShort, d);
+
+/// Felder der zuletzt gesendeten Meldung, solange die App läuft. Ursache
+/// (Prüfung 05.11.26): Als Feld im State der Maske ging der Wert verloren,
+/// sobald die Seite neu lud (CombinedAppletBuilder zeigt beim Laden nur den
+/// Kreisel und baut die Maske neu) – die Warnung vor doppeltem Senden griff
+/// dann nie.
+final absenceLastSent = ValueNotifier<String?>(null);
 
 /// Seite „Krankmeldung“ für Elternkonten.
 class AbsencePage extends ConsumerWidget {
@@ -52,17 +61,33 @@ class AbsencePage extends ConsumerWidget {
         body: AbsenceFormView(
           form: form,
           onCheck: (fields) => checkAbsence(session, fields),
-          onSubmit: (fields) async {
-            final r = await submitAbsence(
-              session,
-              fields,
-              before: form.entries,
-              reload: () => ref.read(absenceParserProvider).getHome(),
-            );
-            // Liste neu laden, damit die Meldung (oder ihr Fehlen) zu sehen
-            // ist – auch wenn das Ergebnis unklar war.
-            refresh?.call();
-            return r;
+          // Demo: kein Senden (die Demo beantwortet Schreibaktionen ohnehin
+          // mit Fehler; „unklar“ mit Link aufs echte Portal wäre irreführend).
+          onSubmit: demoActive
+              ? null
+              : (fields) {
+                  final parser = ref.read(absenceParserProvider);
+                  return submitAbsence(
+                    session,
+                    fields,
+                    before: form.entries,
+                    reload: parser.getHome,
+                  );
+                },
+          // Ursache (Prüfung 05.11.26): Lud die Seite während Rückfrage,
+          // Senden oder Ergebnis neu (alle 5 Minuten oder direkt nach dem
+          // Senden), wurde die Maske abgebaut – „Jetzt melden“ tat nichts
+          // oder das Ergebnis erschien nie. Daher: Auto-Aktualisierung
+          // anhalten, solange gesendet wird, und erst nach dem
+          // Ergebnis-Dialog neu laden.
+          onSending: (active, {sent = false}) {
+            final parser = ref.read(absenceParserProvider);
+            if (active) {
+              parser.stopAutoRefresh();
+            } else {
+              parser.startAutoRefresh();
+              if (sent) refresh?.call();
+            }
           },
         ),
       ),
@@ -79,7 +104,12 @@ class AbsenceFormView extends StatefulWidget {
     this.now,
     this.onCheck,
     this.onSubmit,
+    this.onSending,
   });
+
+  /// Beginn (true) und Ende (false) eines Sendevorgangs – von der Rückfrage
+  /// bis zum geschlossenen Ergebnis; [sent]: es wurde gesendet.
+  final void Function(bool active, {bool sent})? onSending;
 
   final AbsenceForm form;
 
@@ -106,11 +136,6 @@ class _AbsenceFormViewState extends State<AbsenceFormView> {
   late String _blockTo;
   final _comment = TextEditingController();
   bool _busy = false;
-
-  /// Felder der zuletzt gesendeten Meldung. Ursache: Ein zweites Tippen mit
-  /// denselben Angaben (z. B. weil die Liste noch nicht nachgeladen ist)
-  /// würde eine doppelte Meldung erzeugen – dann fragt die Maske nach.
-  String? _lastSent;
 
   AbsenceForm get f => widget.form;
   bool get _isLate => _kind == absenceKindLate;
@@ -281,6 +306,19 @@ class _AbsenceFormViewState extends State<AbsenceFormView> {
   Future<void> _submit() async {
     final onSubmit = widget.onSubmit;
     if (onSubmit == null || _busy) return;
+    widget.onSending?.call(true);
+    var sent = false;
+    try {
+      sent = await _submitInner(onSubmit);
+    } finally {
+      widget.onSending?.call(false, sent: sent);
+    }
+  }
+
+  /// Rückfrage, Senden, Ergebnis; true, wenn gesendet wurde.
+  Future<bool> _submitInner(
+    Future<AbsenceSubmitResult> Function(Map<String, String>) onSubmit,
+  ) async {
     final t = context.t;
     final fields = _draft.toFields(f);
     final key = fields.entries.map((e) => '${e.key}=${e.value}').join('&');
@@ -291,7 +329,7 @@ class _AbsenceFormViewState extends State<AbsenceFormView> {
         title: Text(t.absenceConfirmTitle),
         content: Text(
           [
-            if (key == _lastSent) t.absenceAlreadySent,
+            if (key == absenceLastSent.value) t.absenceAlreadySent,
             t.absenceConfirmText,
             _summary(t),
             if (comment.isNotEmpty) '„$comment“',
@@ -309,7 +347,7 @@ class _AbsenceFormViewState extends State<AbsenceFormView> {
         ],
       ),
     );
-    if (ok != true || !mounted) return;
+    if (ok != true || !mounted) return false;
     setState(() => _busy = true);
     AbsenceSubmitResult r;
     try {
@@ -317,11 +355,9 @@ class _AbsenceFormViewState extends State<AbsenceFormView> {
     } catch (_) {
       r = const AbsenceSubmitResult(AbsenceSent.unconfirmed);
     }
-    if (!mounted) return;
-    setState(() {
-      _busy = false;
-      if (r.state != AbsenceSent.rejected) _lastSent = key;
-    });
+    if (r.state != AbsenceSent.rejected) absenceLastSent.value = key;
+    if (!mounted) return true;
+    setState(() => _busy = false);
     final e = r.entry;
     final (title, text) = switch (r.state) {
       AbsenceSent.confirmed => (
@@ -354,6 +390,7 @@ class _AbsenceFormViewState extends State<AbsenceFormView> {
         ],
       ),
     );
+    return r.state != AbsenceSent.rejected;
   }
 
   void _showFields() {

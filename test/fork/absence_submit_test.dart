@@ -57,6 +57,24 @@ void main() {
     },
   );
 
+  test('fremde neue Zeile mit anderem Tag gilt nicht als gemeldet', () async {
+    const other = AbsenceEntry(
+      name: 'Lena Beispiel',
+      period: '06.11.2026',
+      kind: 'krank',
+      entered: '05.11.2026 07:41',
+      comment: '',
+    );
+    final r = await submitAbsenceWith(
+      fields: fields,
+      before: const [old],
+      check: (_) async => const AbsenceCheck(true, []),
+      save: (_) async => (status: 200, data: ''),
+      reload: () async => form(const [old, other]),
+    );
+    expect(r.state, AbsenceSent.unconfirmed);
+  });
+
   test('abgelehnt: nichts gespeichert', () async {
     var saves = 0;
     final r = await submitAbsenceWith(
