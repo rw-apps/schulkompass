@@ -1,12 +1,10 @@
 # Datenschutzhinweis – App „Schulkompass“
 
-Stand: 04.11.2026
+Stand: 06.11.2026
 
 ## 1. Wer verantwortlich ist
 
 Reinhard Wedhorn  
-Altenhainer Straße 7  
-60326 Frankfurt am Main  
 E-Mail: reinhard.wedhorn@gmx.de
 
 „Schulkompass“ (bis Version 4.1.0+9472 „Schulportal“) ist eine inoffizielle, private und nicht kommerzielle Abwandlung der quelloffenen App [Lanis-Mobile](https://github.com/lanis-mobile/lanis). Mit dem Land Hessen, dem Schulportal Hessen und den Entwicklern von Lanis-Mobile besteht keine Verbindung.

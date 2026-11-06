@@ -1,5 +1,9 @@
 ## Schulkompass (rw-apps, bis 9472 „Schulportal“) – Änderungen gegenüber Lanis-Mobile
 
+**4.1.0+9499** – Datenschutzhinweis
+
+- Kontakt des Verantwortlichen nur noch per E-Mail; an der Datenverarbeitung ändert sich nichts.
+
 **4.1.0+9498** – Benachrichtigungen öffnen die passende Seite
 
 - **Antippen einer Benachrichtigung** führt jetzt direkt hin, beim richtigen Kind: neue Noten und Arbeiten → „Arbeiten & Noten“, Vorabend-Hinweis (Arbeiten, freie Tage, Termine) → Kalender „Termine“, neue Datei der Schule → Dateispeicher, Sammelmeldung und Wahl → Heute. Bisher öffnete jede Meldung nur Heute. Gilt für Meldungen ab diesem Stand.
