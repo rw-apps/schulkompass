@@ -6,6 +6,8 @@ import 'package:lanis/background_service.dart' show notificationChannelId;
 import 'package:lanis/fork_identity.dart' show forkAppName;
 
 import '../l10n/l10n.dart';
+import '../widget/launch_target.dart';
+import 'notify_launch.dart' show notifyPayload;
 import '../ui/today/today_model.dart';
 import '../ui/today/today_page.dart' show dayDiff, relativeDay;
 
@@ -261,6 +263,10 @@ Future<void> showSummary(
           visibility: NotificationVisibility.private,
         ),
       ),
+      // Antippen: Heute, ohne ein Kind zu wählen – die Meldung nennt alle
+      // Kinder (notify_launch.dart). Grenze: Ist gerade ein Kind gewählt,
+      // bleibt es gewählt.
+      payload: notifyPayload(WidgetTarget.today),
     );
     shared.setString(summaryAlertedKey, jsonEncode({'k': keys.toList()}));
   } catch (_) {

@@ -40,6 +40,7 @@ import '../ui/today/today_model.dart'
 import '../widget/home_widget_data.dart' show widgetDays, widgetFreeDays;
 import '../widget/home_widget_sync.dart' show updateHomeWidgetInBackground;
 import '../widget/widget_absence.dart';
+import '../widget/launch_target.dart';
 import 'notices.dart';
 import 'notify_keys.dart';
 import 'summary.dart';
@@ -388,6 +389,8 @@ Future<void> _run(
       message: n.lines.join('\n'),
       id: n.id,
       importance: Importance.high,
+      // Vorabend: Arbeiten, freie Tage, Termine – alle aus dem Kalender.
+      target: WidgetTarget.calendar,
     );
     remembered = rememberKeys(remembered, n.keys);
   }
@@ -541,6 +544,7 @@ Future<void> _storageNews({
     message: [for (final f in fresh) f.name].join('\n'),
     id: storageNewsId,
     importance: Importance.defaultImportance,
+    target: WidgetTarget.storage,
   );
 }
 
@@ -637,6 +641,8 @@ Future<void> _courseNews({
     message: lines.join('\n'),
     id: courseNewsId,
     importance: Importance.defaultImportance,
+    // Neue Noten und Arbeiten: „Arbeiten & Noten“ (Wunsch 06.11.26).
+    target: WidgetTarget.exams,
   );
 }
 

@@ -10,6 +10,8 @@ import 'package:liblanis/liblanis.dart';
 import 'package:lanis/fork/kid_name.dart';
 import 'package:lanis/fork/login_guard.dart';
 import 'package:lanis/fork/notify/notify_keys.dart';
+import 'package:lanis/fork/notify/notify_launch.dart';
+import 'package:lanis/fork/widget/launch_target.dart';
 import 'package:lanis/fork/notify/notify_task.dart' show showForkSummary;
 import 'package:lanis/fork/notify/notify_window.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -211,6 +213,8 @@ Future<void> initializeNotifications() async {
           requestSoundPermission: true,
         ),
       ),
+      // Fork: Tipp öffnet die passende Seite (notify_launch.dart).
+      onDidReceiveNotificationResponse: onNotificationTap,
     );
   } catch (e, s) {
     backgroundLogger.e(e, stackTrace: s);
@@ -481,6 +485,8 @@ class BackgroundTaskToolkit {
     bool avoidDuplicateSending = false,
     Importance importance = Importance.high,
     Priority priority = Priority.high,
+    // Fork: Ziel beim Antippen, mit diesem Konto (notify_launch.dart).
+    WidgetTarget target = WidgetTarget.today,
   }) async {
     if (id > 10000 || id < 0) {
       throw ArgumentError('id must be between 0 and 10000');
@@ -530,6 +536,7 @@ class BackgroundTaskToolkit {
           android: androidDetails,
           iOS: iOSDetails,
         ),
+        payload: notifyPayload(target, account: accountId),
       );
     } catch (e, s) {
       backgroundLogger.e(e, stackTrace: s);

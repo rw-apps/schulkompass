@@ -1,5 +1,9 @@
 ## Schulkompass (rw-apps, bis 9472 „Schulportal“) – Änderungen gegenüber Lanis-Mobile
 
+**4.1.0+9498** – Benachrichtigungen öffnen die passende Seite
+
+- **Antippen einer Benachrichtigung** führt jetzt direkt hin, beim richtigen Kind: neue Noten und Arbeiten → „Arbeiten & Noten“, Vorabend-Hinweis (Arbeiten, freie Tage, Termine) → Kalender „Termine“, neue Datei der Schule → Dateispeicher, Sammelmeldung und Wahl → Heute. Bisher öffnete jede Meldung nur Heute. Gilt für Meldungen ab diesem Stand.
+
 **4.1.0+9497** – Vertretungsplan: Freisetzung ist kein Ausfall
 
 - **Freisetzung:** Steht im Vertretungsplan „Freisetzung“, zeigt die App die Stunde nicht mehr rot als „fällt aus“, sondern gelb als Änderung mit dem Wort der Schule – die Klasse hat dann statt der Stunde etwas anderes. Echte Ausfälle („Entfall“) bleiben rot.

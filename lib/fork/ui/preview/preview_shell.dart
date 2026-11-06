@@ -133,11 +133,39 @@ class _PreviewShellState extends State<PreviewShell> {
     _select(ShellTab.courses);
   }
 
-  /// Tipp im Startbildschirm-Widget (widget_launch.dart, Entwurf 10): das
+  /// Tipp im Startbildschirm-Widget (widget_launch.dart, Entwurf 10) oder
+  /// auf eine Benachrichtigung (notify_launch.dart, Wunsch 06.11.26): das
   /// Kind ist schon gewählt, hier nur Reiter bzw. Seite. Essen ohne
-  /// eingetragene Mensa führt nach Heute (dort steht, wie man sie einträgt).
+  /// eingetragene Mensa führt nach Heute (dort steht, wie man sie einträgt);
+  /// Dateispeicher ohne bekanntes Konto (nach der Wartezeit in
+  /// widget_launch.dart, _waitForKid) oder ohne das Modul nach „Mehr“.
   void _onWidgetTarget(BuildContext context, WidgetLaunch l) {
     switch (l.target) {
+      case WidgetTarget.calendar:
+        _openEvents();
+      case WidgetTarget.storage:
+        final m = FamilyData.of(
+          context,
+        ).where((x) => x.accountId == l.account).firstOrNull;
+        final s = m?.snapshot;
+        _navKeys[ShellTab.more]!.currentState?.popUntil((r) => r.isFirst);
+        _select(ShellTab.more);
+        if (m == null || s == null) return;
+        if (!offersStorage(s.session.travelMenu)) return;
+        // Nach dem nächsten Bild: Ein noch nie geöffneter Reiter baut seinen
+        // Navigator erst jetzt (_visited). Navigator des Reiters „Mehr“ wie
+        // der Eintrag dort (_liveEntries), mit dem Konto ausdrücklich: Sein
+        // eigener Kontext liegt über FamilySwitch und kennt kein Kind.
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          final nav = _navKeys[ShellTab.more]!.currentState;
+          if (!mounted || nav == null) return;
+          pushInTab<void>(
+            nav.context,
+            (_) => LiveStoragePage(subtitle: shortSchoolName(s.schoolName)),
+            kidChips: true,
+            member: m,
+          );
+        });
       case WidgetTarget.today:
         _navKeys[ShellTab.today]!.currentState?.popUntil((r) => r.isFirst);
         _select(ShellTab.today);
