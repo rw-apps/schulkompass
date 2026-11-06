@@ -23,7 +23,6 @@ import '../ui/courses/live_courses_page.dart' show examCalendarOf;
 import '../ui/live/family.dart';
 import '../ui/live/live_data.dart';
 import '../ui/plan/plan_model.dart';
-import '../ui/today/today_from_lanis.dart' show freeDaysAhead, freeDaysFrom;
 import 'home_widget_data.dart';
 import 'widget_absence.dart';
 
@@ -158,9 +157,11 @@ Map<String, Object?>? liveKidEntry(
     days: s.substitutionDaysFromToday(now),
     now: now,
     t: t,
-    free: s.offers('kalender.php')
-        ? freeDaysFrom(events, now, className: className, days: freeDaysAhead)
-        : const {},
+    free: widgetFreeDays(
+      s.offers('kalender.php') ? events : const [],
+      now,
+      className: className,
+    ),
     className: className,
   );
   // Gemeldete Abwesenheit (widget_absence.dart, Abnahme 05.11.26): dieselbe

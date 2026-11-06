@@ -55,13 +55,13 @@ class LiveCalendarPage extends StatelessWidget {
         // diesen Tagen leer, Tagesansicht nennt den Grund.
         final free = [
           for (final (m, _) in shown)
-            m.snapshot.offers('kalender.php')
-                ? freeDaysFrom(
-                    m.snapshot.calendar.content ?? const [],
-                    schoolWeek(now).first,
-                    className: liveClassName(m.snapshot),
-                  )
-                : const <DateTime, String>{},
+            freeDaysFrom(
+              m.snapshot.offers('kalender.php')
+                  ? m.snapshot.calendar.content ?? const []
+                  : const [],
+              schoolWeek(now).first,
+              className: liveClassName(m.snapshot),
+            ),
         ];
         final plans = [
           for (final (i, (m, live)) in shown.indexed)

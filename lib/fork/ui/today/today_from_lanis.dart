@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 
+import '../../data/holidays_hessen.dart';
 import 'package:liblanis/liblanis.dart';
 
 import '../../courses_scan.dart';
@@ -741,7 +742,8 @@ DateTime lastDayOf(CalendarEvent e) {
 /// Allgemeine Feiertage in der Ferien-Kategorie („Reformationstag“, an
 /// Schule B so eingetragen) zählen nicht – manche sind Schultage. Ein
 /// Ferieneintrag mit Uhrzeit über mehrere Tage (Schule A: 05.10. 11:00 bis
-/// 16.10. 12:00) gilt an allen seinen Tagen ganz.
+/// 16.10. 12:00) gilt an allen seinen Tagen ganz. Gesetzliche Feiertage in
+/// Hessen kommen unabhängig vom Kalender hinzu (hessenHolidays, 06.11.26).
 Map<DateTime, String> freeDaysFrom(
   List<CalendarEvent> events,
   DateTime now, {
@@ -776,6 +778,17 @@ Map<DateTime, String> freeDaysFrom(
       d = DateTime(d.year, d.month, d.day + 1)
     ) {
       if (d.weekday <= DateTime.friday) out.putIfAbsent(d, () => title);
+    }
+  }
+  // Gesetzliche Feiertage in Hessen (holidays_hessen.dart): immer frei,
+  // auch wenn die Schule sie nicht einträgt. Ein Eintrag der Schule am
+  // selben Tag (z. B. „Herbstferien“) geht vor.
+  for (var y = today.year; y <= last.year; y++) {
+    for (final h in hessenHolidays(y).entries) {
+      if (h.key.isBefore(today) || h.key.isAfter(last)) continue;
+      if (h.key.weekday <= DateTime.friday) {
+        out.putIfAbsent(h.key, () => h.value);
+      }
     }
   }
   return out;

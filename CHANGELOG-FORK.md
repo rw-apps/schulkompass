@@ -1,5 +1,12 @@
 ## Schulkompass (rw-apps, bis 9472 „Schulportal“) – Änderungen gegenüber Lanis-Mobile
 
+**4.1.0+9496** – Feiertage, nächster Schultag je Kind
+
+- **Gesetzliche Feiertage:** Die App kennt jetzt die Feiertage in Hessen (Ostern, Himmelfahrt, Pfingsten, Fronleichnam usw.) auch dann, wenn der Schulkalender sie nicht führt oder nicht geladen ist. Heute, Stundenplan, Unterricht, Hausaufgaben-Fristen, Widget und „Krank melden“ zeigen bzw. schlagen dafür keinen Unterricht mehr vor.
+- **Hinweis vor freien Tagen:** Unter „Nächster Schultag“ steht, was dazwischen frei ist, z. B. „Herbstferien bis Fr 23.10.“ oder „Christi Himmelfahrt am Do 14.5.“. An Himmelfahrt selbst nennt er den Brückentag danach.
+- **Mehrere Konten:** Der nächste Schultag gilt je Konto nach dessen Schulkalender – wichtig, wenn Geschwister an verschiedenen Schulen unterschiedliche Ferien oder bewegliche Ferientage haben.
+- **Sammel-Benachrichtigung:** nennt vor einem Feiertag die Änderungen des Tages danach statt des leeren Feiertags.
+
 **4.1.0+9495** – Heute: nächster Schultag ohne Ferien
 
 - **Vor den Ferien:** Nach Schulschluss zeigt die Karte den ersten Schultag nach den Ferien (laut Schulkalender) statt beim Ferien-Montag stehen zu bleiben – mit Band „krank gemeldet“ und „Gemeldet“, wenn dieser Tag schon gemeldet ist. Auch während der Ferien steht dort der erste Schultag danach. Hinweise und Arbeiten gehören zu diesem Tag.

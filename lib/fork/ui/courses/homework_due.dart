@@ -10,7 +10,8 @@ import 'courses_model.dart';
 /// Vermutete Frist einer Hausaufgabe je Kurs: die nächste Stunde des Kurses
 /// nach dem Tag des Aufgebens – aus dem Stundenplan (nextLessonOf, dieselbe
 /// Zuordnung Kurs ↔ Plan wie „Nächste Stunde“ auf der Kursseite), schulfreie
-/// Tage aus dem Kalender übersprungen (freeDaysFrom).
+/// Tage aus dem Kalender und gesetzliche Feiertage übersprungen
+/// (freeDaysFrom, holidays_hessen.dart).
 ///
 /// Ursache (Frage 27.10.26: „Wann sind Hausaufgaben nicht mehr
 /// relevant?“): Das Portal nennt nur den Tag des Aufgebens, keine Frist;
@@ -62,9 +63,7 @@ DateTime? Function(String course, DateTime? given)? _buildDue(LiveSnapshot s) {
         i.subject,
         codes,
         from,
-        free: cal.isEmpty
-            ? const {}
-            : freeDaysFrom(cal, from, className: className, days: 22),
+        free: freeDaysFrom(cal, from, className: className, days: 22),
       )?.day;
     });
   };

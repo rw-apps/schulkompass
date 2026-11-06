@@ -12,6 +12,7 @@ import '../../absence/absence_today.dart' show absenceKindIsLate;
 import '../../data/portal_rules.dart';
 import '../../l10n/l10n.dart';
 import '../../widget/home_widget_data.dart' show widgetSlotShort;
+import 'today_from_lanis.dart' show freeDaysFrom;
 import 'today_model.dart';
 import 'today_page.dart' show dayDiff, relativeDay;
 
@@ -187,8 +188,9 @@ DateTime nextSchoolDay(DateTime now) {
 /// schlug „Krank melden“ nachmittags sonst einen Ferientag vor). Grenze:
 /// frei ist nur, was [free] kennt – absenceFreeDays liefert 60
 /// Kalendertage; die Schleife bricht nach 60 Sprüngen ab. Auch der nächste
-/// Tag der Karte (FamilyToday.nextDate) kommt von hier (Wunsch 06.11.26).
-/// Ohne Kalender zählen Ferientage als Schultage.
+/// Tag der Karte je Kind (FamilyToday.nextDateOf) kommt von hier (Wunsch
+/// 06.11.26). Ohne Kalender kennt [free] nur die gesetzlichen Feiertage
+/// (holidays_hessen.dart); Ferientage zählen dann als Schultage.
 DateTime nextSchoolDayFree(DateTime now, Map<DateTime, String> free) {
   var d = nextSchoolDay(now);
   for (var i = 0; i < 60 && free.containsKey(d); i++) {
@@ -196,6 +198,17 @@ DateTime nextSchoolDayFree(DateTime now, Map<DateTime, String> free) {
   }
   return d;
 }
+
+/// Nächster Schultag nach [now] ohne Wochenende und gesetzliche Feiertage
+/// (holidays_hessen.dart), aber ohne Ferien. Für die Sammel-Benachrichtigung
+/// in App (live_today_page.dart) und Hintergrund (notify_task.dart `next:`).
+/// Ursache (Prüfung 06.11.26): Vor Himmelfahrt nannte sie den Feiertag,
+/// während die Karte schon Freitag zeigte. Feiertage braucht kein Abruf,
+/// beide Pfade rechnen also denselben Tag (sonst meldeten sie im Wechsel,
+/// mit Ton). Grenze: Ferien und Studientage kennt nur der Kalender, den der
+/// Hintergrund nicht immer lädt – vor ihnen bleibt es beim freien Tag.
+DateTime nextSchoolDayLegal(DateTime now) =>
+    nextSchoolDayFree(now, freeDaysFrom(const [], now, days: 14));
 
 /// Folge des Ausfalls von Abschnitt [i] in [lessons] (Tag, zeitlich
 /// sortiert): [start] = Beginn der ersten stattfindenden Stunde, wenn vor
@@ -239,8 +252,8 @@ DateTime nextSchoolDayFree(DateTime now, Map<DateTime, String> free) {
 /// über die Stunde verglichen, weil die Bezeichnung abweichen kann
 /// („5.“ an der Stunde, „5. Std.“ im Beispiel demo_family.dart).
 ///
-/// [next]: nächster Schultag der Karte (FamilyToday.nextDate, ohne Ferien –
-/// Wunsch 06.11.26); null = [nextSchoolDay].
+/// [next]: nächster Schultag der Karte (FamilyToday.nextDateOf, ohne Ferien
+/// und Feiertage – Wunsch 06.11.26); null = [nextSchoolDay].
 List<KidHint> kidHints(
   ChildToday kid,
   DateTime now,
@@ -483,14 +496,17 @@ List<WeekItem> examsFor(List<WeekItem> week, int index, int kidCount) => [
 
 /// Termine für „Demnächst“ ohne die Arbeiten, die schon als Hinweis auf
 /// einer Karte stehen.
+///
+/// [nextOf]: nächster Schultag des Kindes einer Arbeit (childIndex), siehe
+/// FamilyToday.nextDateOf; null = [nextSchoolDay].
 List<WeekItem> upcomingWithoutHints(
   List<WeekItem> week,
   DateTime now,
   int kidCount, {
-  DateTime? next,
+  DateTime? Function(int? childIndex)? nextOf,
 }) => [
   for (final w in week)
-    if (!examIsHint(w, now, next: next) ||
+    if (!examIsHint(w, now, next: nextOf?.call(w.childIndex)) ||
         (w.childIndex == null && kidCount != 1) ||
         (w.childIndex != null && w.childIndex! >= kidCount))
       w,

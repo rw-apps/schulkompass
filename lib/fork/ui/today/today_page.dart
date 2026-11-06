@@ -177,7 +177,8 @@ class TodayPage extends StatelessWidget {
           onCancelMeal: onCancelMeal,
           onOpenDay: onOpenDay,
           nextDay: i < data.next.length ? data.next[i] : null,
-          nextDate: data.nextDate,
+          nextDate: data.nextDateOf(i),
+          nextNote: i < data.nextNotes.length ? data.nextNotes[i] : null,
           exams: examsFor(data.week, i, data.kids.length),
           onEnterTimes: onEnterTimes,
         ),
@@ -215,7 +216,7 @@ class TodayPage extends StatelessWidget {
           data.week,
           data.now,
           data.kids.length,
-          next: data.nextDate,
+          nextOf: data.nextDateOf,
         ).isEmpty
         ? null
         : UpcomingList(
@@ -314,6 +315,7 @@ class KidCard extends StatelessWidget {
     this.onOpenDay,
     this.nextDay,
     this.nextDate,
+    this.nextNote,
     this.exams = const [],
     this.onEnterTimes,
   });
@@ -331,6 +333,9 @@ class KidCard extends StatelessWidget {
   /// Datum (_NextDayBand).
   final ChildToday? nextDay;
   final DateTime? nextDate;
+
+  /// Was bis [nextDate] frei ist (FamilyToday.nextNotes).
+  final String? nextNote;
   final void Function(ChildToday child)? onReportAbsence;
   final void Function(ChildToday child)? onOpenHomework;
 
@@ -489,6 +494,9 @@ class KidCard extends StatelessWidget {
               now: now,
               doneAt: doneAt,
               freeLabel: kid.freeLabel,
+              // Den Grund von heute nimmt freeNote heraus (skip), er steht
+              // schon oben bei „Heute“ (freeLabel).
+              note: nextNote,
             ),
           ],
           // Krankmeldung (Wunsch 05.11.26): gleich unter dem Kopf, damit man
@@ -772,10 +780,15 @@ class _NextDayHead extends StatelessWidget {
     required this.now,
     this.doneAt,
     this.freeLabel,
+    this.note,
   });
 
   final DateTime day;
   final DateTime now;
+
+  /// Was bis [day] frei ist („Herbstferien bis Fr 23.10.“), unter dem
+  /// Datum; null = nichts übersprungen.
+  final String? note;
 
   /// Ende der letzten Stunde heute; null = heute kein Unterricht.
   final String? doneAt;
@@ -819,6 +832,10 @@ class _NextDayHead extends StatelessWidget {
         ),
         const SizedBox(height: Sp.xxs),
         Text(formatDate(t, t.dateLong, day), style: k.section),
+        if (note case final n?) ...[
+          const SizedBox(height: Sp.xxs),
+          Text(n, style: k.meta),
+        ],
       ],
     );
   }
@@ -1333,7 +1350,7 @@ class UpcomingList extends StatelessWidget {
       data.week,
       data.now,
       data.kids.length,
-      next: data.nextDate,
+      nextOf: data.nextDateOf,
     )..sort((a, b) => a.day.compareTo(b.day));
     final shown = items.take(max).toList();
     return Column(

@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lanis/fork/data/holidays_hessen.dart';
 import 'package:lanis/fork/l10n/l10n.dart';
 import 'package:lanis/fork/school_links.dart';
 import 'package:lanis/fork/ui/plan/plan_model.dart';
@@ -918,8 +919,9 @@ void main() {
           cat: elternCat,
         ),
       ], now);
+      // Ohne die gesetzlichen Feiertage der 400 Tage (holidays_hessen.dart).
       expect(
-        free.length,
+        free.values.where((v) => v == 'Ferien').length,
         10,
         reason: 'Mo 5.10. bis Fr 16.10., ohne Wochenende',
       );
@@ -937,7 +939,13 @@ void main() {
           allDay: true,
         ),
       ], now);
-      expect(b.keys.last, DateTime(2026, 10, 16));
+      expect(
+        [
+          for (final e in b.entries)
+            if (e.value == 'Schöne Ferien') e.key,
+        ].last,
+        DateTime(2026, 10, 16),
+      );
     });
 
     test('kein freier Tag: Betreuung, halber Tag, Feiertag, andere Klasse', () {
@@ -965,9 +973,17 @@ void main() {
         now,
         className: '9C',
       );
-      expect(free, isEmpty);
+      // Gesetzliche Feiertage (holidays_hessen.dart) kommen immer hinzu.
+      bool legal(DateTime x) => hessenHolidays(x.year).containsKey(x);
+      expect(free.keys.where((x) => !legal(x)), isEmpty);
+      final moveable = freeDaysFrom([
+        ev('Beweglicher Ferientag', d, d, allDay: true),
+      ], now);
       expect(
-        freeDaysFrom([ev('Beweglicher Ferientag', d, d, allDay: true)], now),
+        {
+          for (final e in moveable.entries)
+            if (!legal(e.key)) e.key: e.value,
+        },
         {d: 'Beweglicher Ferientag'},
       );
     });

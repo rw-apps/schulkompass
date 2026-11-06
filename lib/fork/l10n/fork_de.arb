@@ -1937,6 +1937,17 @@
   "widgetConfigTitle": "Kinder im Widget",
   "widgetConfigOk": "Fertig",
   "widgetConfigEmpty": "Erst die App öffnen und anmelden.",
+  "nextFreeOn": "{label} am {date}",
+  "@nextFreeOn": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
   "widgetFreeUntil": "{label} bis {date}",
   "@widgetFreeUntil": {
     "placeholders": {

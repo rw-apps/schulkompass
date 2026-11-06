@@ -211,6 +211,40 @@ void main() {
     expect(find.text('Montag, 2. November'), findsOneWidget);
   });
 
+  testWidgets('nächster Schultag je Kind mit Hinweis', (t) async {
+    // Rückfall nextDate wäre der Ferien-Montag; das Kind hat den 26.10.
+    await t.pumpWidget(
+      app(
+        FamilyToday(
+          now: DateTime(2026, 10, 9, 17),
+          kids: [kid(today)],
+          week: const [],
+          next: [kid(tomorrow)],
+          nextDate: DateTime(2026, 10, 12),
+          nextDates: [DateTime(2026, 10, 26)],
+          nextNotes: const ['Herbstferien bis Fr 23.10.'],
+        ),
+      ),
+    );
+    await t.pumpAndSettle();
+    expect(find.text('Montag, 26. Oktober'), findsOneWidget);
+    expect(find.text('Herbstferien bis Fr 23.10.'), findsOneWidget);
+    expect(find.text('Montag, 12. Oktober'), findsNothing);
+  });
+
+  test('nextDateOf ohne Index bei einem Kind: dessen Tag', () {
+    final f = FamilyToday(
+      now: DateTime(2026, 10, 9, 17),
+      kids: const [],
+      week: const [],
+      nextDate: DateTime(2026, 10, 12),
+      nextDates: [DateTime(2026, 10, 26)],
+    );
+    expect(f.nextDateOf(null), DateTime(2026, 10, 26));
+    expect(f.nextDateOf(0), DateTime(2026, 10, 26));
+    expect(f.nextDateOf(3), DateTime(2026, 10, 12));
+  });
+
   testWidgets('ohne Unterricht am nächsten Tag: bleibt bei vorbei', (t) async {
     await t.pumpWidget(
       app(

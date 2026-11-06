@@ -26,12 +26,12 @@ library;
 import 'dart:convert';
 
 import 'package:intl/intl.dart';
-import 'package:liblanis/liblanis.dart' show SubstitutionDay;
+import 'package:liblanis/liblanis.dart' show CalendarEvent, SubstitutionDay;
 
 import '../l10n/l10n.dart';
 import '../ui/plan/plan_model.dart';
 import '../ui/today/today_from_lanis.dart'
-    show dayLessonsFor, planWithSubstitutions;
+    show dayLessonsFor, freeDaysAhead, freeDaysFrom, planWithSubstitutions;
 import '../ui/today/today_model.dart';
 
 /// Schlüssel der Widget-Daten in den SharedPreferences „HomeWidgetPreferences“
@@ -59,6 +59,25 @@ const widgetKidsSetting = 'fork-widget/kids';
 /// über ein Wochenende oder kurze Ferien hinweg. Grenze: Danach zeigt das
 /// Widget „Stand …“ (veraltet, WidgetModel.kt).
 const widgetDaysAhead = 7;
+
+/// Schulfreie Tage für die Datei: Kalender der Schule bis heute +
+/// [freeDaysAhead], gesetzliche Feiertage (holidays_hessen.dart) bis heute +
+/// [widgetDaysAhead]. Ursache (Prüfung 06.11.26): Mit nur [freeDaysAhead]
+/// stand ein Feiertag an Tag 4–7 als Unterrichtstag in der Datei, und „krank
+/// bis …“ brach davor ab. Die Feiertage braucht kein Abruf, App
+/// (home_widget_sync.dart) und Hintergrund (notify_task.dart) schreiben
+/// dieselben Tage. Grenze: Ferien und Studientage nach Tag 3 kennt die Datei
+/// nicht – der Hintergrund lädt den Kalender nur so weit (notify_task.dart
+/// loadEvents); ein längerer Horizont nur in der App ließe die Datei
+/// zwischen App- und Hintergrundstand springen.
+Map<DateTime, String> widgetFreeDays(
+  List<CalendarEvent> events,
+  DateTime now, {
+  String className = '',
+}) => {
+  ...freeDaysFrom(const [], now, days: widgetDaysAhead),
+  ...freeDaysFrom(events, now, className: className, days: freeDaysAhead),
+};
 
 /// Arbeiten, die die Datei kennt: wie [widgetDaysAhead]. Das Symbol leuchtet
 /// nur am gezeigten Tag selbst (Vorschlag 2, 30.10.26: sonst leuchtete es

@@ -321,7 +321,11 @@ class _AbsenceScreen extends StatelessWidget {
                       ? const []
                       : absenceReminders(live!, current, t, DateTime.now()),
                   onCancelMeal: onCancelMeal,
-                  free: live == null ? const {} : absenceFreeDays(live!),
+                  // Ohne Live-Stand nur die gesetzlichen Feiertage
+                  // (holidays_hessen.dart), Prüfung 06.11.26.
+                  free: live == null
+                      ? freeDaysFrom(const [], DateTime.now(), days: 60)
+                      : absenceFreeDays(live!),
                 ),
               )
             : AbsenceFormView(
@@ -1148,7 +1152,8 @@ class _DateTile extends StatelessWidget {
   }
 }
 
-/// Schulfreie Tage der nächsten Wochen aus dem Kalender des Kontos (für
+/// Schulfreie Tage der nächsten Wochen aus dem Kalender des Kontos und den
+/// gesetzlichen Feiertagen (freeDaysFrom, holidays_hessen.dart; für
 /// „Auch … melden“ und den Vorschlag nach Schulschluss). 60 Tage, damit
 /// auch die Sommerferien (6 Wochen, bis 44 Tage) ganz darin liegen; der
 /// Kalender lädt ohnehin rund ein Jahr voraus (CalendarParser.getHome).

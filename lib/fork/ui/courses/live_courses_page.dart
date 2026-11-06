@@ -242,14 +242,14 @@ Widget liveCourseDetail(
               i.subject,
               codes,
               now,
-              free: s.offers('kalender.php')
-                  ? freeDaysFrom(
-                      s.calendar.content ?? const [],
-                      now,
-                      className: liveClassName(s),
-                      days: 22,
-                    )
-                  : const {},
+              free: freeDaysFrom(
+                s.offers('kalender.php')
+                    ? s.calendar.content ?? const []
+                    : const [],
+                now,
+                className: liveClassName(s),
+                days: 22,
+              ),
             ),
       calendarExams: examCalendarOf(s, now),
       lastMessages: last,

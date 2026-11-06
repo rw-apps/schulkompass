@@ -735,6 +735,7 @@
   "widgetConfigTitle": "Children in widget",
   "widgetConfigOk": "Done",
   "widgetConfigEmpty": "Open the app and sign in first.",
+  "nextFreeOn": "{label} on {date}",
   "widgetFreeUntil": "{label} until {date}",
   "widgetFreeDate": "EEE M/d",
   "widgetAbsent": "reported sick",

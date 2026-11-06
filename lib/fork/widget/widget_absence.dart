@@ -31,7 +31,7 @@ const _maxChain = 30;
 /// Nächster Schultag nach [d]: ohne Wochenende und ohne die freien Tage
 /// der Datei ([free], ISO-Datum), damit ein Studientag zwischen zwei
 /// Meldungen die Kette nicht beendet (Prüfung 05.11.26). Grenze: freie Tage
-/// kennt die Datei nur bis heute + widgetDaysAhead.
+/// kennt die Datei nur so weit wie widgetFreeDays (home_widget_data.dart).
 DateTime _nextSchoolDay(DateTime d, Set<String> free) {
   var n = DateTime(d.year, d.month, d.day + 1);
   while (n.weekday > 5 || free.contains(_iso(n))) {
@@ -52,9 +52,10 @@ String _iso(DateTime d) =>
 /// gemeldet“) geht vor Verspätung am selben Tag. Ende: letzter Schultag, an
 /// dem eine Krankmeldung gilt, auch über mehrere Einträge und Wochenenden
 /// hinweg; freie Tage der Datei überspringt die Kette ([_nextSchoolDay]).
-/// Grenze: ein Feiertag, den der Kalender nicht als frei führt, beendet sie;
-/// ohne geladenen Kalender (Hintergrund-Lauf, notify_task.dart `events`
-/// null) kennt die Kette gar keine freien Tage und endet davor.
+/// Die gesetzlichen Feiertage Hessens stehen bis heute + widgetDaysAhead
+/// immer in der Datei (widgetFreeDays, home_widget_data.dart). Grenze: ohne
+/// geladenen Kalender (Hintergrund-Lauf, notify_task.dart `events` null)
+/// fehlen Ferien und bewegliche Ferientage; die Kette endet dann vor ihnen.
 List<Map<String, Object?>> widgetDaysWithAbsences(
   List<Map<String, Object?>> days, {
   required List<AbsenceEntry> entries,

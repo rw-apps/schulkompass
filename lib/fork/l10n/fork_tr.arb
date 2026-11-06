@@ -735,6 +735,7 @@
   "widgetConfigTitle": "Widget’taki çocuklar",
   "widgetConfigOk": "Tamam",
   "widgetConfigEmpty": "Önce uygulamayı açıp giriş yapın.",
+  "nextFreeOn": "{date} {label}",
   "widgetFreeUntil": "{label} {date} kadar",
   "widgetFreeDate": "EEE d.M.",
   "widgetAbsent": "hasta bildirildi",

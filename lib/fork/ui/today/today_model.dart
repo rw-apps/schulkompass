@@ -203,13 +203,41 @@ class FamilyToday {
     this.updatedAt,
     this.next = const [],
     this.nextDate,
+    this.nextDates = const [],
+    this.nextNotes = const [],
   });
 
   /// Plan des nächsten Schultags je Kind (gleiche Reihenfolge wie [kids],
-  /// null = unbekannt) und sein Datum. Nach Schulschluss zeigt die Karte
+  /// null = unbekannt; Datum in [nextDates]). Nach Schulschluss zeigt die Karte
   /// ihn statt „Unterricht vorbei“ (Vorschlag 4, Abnahme 26.10.26).
   final List<ChildToday?> next;
+
+  /// Nächster Werktag (nextSchoolDay, ohne Ferien und Feiertage) – Rückfall,
+  /// wenn [nextDates] fehlt (Demo, Tests). Die Live-Seite füllt [nextDates]
+  /// immer.
   final DateTime? nextDate;
+
+  /// Nächster Schultag je Kind (gleiche Reihenfolge wie [kids]), ohne die
+  /// freien Tage seiner Schule (Wunsch 06.11.26: ein beweglicher Ferientag
+  /// nur einer Schule ließ dieses Kind sonst bei „Unterricht vorbei“).
+  final List<DateTime?> nextDates;
+
+  /// Was zwischen heute und [nextDates] frei ist, je Kind („Herbstferien
+  /// bis Fr 23.10.“); null = nichts übersprungen. Steht unter dem Datum des
+  /// nächsten Schultags (Wunsch 06.11.26).
+  final List<String?> nextNotes;
+
+  /// Nächster Schultag von Kind [i] ([nextDates], sonst [nextDate]). Ohne
+  /// Index bei nur einem Kind dessen Tag (Prüfung 06.11.26: ein Termin ohne
+  /// childIndex wurde sonst gegen einen anderen Tag geprüft als die Karte,
+  /// stand doppelt oder fehlte).
+  DateTime? nextDateOf(int? i) {
+    if (i == null && nextDates.length == 1) return nextDates.first ?? nextDate;
+    return (i != null && i >= 0 && i < nextDates.length
+            ? nextDates[i]
+            : null) ??
+        nextDate;
+  }
 
   final DateTime now;
   final List<ChildToday> kids;

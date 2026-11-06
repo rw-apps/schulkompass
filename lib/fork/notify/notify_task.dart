@@ -33,11 +33,11 @@ import '../ui/today/today_from_lanis.dart'
     show classFromCourses, freeDaysAhead, freeDaysFrom, weekItemsFromCalendar;
 import '../mensa.dart' show MensaAddresses;
 import '../mensa_store.dart';
-import '../ui/today/kid_hints.dart' show nextSchoolDay;
+import '../ui/today/kid_hints.dart' show nextSchoolDayLegal;
 import '../ui/today/today_from_lanis.dart' show applySubstitutions;
 import '../ui/today/today_model.dart'
     show ChangeItem, DayLesson, hasTime, minutesOf;
-import '../widget/home_widget_data.dart' show widgetDays;
+import '../widget/home_widget_data.dart' show widgetDays, widgetFreeDays;
 import '../widget/home_widget_sync.dart' show updateHomeWidgetInBackground;
 import '../widget/widget_absence.dart';
 import 'notices.dart';
@@ -159,7 +159,9 @@ Future<void> _run(
   // in der App. Ursache (Prüfung 27.10.26): Ohne freie Tage kam eine
   // Änderung am freien Tag in die Sammelmeldung, die offene App nahm sie
   // heraus, der nächste Lauf meldete sie mit Ton erneut. Grenze: Ohne
-  // Kalender (Fehler, nicht angeboten) bleiben die Änderungen.
+  // Kalender (Fehler, nicht angeboten) bleiben die Änderungen an Ferien-
+  // und Studientagen; die an gesetzlichen Feiertagen fallen immer heraus
+  // (freeDaysFrom, holidays_hessen.dart).
   List<CalendarEvent>? events;
   Future<List<CalendarEvent>> loadEvents() async {
     if (events != null) return events!;
@@ -303,7 +305,7 @@ Future<void> _run(
                   if (!sick(c.day)) c,
               ],
               now: now,
-              next: nextSchoolDay(now),
+              next: nextSchoolDayLegal(now),
               t: t,
               endOf: {
                 for (final l in r.today)
@@ -336,12 +338,7 @@ Future<void> _run(
       days: subDays,
       now: now,
       t: t,
-      free: freeDaysFrom(
-        events ?? const [],
-        now,
-        className: className,
-        days: freeDaysAhead,
-      ),
+      free: widgetFreeDays(events ?? const [], now, className: className),
       className: className,
     );
     // Gemeldete Abwesenheit (widget_absence.dart, Abnahme 05.11.26): die
