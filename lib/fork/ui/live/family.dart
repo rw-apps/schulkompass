@@ -720,4 +720,5 @@ bool sameLiveData(LiveSnapshot a, LiveSnapshot b) =>
     // galt als „keine Änderung“, die Familie behielt den alten Stand –
     // „Heute krank gemeldet“ und „Krankmeldungen“ erschienen nie.
     identical(a.absences, b.absences) &&
+    identical(a.storedSickDays, b.storedSickDays) &&
     a.accountKey == b.accountKey;

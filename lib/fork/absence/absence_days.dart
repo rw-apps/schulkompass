@@ -70,16 +70,34 @@ List<DateTime> absenceSickDays(
 /// die Tage von Lena auch für Jonas' Essens-Erinnerungen, wenn beide über
 /// ein Elternkonto bestellen (meal_hub_page.dart mealKids). Kinder ohne
 /// Krankheitstag fehlen in der Map.
+///
+/// Zusätzlich [absencePlanKidKey] für das Kind des Plans (kids.first):
+/// Scheitern im Hintergrund Unterricht UND Meldungsabruf im selben Lauf,
+/// kennt notify_task.dart keine Kinder-Kennung – ohne diesen Eintrag kämen
+/// die unterdrückten Ausfälle für einen Lauf mit Ton zurück (Prüfung
+/// 06.11.26).
 Map<String, List<DateTime>> absenceSickDaysByKid(
   List<AbsenceEntry> entries,
   List<ChildLessons> kids,
   DateTime now,
-) => {
-  for (final k in kids)
-    if (absenceSickDays(entries, shortFirstName(k.firstName), now)
-        case final days when days.isNotEmpty)
-      k.pupilId: days,
-};
+) {
+  final out = <String, List<DateTime>>{
+    for (final k in kids)
+      if (absenceSickDays(entries, shortFirstName(k.firstName), now)
+          case final days when days.isNotEmpty)
+        k.pupilId: days,
+  };
+  if (kids.isNotEmpty && out[kids.first.pupilId] != null) {
+    out[absencePlanKidKey] = out[kids.first.pupilId]!;
+  }
+  return out;
+}
+
+/// Schlüssel der Tage des Plan-Kindes in der Ablage. Mit Doppelpunkt, weil
+/// Kinder-Kennungen aus `h2[data-pupil]` kommen (lessons_parent.dart) und
+/// im Portal nur Ziffern sind – ungeprüft, darum ein Zeichen, das in einer
+/// Kennung nicht vorkommt.
+const absencePlanKidKey = ':plan';
 
 /// Ablegen (ersetzt die vorige Liste, je Kind); leer löscht den Eintrag.
 /// Schreibt nur bei Änderung.

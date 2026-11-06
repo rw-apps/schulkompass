@@ -80,7 +80,12 @@ bool absenceCovers(AbsenceEntry e, DateTime day) {
 }
 
 /// Verspätung statt Abwesenheit (Art im Portal „verspätet“).
-bool absenceIsLate(AbsenceEntry e) => e.kind.toLowerCase().contains('versp');
+bool absenceIsLate(AbsenceEntry e) => absenceKindIsLate(e.kind);
+
+/// Art „verspätet“ (Portal: „als verspätet melden“); alles andere gilt als
+/// krank/abwesend. Eine Regel für Widget, Heute, Benachrichtigung und
+/// Krankmeldung (Prüfung 06.11.26: dreifach im Text geprüft, Driftgefahr).
+bool absenceKindIsLate(String kind) => kind.toLowerCase().contains('versp');
 
 /// Einträge, die heute oder später noch gelten, nach Beginn sortiert.
 List<AbsenceEntry> currentAbsences(List<AbsenceEntry> all, DateTime now) {

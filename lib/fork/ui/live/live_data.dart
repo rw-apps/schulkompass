@@ -31,7 +31,7 @@ import '../plan/plan_model.dart';
 import '../../kid_name.dart';
 export '../../kid_name.dart' show shortFirstName;
 import '../../absence/absence_days.dart'
-    show absenceSickDaysByKid, storeSickDays;
+    show absenceSickDaysByKid, readSickDays, storeSickDays;
 import '../../absence/absence_form.dart' show AbsenceEntry;
 import '../../absence/absence_parser.dart' show loadAbsenceEntries;
 import '../../class_choice.dart';
@@ -199,6 +199,7 @@ class LiveSnapshot {
     this.electionOpen = false,
     this.absences,
     this.absencesAt,
+    this.storedSickDays,
     this.substitutionHistory = SubstitutionHistory.empty,
   });
 
@@ -238,6 +239,11 @@ class LiveSnapshot {
   /// Meldungsliste neuer ist – App oder Hintergrund-Lauf – entscheidet sich
   /// daran, nicht am Vertretungsplan (Prüfung 05.11.26).
   final DateTime? absencesAt;
+
+  /// Gemerkte Krankheitstage je Kind (absence_days.dart readSickDays), nur
+  /// gesetzt, wenn der Abruf von [absences] scheiterte; null = nicht
+  /// gebraucht oder noch nicht versucht.
+  final Map<String, Set<DateTime>>? storedSickDays;
 
   /// Von Hand eingetragene Klasse (class_choice.dart), null = keine gültige.
   final ClassChoice? classChoice;
@@ -380,6 +386,7 @@ class _LiveDataScopeState extends ConsumerState<LiveDataScope>
   /// Meldungsliste der Krankmeldung (Elternkonto), null = nicht gelesen.
   List<AbsenceEntry>? _absences;
   DateTime? _absencesAt;
+  Map<String, Set<DateTime>>? _storedSick;
   DateTime? _electionChecked;
   MensaAddresses _mensa = const MensaAddresses({});
   int? _settingsFor;
@@ -521,6 +528,7 @@ class _LiveDataScopeState extends ConsumerState<LiveDataScope>
       _electionChecked = null;
       _absences = null;
       _absencesAt = null;
+      _storedSick = null;
     }
     final s = ref.read(accountSpecificSettingsProvider);
     if (s == null) return;
@@ -717,6 +725,9 @@ class _LiveDataScopeState extends ConsumerState<LiveDataScope>
           setState(() {
             _absences = list;
             _absencesAt = at;
+            // Gelesen: gemerkte Tage nicht mehr nötig (Prüfung 06.11.26 –
+            // sonst umging stored den Vornamen-Riegel in live_today_page).
+            _storedSick = null;
           });
           // Krankheitstage je Kind für die Sammelmeldung merken
           // (absence_days.dart): Die Essens-Zeilen entstehen im Hintergrund
@@ -730,7 +741,22 @@ class _LiveDataScopeState extends ConsumerState<LiveDataScope>
             storeSickDays(st, absenceSickDaysByKid(list, kids, DateTime.now()));
           }
         }
-      } catch (_) {}
+      } catch (_) {
+        // Abruf gescheitert (Netz, Seite ohne Formular): gemerkte
+        // Krankheitstage statt keiner (Prüfung 06.11.26). Ursache: Ohne
+        // Liste glich die App Plan- und Essenszeilen der Sammelmeldung gar
+        // nicht mehr ab (live_today_page.dart absKnown) – erledigte Zeilen
+        // blieben bis zum nächsten Hintergrund-Lauf stehen.
+        if (mounted && _extrasFor == forAccount && _absences == null) {
+          setState(
+            // Ohne Einstellungen nichts setzen: eine leere Map gäbe den
+            // Abgleich frei, ohne etwas zu wissen.
+            () => _storedSick = st == null
+                ? null
+                : readSickDays(st, DateTime.now()),
+          );
+        }
+      }
     }
     if (!mounted) return;
     final showPhotos =
@@ -868,6 +894,7 @@ class _LiveDataScopeState extends ConsumerState<LiveDataScope>
       electionOpen: _electionOpen,
       absences: _absences,
       absencesAt: _absencesAt,
+      storedSickDays: _storedSick,
       setClass: (name) {
         final s = ref.read(accountSpecificSettingsProvider);
         if (s == null || !mounted) return;

@@ -56,9 +56,18 @@ void main() {
       ),
     ];
     final m = absenceSickDaysByKid([e('05.11.2026')], kids, now);
+    // Plan-Kind (kids.first) zusätzlich unter absencePlanKidKey.
     expect(m, {
       '11': [DateTime(2026, 11, 5)],
+      absencePlanKidKey: [DateTime(2026, 11, 5)],
     });
+    // Nur das zweite Kind krank: kein Plan-Eintrag.
+    final m2 = absenceSickDaysByKid(
+      [e('05.11.2026', name: 'Jonas Beispiel')],
+      kids,
+      now,
+    );
+    expect(m2.keys, ['12']);
   });
 
   test('Ablage: ersetzen, alte Tage fallen heraus, kaputt = keine', () {

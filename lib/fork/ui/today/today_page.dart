@@ -4,6 +4,7 @@ import '../../l10n/l10n.dart';
 import '../kit.dart';
 import '../pinned_page.dart';
 import '../../class_choice.dart' show classLabel;
+import '../../absence/absence_today.dart' show absenceKindIsLate;
 import 'kid_hints.dart';
 import 'kind_icons.dart';
 import 'today_model.dart';
@@ -386,8 +387,7 @@ class KidCard extends StatelessWidget {
     // (ChildToday.sickDays): Änderungen und „Essen bestellen“ entfallen,
     // Abbestellen und verpasste Arbeit kommen hinzu.
     final report = showNext ? next.reportedAbsence : kid.reportedAbsence;
-    final absentShown =
-        report != null && !report.kind.toLowerCase().contains('versp');
+    final absentShown = report != null && !absenceKindIsLate(report.kind);
     final shown = !showNext
         ? hints
         : [
@@ -703,9 +703,9 @@ class _ReportedStrip extends StatelessWidget {
   Widget build(BuildContext context) {
     final k = Kit.of(context);
     final t = context.t;
-    // Wie absenceIsLate (absence_today.dart), damit Band und Auswahl in
+    // absenceKindIsLate (absence_today.dart), damit Band und Auswahl in
     // reportedAbsenceFor dieselbe Art erkennen (Prüfung 05.11.26).
-    final late = kind.toLowerCase().contains('versp');
+    final late = absenceKindIsLate(kind);
     final content = Padding(
       padding: const EdgeInsets.symmetric(horizontal: Sp.m, vertical: Sp.s),
       child: Row(

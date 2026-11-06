@@ -2133,6 +2133,7 @@
       }
     }
   },
+  "hintMealCancelOpen": "abbestellen",
   "hintMealCancel": "abbestellen bis {until}",
   "@hintMealCancel": {
     "placeholders": {
@@ -2171,6 +2172,14 @@
         "type": "String"
       },
       "name": {
+        "type": "String"
+      }
+    }
+  },
+  "absenceRemindMealDayOpen": "{day}: abbestellbar",
+  "@absenceRemindMealDayOpen": {
+    "placeholders": {
+      "day": {
         "type": "String"
       }
     }

@@ -161,7 +161,10 @@ Future<AnonExport> runAnonExport({
       'Noten und Punkte zufällig, Schulnummer entfernt, keine Bilder, '
       'Skripte, Cookies oder Kopfzeilen.',
     )
-    ..writeln('Unverändert: Seitenaufbau, Zahlen, Uhrzeiten, Daten und:')
+    ..writeln(
+      'Unverändert: Seitenaufbau, Zahlen (Kinder-Kennungen ab vier Ziffern '
+      'als KIND1, KIND2 …), Uhrzeiten, Daten und:',
+    )
     ..writeln(a.kept.join(', '))
     ..writeln()
     ..write(text);

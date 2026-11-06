@@ -89,6 +89,7 @@ void main() {
           '$sphBase/stundenplan.php?a=detail_klasse&e=1&p=$id',
         ],
         '$sphBase/stundenplan.php',
+        '$sphBase/stundenplan.php?p=7',
       ],
     );
     expect(p.buildSections(DebugExportPresetContext()), isEmpty);

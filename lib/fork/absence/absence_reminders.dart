@@ -19,6 +19,7 @@ import '../exams.dart';
 import '../lessons_parent.dart' show kidOfCourseId;
 import '../l10n/l10n.dart';
 import '../mensa_store.dart' show MealCache;
+import '../ui/today/today_page.dart' show schoolWeek;
 import '../ui/courses/live_courses_page.dart' show examCalendarOf;
 import '../ui/live/live_data.dart' show LiveSnapshot, shortFirstName;
 import '../ui/mensa/meal_cancel.dart';
@@ -78,7 +79,9 @@ List<AbsenceReminder> absenceReminders(
             (id: k.pupilId, name: shortFirstName(k.firstName), plan: i == 0),
         ];
   final many = kids.length > 1;
-  final monday = DateTime(now.year, now.month, now.day - (now.weekday - 1));
+  // Ab der Woche, die die Essensseite zuerst liest (schoolWeek: am
+  // Wochenende schon die nächste), zwei Wochen.
+  final monday = schoolWeek(now).first;
   final horizon = DateTime(monday.year, monday.month, monday.day + 14);
   final scan = s.courseScan?.upcoming(now) ?? const <ScanExam>[];
 
@@ -106,10 +109,11 @@ List<AbsenceReminder> absenceReminders(
         if (m == null) continue;
         days.add((
           day: d,
-          label: t.absenceRemindMealDay(
-            day(d),
-            mealCancelLabel(t, m.cancelUntil, d),
-          ),
+          label: switch (mealCancelLabel(t, m.cancelUntil, d)) {
+            // Ohne lesbare Frist kein „bis –“ (Prüfung 06.11.26).
+            '–' => t.absenceRemindMealDayOpen(day(d)),
+            final until => t.absenceRemindMealDay(day(d), until),
+          },
           weekday: formatDate(t, 'ccc', d),
         ));
       }

@@ -539,4 +539,15 @@ class WidgetModelTest {
         assertFalse(k.days[0].sick)
         assertFalse(view(kid(1, "Jonas", day(mon)), at(7)).time.reported)
     }
+
+    @Test
+    fun verspaetungZeigtGeaendertenBeginnVorDerMeldung() {
+        // Prüfung 06.11.26: 1. Stunde fällt aus – „ab 09:45“ geht vor.
+        val v = view(
+            kid(1, "Jonas", reported(day(mon, start = "09:45"), "verspätet gemeldet", false)),
+            at(7),
+        )
+        assertFalse(v.time.reported)
+        assertTrue(v.time.red)
+    }
 }

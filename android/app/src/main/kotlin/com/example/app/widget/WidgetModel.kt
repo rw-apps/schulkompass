@@ -404,13 +404,25 @@ object WidgetModel {
         if (d.date != today) {
             kid.days.firstOrNull { it.date == today }?.free?.let { return When(it, red = false, busy = false, mid = "") }
         }
-        // Gemeldete Abwesenheit vor Ausfällen: Für Eltern zählt dann nicht
-        // mehr, wann Unterricht ist (Abnahme 05.11.26). Ferien davor
-        // (oben) bleiben, weil die App freie Tage nie markiert.
-        d.absent?.let {
-            val short = if (d.sick) l.sick else l.lateShort
-            return When(it, red = false, busy = false, mid = "", reported = true, short = short.ifEmpty { it })
+        // Krank gemeldet vor Ausfällen: Für Eltern zählt dann nicht mehr,
+        // wann Unterricht ist (Abnahme 05.11.26). Ferien davor (oben)
+        // bleiben, weil die App freie Tage nie markiert.
+        if (d.sick) d.absent?.let {
+            return When(it, red = false, busy = false, mid = "", reported = true, short = l.sick.ifEmpty { it })
         }
+        val w = plannedWhen(d, today, t, l)
+        // Verspätung: Das Kind geht zur Schule – Ausfall und geänderter
+        // Beginn/Schluss gehen vor (Prüfung 06.11.26: „ab 09:45“ ist für ein
+        // verspätetes Kind die wichtigste Angabe). Nur wenn nichts abweicht,
+        // steht „verspätet gemeldet“ statt des Zeitraums.
+        if (!d.sick && !w.red && w.mid.isEmpty()) d.absent?.let {
+            return When(it, red = false, busy = false, mid = "", reported = true, short = l.lateShort.ifEmpty { it })
+        }
+        return w
+    }
+
+    /** Zeitraum ohne Meldung (Ausfall, verschobener Beginn/Schluss, Mitte). */
+    private fun plannedWhen(d: Day, today: LocalDate, t: LocalTime, l: Labels): When {
         if (d.allOff) return When(l.off, red = true, busy = true, mid = "")
         val mid = midText(d, today, t)
         val base = if (d.timed && d.start != null && d.end != null) {

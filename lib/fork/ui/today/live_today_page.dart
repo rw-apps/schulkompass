@@ -6,7 +6,7 @@ import 'package:liblanis/liblanis.dart'
     show AccountType, sharedOverAccountSettingsProvider;
 
 import 'package:lanis/fork/absence/absence_days.dart'
-    show absenceSickDays, absenceSickOn;
+    show absencePlanKidKey, absenceSickDays, absenceSickOn;
 import 'package:lanis/fork/absence/absence_form.dart' show AbsenceEntry;
 import 'package:lanis/fork/absence/absence_view.dart';
 
@@ -422,9 +422,16 @@ class _LiveTodayPageState extends State<LiveTodayPage> {
                   // Nach Schulschluss meint „Krank melden“ fast immer den
                   // nächsten Schultag (Vorschlag 4, 05.11.26) – vorbelegt,
                   // das Formular hält ihn im erlaubten Bereich (_clampToForm).
+                  // „Ohne Unterricht“ nur am Wochenende oder an freien Tagen
+                  // (Prüfung 06.11.26): An einem Schultag ohne geladene
+                  // oder mit ganz ausgefallenen Stunden hieß es um 7:15
+                  // sonst „morgen“ – wer nicht aufs Datum schaut, meldet
+                  // den falschen Tag.
                   final phase = dayStatus(c.lessons, now).phase;
                   final over =
-                      phase == DayPhase.over || phase == DayPhase.noLessons;
+                      phase == DayPhase.over ||
+                      (phase == DayPhase.noLessons &&
+                          (now.weekday > 5 || c.freeLabel != null));
                   pushFullScreen<void>(
                     context,
                     (_) => m.scope(
@@ -528,17 +535,31 @@ class _LiveTodayPageState extends State<LiveTodayPage> {
             // abgleichen – „nur Geladenes“ wie oben. Ursache (Prüfung
             // 05.11.26): Sonst kämen die Zeilen der Krankheitstage kurz
             // zurück, nach dem Wegwischen sogar als neue Meldung.
+            // Abruf gescheitert: gemerkte Tage je Kind (storedSickDays,
+            // Prüfung 06.11.26). Ohne bekannten Vornamen (Ersatz „Dein
+            // Kind“, Unterricht nicht geladen) gleicht die App nicht ab –
+            // sonst kämen Zeilen zurück, die der Hintergrund über
+            // storedKidName herausnimmt (Prüfung 06.11.26).
+            final stored = s.storedSickDays;
             final absKnown =
-                !s.offers('abwesenheitsmeldung.php') || s.absences != null;
-            bool sick(DateTime d, String name) =>
-                absenceSickOn(s.absences ?? const [], name, d);
+                !s.offers('abwesenheitsmeldung.php') ||
+                (s.absences != null && s.firstName.trim().isNotEmpty) ||
+                stored != null;
+            bool sick(DateTime d, String pupil, String name) =>
+                s.absences != null
+                ? absenceSickOn(s.absences!, name, d)
+                : stored?[pupil]?.contains(DateTime(d.year, d.month, d.day)) ??
+                      false;
+            // Ohne geladene Kinder die Tage des Plan-Kindes wie im Hintergrund
+            // (absencePlanKidKey, notify_task.dart).
+            final planPupil = s.kids.firstOrNull?.pupilId ?? absencePlanKidKey;
             if (s.substitutions.content != null && absKnown) {
               sources['${m.accountId}/plan'] = changeSummaryItems(
                 scope: '${m.accountId}',
                 name: name,
                 changes: [
                   for (final c in kid.changes)
-                    if (!sick(c.day, kid.firstName)) c,
+                    if (!sick(c.day, planPupil, kid.firstName)) c,
                 ],
                 now: now,
                 next: next,
@@ -568,7 +589,7 @@ class _LiveTodayPageState extends State<LiveTodayPage> {
                     now,
                     weekdays: mealRemindDays(shared, owner),
                   ))
-                    if (!sick(d, mealName)) d,
+                    if (!sick(d, s.mensaKid, mealName)) d,
                 ],
                 t: t,
               );

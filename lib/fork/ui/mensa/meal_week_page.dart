@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:liblanis/liblanis.dart' show sharedOverAccountSettingsProvider;
+import 'meal_cancel.dart' show mealCancelDeadline;
 
 import '../../l10n/l10n.dart';
 import '../../mensa.dart'
@@ -132,7 +133,14 @@ class _MealWeekPageState extends ConsumerState<MealWeekPage> {
       for (final d in w.days) {
         if (dayDiff(d.day, day) != 0) continue;
         if (d.state != MealState.ordered) return tell(t.mealCancelNotOrdered);
-        if (!d.canCancel) return tell(t.mealCancelGone);
+        // Frist auch gegen die Uhrzeit beim Öffnen der Seite (_now, Prüfung
+        // 06.11.26): Nach einem gescheiterten Lesen (onDone kommt auch dann)
+        // wäre canCancel der alte Stand. Grenze: _now ist fest ab dem
+        // Öffnen; das Lesen dauert Sekunden.
+        final dl = mealCancelDeadline(d.cancelUntil);
+        if (!d.canCancel || (dl != null && !_now.isBefore(dl))) {
+          return tell(t.mealCancelGone);
+        }
         if (!_inApp) return tell(t.mealCancelNotInApp);
         _change(w, d, null);
         return;
@@ -163,6 +171,9 @@ class _MealWeekPageState extends ConsumerState<MealWeekPage> {
   }
 
   void _go(MealWeek w, int dir) {
+    // Wer blättert, will nicht mehr die Rückfrage von „Heute“ – sie soll
+    // nicht Sekunden später über einer anderen Woche aufgehen.
+    _autoCancel = null;
     final target = DateTime(w.start.year, w.start.month, w.start.day + 7 * dir);
     setState(() => _shown = schoolWeek(target).first);
     // Auch gespeicherte Wochen neu lesen: Bestellstand und Fristen ändern

@@ -1,5 +1,13 @@
 ## Schulkompass (rw-apps, bis 9472 „Schulportal“) – Änderungen gegenüber Lanis-Mobile
 
+**4.1.0+9494** – Krankmeldung: Korrekturen nach der Gesamtprüfung
+
+- **Widget bei Verspätung:** Fällt bei einem verspätet gemeldeten Kind die erste Stunde aus oder verschiebt sich der Beginn, zeigt das Widget wieder „ab 09:45“ bzw. den Ausfall – das ist für ein verspätetes Kind die wichtigste Angabe. „verspätet gemeldet“ steht nur, wenn sonst nichts abweicht.
+- **Benachrichtigungen:** Konnte die App die Krankmeldungen nicht lesen (z. B. offline), glich sie die Sammel-Benachrichtigung nicht mehr ab; jetzt nutzt sie die zuletzt bekannten Krankheitstage. „krank bis …“ im Widget berücksichtigt auch im Hintergrund Studientage.
+- **„Krank melden“:** schlägt den nächsten Schultag nur noch nach Schulschluss, am Wochenende oder an freien Tagen vor – nicht morgens, wenn heute alle Stunden ausfallen. Ein Vorschlag außerhalb des erlaubten Bereichs entfällt.
+- **Essen abbestellen:** Die Rückfrage prüft die Frist gegen die Uhrzeit und erscheint nicht mehr, wenn man inzwischen in eine andere Woche geblättert hat. Ohne lesbare Frist steht kein „bis –“ mehr da.
+- **Export:** Der Stundenplan-Abruf je Kind stellt zum Schluss wieder auf das erste Kind.
+
 **4.1.0+9493** – Anonymer Export: Stundenplan je Kind
 
 - **Für Geschwister-Familien:** Der „Anonyme Export“ in den Einstellungen ruft bei Elternkonten jetzt auch den Stundenplan je Kind ab und nennt Weiterleitungen. So kann eine Familie mit zwei Kindern an einer Schule die nötige Auskunft schicken, ohne echte Namen preiszugeben.

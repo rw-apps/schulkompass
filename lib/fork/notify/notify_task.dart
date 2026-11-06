@@ -252,9 +252,10 @@ Future<void> _run(
   // kids.first): frisch gelesen nach Name, sonst die gemerkten.
   final sickDays = absStand != null
       ? absenceSickDays(entries, firstName, now).toSet()
-      : (kids.isEmpty
-            ? const <DateTime>{}
-            : readSickDays(s, now)[kids.first.pupilId] ?? const <DateTime>{});
+      : readSickDays(s, now)[kids.isEmpty
+                ? absencePlanKidKey
+                : kids.first.pupilId] ??
+            const <DateTime>{};
   bool sick(DateTime d) => sickDays.contains(DateTime(d.year, d.month, d.day));
 
   // Sammel-Benachrichtigung (summary.dart, Wunsch 27.10.26): Ausfälle und
@@ -323,6 +324,12 @@ Future<void> _run(
   // Benachrichtigungen und im Zeitfenster (background_service.dart); sonst
   // erneuert nur die offene App das Widget.
   try {
+    // Krank gemeldet und Kalender noch nicht geladen: jetzt laden (Prüfung
+    // 06.11.26). Ursache: Ohne freie Tage endet „krank bis …“ vor einem
+    // Studientag (widget_absence.dart _nextSchoolDay), und weil die Liste
+    // des Laufs neuer ist, überschrieb sie den richtigen Text der App bei
+    // jedem Lauf. Grenze: eine Anfrage mehr, nur an Krankheitstagen.
+    if (events == null && sickDays.isNotEmpty) await loadEvents();
     final planned = widgetDays(
       plan: plan.withTeacherNames(ownNames),
       choice: effectiveChoice(auto, userChoice),

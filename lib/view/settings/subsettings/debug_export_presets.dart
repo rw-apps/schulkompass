@@ -483,9 +483,10 @@ final debugExportPresets = <DebugExportPreset>[
   // (Export Schule A 16.10.26); ob das Portal den Plan eines zweiten Kindes
   // über `p=` liefert, umleitet oder eine Auswahl zeigt, ist unbelegt – die
   // Klasse des zweiten Kindes kennt die App nicht. Darum je Kind zwei
-  // Varianten ohne Klasse; die Umleitungen hält der Export fest. Zum Schluss
-  // noch einmal `stundenplan.php` ohne `p=`: zeigt, ob sich das Portal ein
-  // per `p=` gewähltes Kind in der Sitzung merkt. Braucht lessonsStudent
+  // Varianten ohne Klasse; die Umleitungen hält der Export fest. Ab zwei
+  // Kindern zum Schluss `stundenplan.php` ohne `p=` (#nachher: merkt sich
+  // das Portal ein per `p=` gewähltes Kind?) und `?p=<erstes Kind>`
+  // (#zurueck: stellt es wieder zurück). Braucht lessonsStudent
   // (Kinder-Kennungen, ctx.lessonsHtml); ohne Kinder keine Abschnitte, der
   // Runner vermerkt das (debug_export.dart). Grenze: Steht am ENDE der
   // Liste – `detail_klasse` ohne `k=` erzeugt das Portal selbst nie; kippt
@@ -506,11 +507,21 @@ final debugExportPresets = <DebugExportPreset>[
           request: _get('stundenplan.php?a=detail_klasse&e=1&p=$id'),
         ),
       ],
-      if (parsePupilIds(ctx.lessonsHtml ?? '').isNotEmpty)
+      if (parsePupilIds(ctx.lessonsHtml ?? '') case [final first, _, ...]) ...[
         DebugExportSection(
           name: '${DebugExportPresetId.timetableKids.name}#nachher',
           request: _get('stundenplan.php'),
         ),
+        // Zurück auf das erste Kind (Prüfung 06.11.26): Merkt sich das
+        // Portal das zuletzt per `p=` gewählte Kind, zeigte die App danach
+        // bis zur nächsten Anmeldung den Plan des zweiten Kindes unter dem
+        // Namen des ersten. Grenze: hilft nur, wenn `p=` das Kind wirklich
+        // wählt – genau das soll der Export klären.
+        DebugExportSection(
+          name: '${DebugExportPresetId.timetableKids.name}#zurueck',
+          request: _get('stundenplan.php?p=$first'),
+        ),
+      ],
     ],
   ),
 ];

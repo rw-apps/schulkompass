@@ -87,6 +87,13 @@ void main() {
     final cancels = h.where((x) => x.cancelMeal).toList();
     expect(cancels.map((x) => x.day), [thu, fri]);
     expect(cancels.first.what, 'abbestellen bis 08:30');
+    // Ohne lesbare Frist kein „bis –“.
+    final open = kidHints(
+      kid(sick: {thu}, cancel: [(day: thu, until: '–')]),
+      now,
+      de,
+    ).singleWhere((x) => x.cancelMeal);
+    expect(open.what, de.hintMealCancelOpen);
     final missed = h.singleWhere((x) => x.kind == HintKind.exam);
     expect(missed.what, de.hintExamMissed);
     expect(missed.detail, de.hintExamMissedDetail);

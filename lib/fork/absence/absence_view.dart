@@ -327,7 +327,11 @@ class _AbsenceScreen extends StatelessWidget {
             : AbsenceFormView(
                 key: ValueKey(ui.round),
                 form: form,
-                initialFrom: ui.prefill?.day ?? suggestDay,
+                // Vorschlag nur im erlaubten Bereich (Prüfung 06.11.26):
+                // _clampToForm setzte sonst stillschweigend das Ende des
+                // Bereichs ein, womöglich einen Ferientag.
+                initialFrom:
+                    ui.prefill?.day ?? _inRange(suggestDay, form.fromRange),
                 initialPupilName: ui.prefill?.pupilName,
                 initialKind: ui.prefill?.kind,
                 // Demo: kein Senden (die Demo beantwortet Schreibaktionen
@@ -1158,3 +1162,11 @@ Map<DateTime, String> absenceFreeDays(LiveSnapshot s, {DateTime? now}) =>
       className: liveClassName(s),
       days: 60,
     );
+
+/// [day], wenn er im erlaubten Bereich [range] liegt, sonst null (Prüfung
+/// 06.11.26: _clampToForm setzte einen Vorschlag außerhalb stillschweigend
+/// aufs Bereichsende, womöglich einen Ferientag). Ohne Bereich unverändert.
+DateTime? _inRange(DateTime? day, DateRange? range) {
+  if (day == null || range == null) return day;
+  return range.contains(day) ? day : null;
+}

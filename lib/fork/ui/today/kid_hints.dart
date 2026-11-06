@@ -8,6 +8,7 @@
 /// Karte steht.
 library;
 
+import '../../absence/absence_today.dart' show absenceKindIsLate;
 import '../../data/portal_rules.dart';
 import '../../l10n/l10n.dart';
 import '../../widget/home_widget_data.dart' show widgetSlotShort;
@@ -184,8 +185,10 @@ DateTime nextSchoolDay(DateTime now) {
 /// Nächster Schultag nach [now] ohne die schulfreien Tage [free]
 /// (freeDaysFrom). Für Vorschläge zum Melden (Wunsch 05.11.26: vor Ferien
 /// schlug „Krank melden“ nachmittags sonst einen Ferientag vor). Grenze:
-/// höchstens 60 Schultag-Sprünge (rund 12 Wochen); was der Kalender nicht
-/// als frei führt, zählt als Schultag.
+/// frei ist nur, was [free] kennt – absenceFreeDays liefert 60
+/// Kalendertage; die Schleife bricht nach 60 Sprüngen ab. Karte, Band und
+/// „Gemeldet“ nutzen weiter nextSchoolDay (ohne Ferien): Vor Ferien steht
+/// nach dem Melden des Tages danach deshalb weiter „Krank melden“.
 DateTime nextSchoolDayFree(DateTime now, Map<DateTime, String> free) {
   var d = nextSchoolDay(now);
   for (var i = 0; i < 60 && free.containsKey(d); i++) {
@@ -250,10 +253,12 @@ List<KidHint> kidHints(
   final today = DateTime(now.year, now.month, now.day);
   // Krank gemeldet (Wunsch 05.11.26): An diesen Tagen betreffen Änderungen
   // und „Essen bestellen“ das Kind nicht. Heute zählt auch das Band
-  // (reportedAbsence), falls die Tage fehlen (z. B. Vorschau, Tests).
+  // (reportedAbsence), falls die Tage fehlen – produktiv kommen beide aus
+  // derselben Liste (live_today_page.dart _kidOf), greift also nur, wenn
+  // ein Aufrufer sickDays nicht setzt (Tests).
   final reportedToday =
       kid.reportedAbsence != null &&
-      !kid.reportedAbsence!.kind.toLowerCase().contains('versp');
+      !absenceKindIsLate(kid.reportedAbsence!.kind);
   bool sick(DateTime d) {
     final day = DateTime(d.year, d.month, d.day);
     return kid.sickDays.contains(day) || (reportedToday && day == today);
@@ -312,10 +317,10 @@ List<KidHint> kidHints(
   // Schultag weiter unten bei seinen Hinweisen.
   KidHint cancel(({DateTime day, String until}) m, {String? when}) => KidHint(
     kind: HintKind.meal,
-    title: '${t.kindMeal} ${t.hintMealCancel(m.until)}',
+    title: '${t.kindMeal} ${_cancelWhat(t, m.until)}',
     subject: t.kindMeal,
     // Frist im Art-Wort statt als Marke: Die Marken-Spalte heißt „Stunde“.
-    what: t.hintMealCancel(m.until),
+    what: _cancelWhat(t, m.until),
     toMeal: true,
     cancelMeal: true,
     day: DateTime(m.day.year, m.day.month, m.day.day),
@@ -483,3 +488,8 @@ List<WeekItem> upcomingWithoutHints(
         (w.childIndex != null && w.childIndex! >= kidCount))
       w,
 ];
+
+/// „abbestellen bis 08:30“; ohne lesbare Frist (mealCancelLabel „–“) nur
+/// „abbestellen“ (Prüfung 06.11.26: sonst „abbestellen bis –“).
+String _cancelWhat(ForkL10n t, String until) =>
+    until == '–' ? t.hintMealCancelOpen : t.hintMealCancel(until);
