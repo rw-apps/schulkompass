@@ -186,9 +186,9 @@ DateTime nextSchoolDay(DateTime now) {
 /// (freeDaysFrom). Für Vorschläge zum Melden (Wunsch 05.11.26: vor Ferien
 /// schlug „Krank melden“ nachmittags sonst einen Ferientag vor). Grenze:
 /// frei ist nur, was [free] kennt – absenceFreeDays liefert 60
-/// Kalendertage; die Schleife bricht nach 60 Sprüngen ab. Karte, Band und
-/// „Gemeldet“ nutzen weiter nextSchoolDay (ohne Ferien): Vor Ferien steht
-/// nach dem Melden des Tages danach deshalb weiter „Krank melden“.
+/// Kalendertage; die Schleife bricht nach 60 Sprüngen ab. Auch der nächste
+/// Tag der Karte (FamilyToday.nextDate) kommt von hier (Wunsch 06.11.26).
+/// Ohne Kalender zählen Ferientage als Schultage.
 DateTime nextSchoolDayFree(DateTime now, Map<DateTime, String> free) {
   var d = nextSchoolDay(now);
   for (var i = 0; i < 60 && free.containsKey(d); i++) {
@@ -231,17 +231,22 @@ DateTime nextSchoolDayFree(DateTime now, Map<DateTime, String> free) {
 /// 2. heutige Änderungen ohne Stunde im Plan (Zusatzstunde in einer
 ///    Freistunde, applySubstitutions in today_from_lanis.dart);
 /// 3. Essenshinweis aus dem Schulkalender ([ChildToday.mealHint]);
-/// 4. Änderungen am nächsten Schultag ([nextSchoolDay]), mit „Morgen“.
+/// 4. Änderungen am nächsten Schultag ([next], sonst [nextSchoolDay]), mit
+///    „Morgen“ bzw. dem Datum.
 ///
 /// Eine heutige Änderung aus [ChildToday.changes] gilt als schon gezeigt,
 /// wenn eine Stunde mit gleichem Fach und gleicher Art geändert ist. Nicht
 /// über die Stunde verglichen, weil die Bezeichnung abweichen kann
 /// („5.“ an der Stunde, „5. Std.“ im Beispiel demo_family.dart).
+///
+/// [next]: nächster Schultag der Karte (FamilyToday.nextDate, ohne Ferien –
+/// Wunsch 06.11.26); null = [nextSchoolDay].
 List<KidHint> kidHints(
   ChildToday kid,
   DateTime now,
   ForkL10n t, {
   List<WeekItem> exams = const [],
+  DateTime? next,
 }) {
   final l = kid.lessons;
   String? effect(int i) => switch (cancelEffect(l, i)) {
@@ -369,18 +374,18 @@ List<KidHint> kidHints(
       ),
     );
   }
-  final next = nextSchoolDay(now);
+  final nextDay = next ?? nextSchoolDay(now);
   for (final c in kid.changes) {
-    if (dayDiff(next, c.day) != 0 || sick(c.day)) continue;
+    if (dayDiff(nextDay, c.day) != 0 || sick(c.day)) continue;
     out.add(fromItem(c, when: relativeDay(t, c.day, now)));
   }
   for (final m in kid.mealCancel) {
-    if (dayDiff(next, m.day) == 0) {
+    if (dayDiff(nextDay, m.day) == 0) {
       out.add(cancel(m, when: relativeDay(t, m.day, now)));
     }
   }
   // Nichts bestellt für den nächsten Schultag (mensa_store.dart).
-  if (unordered != null && dayDiff(next, unordered) == 0) {
+  if (unordered != null && dayDiff(nextDay, unordered) == 0) {
     out.add(
       KidHint(
         kind: HintKind.meal,
@@ -399,7 +404,7 @@ List<KidHint> kidHints(
   // „Demnächst“ zwischen Elternabend und Ferien; am Vorabend gehören sie
   // zu den Hinweisen.
   for (final e in exams) {
-    if (!examIsHint(e, now)) continue;
+    if (!examIsHint(e, now, next: nextDay)) continue;
     final isToday = dayDiff(now, e.day) == 0;
     final (subject, what) = examParts(t, e.title);
     // Arbeit an einem Krankheitstag (Vorschlag 2, 05.11.26): „verpasst“
@@ -463,9 +468,10 @@ String hintDayCaption(ForkL10n t, DateTime day, DateTime now) => upperFor(
 /// nächsten Schultag) – UpcomingList lässt sie dann weg (Abnahme 26.10.26:
 /// nicht doppelt). Grenze: Ohne Kindzuordnung (childIndex null) nur bei
 /// einem einzigen Kind, sonst wüsste die Karte nicht, wem sie gehört.
-bool examIsHint(WeekItem w, DateTime now) =>
+bool examIsHint(WeekItem w, DateTime now, {DateTime? next}) =>
     w.kind == WeekKind.exam &&
-    (dayDiff(now, w.day) == 0 || dayDiff(nextSchoolDay(now), w.day) == 0);
+    (dayDiff(now, w.day) == 0 ||
+        dayDiff(next ?? nextSchoolDay(now), w.day) == 0);
 
 /// Arbeiten der Karte [index] aus [week] (Familie mit [kidCount] Kindern).
 List<WeekItem> examsFor(List<WeekItem> week, int index, int kidCount) => [
@@ -480,10 +486,11 @@ List<WeekItem> examsFor(List<WeekItem> week, int index, int kidCount) => [
 List<WeekItem> upcomingWithoutHints(
   List<WeekItem> week,
   DateTime now,
-  int kidCount,
-) => [
+  int kidCount, {
+  DateTime? next,
+}) => [
   for (final w in week)
-    if (!examIsHint(w, now) ||
+    if (!examIsHint(w, now, next: next) ||
         (w.childIndex == null && kidCount != 1) ||
         (w.childIndex != null && w.childIndex! >= kidCount))
       w,

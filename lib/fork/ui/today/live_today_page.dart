@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -154,13 +155,48 @@ class _LiveTodayPageState extends State<LiveTodayPage> {
     super.dispose();
   }
 
+  /// Schulfreie Tage, die für alle [members] mit geladenem Kalender frei
+  /// sind (absenceFreeDays je Konto, Schnittmenge). Grenze: Ein freier Tag
+  /// nur einer Schule (beweglicher Ferientag) verschiebt den Tag nicht –
+  /// dieses Kind bleibt dann bei „Unterricht vorbei“; ein Datum je Kind
+  /// wäre der Ausweg (FamilyToday.nextDate ist eins für alle).
+  Map<DateTime, String> _commonFree(List<FamilyMember> members, DateTime now) {
+    Map<DateTime, String>? out;
+    for (final m in members) {
+      // Konten ohne Plan oder ohne geladenen Kalender zählen nicht mit
+      // (Prüfung 06.11.26): Ihre leere Liste hätte den Ferien-Sprung für
+      // alle anderen Karten aufgehoben.
+      if (!m.snapshot.offers('stundenplan.php') ||
+          m.snapshot.calendar.content == null) {
+        continue;
+      }
+      final f = absenceFreeDays(m.snapshot, now: now);
+      out = out == null
+          ? Map.of(f)
+          : {
+              for (final e in out.entries)
+                if (f.containsKey(e.key)) e.key: e.value,
+            };
+    }
+    return out ?? const {};
+  }
+
   /// Karte eines Kontos; null, solange dessen Stundenplan fehlt.
   ///
-  /// [day] statt heute: Karte für den nächsten Schultag (nextSchoolDay),
-  /// die die Kinderkarte nach Schulschluss zeigt (Abnahme 26.10.26). Grenze:
-  /// Ferien kennt nextSchoolDay nicht; ist der Tag laut Kalender frei,
-  /// trägt die Karte freeLabel und KidCard bleibt bei „Unterricht vorbei“.
-  ChildToday? _kidOf(FamilyMember m, DateTime now, {DateTime? day}) {
+  /// [day] statt heute: Karte für den nächsten Schultag (ohne Ferien,
+  /// nextSchoolDayFree), die die Kinderkarte nach Schulschluss zeigt
+  /// (Abnahme 26.10.26). Ist der Tag für dieses Konto trotzdem frei
+  /// (Studientag nur seiner Schule), trägt die Karte freeLabel und KidCard
+  /// bleibt bei „Unterricht vorbei“.
+  ///
+  /// [nextDay]: nächster Schultag der Familie (ohne Ferien) für die Tage, an
+  /// denen „Essen abbestellen“ gilt.
+  ChildToday? _kidOf(
+    FamilyMember m,
+    DateTime now, {
+    DateTime? day,
+    DateTime? nextDay,
+  }) {
     final at = day ?? now;
     final s = m.snapshot;
     if (!s.offers('stundenplan.php')) return null;
@@ -223,7 +259,7 @@ class _LiveTodayPageState extends State<LiveTodayPage> {
       sickDays: day == null ? sick : const {},
       mealCancel: day == null
           ? [
-              for (final d in [now, nextSchoolDay(now)])
+              for (final d in [now, nextDay ?? nextSchoolDay(now)])
                 if (sick.contains(DateTime(d.year, d.month, d.day)))
                   if (cancellableMeal(meals, d, now) case final m?)
                     (
@@ -259,17 +295,29 @@ class _LiveTodayPageState extends State<LiveTodayPage> {
                       m.accountId == widget.onlyAccount)
                     m,
               ];
+        // Nächster Schultag ohne Ferien (Wunsch 06.11.26): Vorher stand am
+        // Freitag vor Ferien der Ferien-Montag hier; die Karte blieb bei
+        // „Unterricht vorbei“, Band und „Gemeldet“ kannten den ersten
+        // Schultag danach nicht. Frei zählt nur, was für ALLE gezeigten
+        // Konten frei ist – Studientage einer Schule verschieben den Tag
+        // der anderen nicht (die Karte dieses Kindes bleibt dann bei
+        // „Unterricht vorbei“). Grenze: nur, was der Kalender kennt.
+        final nextDay = nextSchoolDayFree(now, _commonFree(members, now));
         final shown = <(FamilyMember, ChildToday)>[
           for (final m in members)
-            if (_kidOf(m, now) case final kid?) (m, kid),
+            if (_kidOf(m, now, nextDay: nextDay) case final kid?) (m, kid),
         ];
         final kids = [for (final x in shown) x.$2];
-        final nextDay = nextSchoolDay(now);
         FamilyMember memberOf(ChildToday c) =>
             shown[kids.indexOf(c).clamp(0, shown.length - 1)].$1;
         // Nach Tag zusammenführen; innerhalb eines Tages bleibt die
         // Reihenfolge je Konto (Uhrzeit) erhalten – Dart sortiert nicht
         // stabil, daher die Position als zweiter Schlüssel.
+        // Mindestens bis zum nächsten Schultag (Prüfung 06.11.26): Nach
+        // Herbst- oder Osterferien liegt er 16–17 Tage entfernt, die
+        // Arbeit dieses Tages fehlte sonst auf der Karte bis wenige Tage
+        // vorher.
+        final horizon = math.max(14, dayDiff(now, nextDay) + 1);
         final merged =
             [
               for (final (i, (m, _)) in shown.indexed)
@@ -280,10 +328,12 @@ class _LiveTodayPageState extends State<LiveTodayPage> {
                     childIndex: i,
                     className: liveClassName(m.snapshot),
                     skipHolidays: true,
+                    days: horizon,
                   ),
                   m.snapshot.courseScan,
                   now,
                   childIndex: i,
+                  days: horizon,
                 ),
             ].indexed.toList()..sort((a, b) {
               final d = a.$2.day.compareTo(b.$2.day);
@@ -518,6 +568,10 @@ class _LiveTodayPageState extends State<LiveTodayPage> {
         final shared = MealCache.instance.settings;
         if (shared != null && !demoActive) {
           final t = context.t;
+          // Bewusst ohne Ferien wie der Hintergrund (notify_task.dart `next:`):
+          // Sonst meldeten App und Lauf verschiedene Tage, mit Ton im
+          // Wechsel. Grenze: Vor einem freien Montag zeigt die Karte eine
+          // Änderung vom Dienstag, die Benachrichtigung nicht.
           final next = nextSchoolDay(now);
           final sources = <String, List<SummaryItem>>{};
           for (final (m, kid) in shown) {

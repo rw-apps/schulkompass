@@ -1,5 +1,9 @@
 ## Schulkompass (rw-apps, bis 9472 „Schulportal“) – Änderungen gegenüber Lanis-Mobile
 
+**4.1.0+9495** – Heute: nächster Schultag ohne Ferien
+
+- **Vor den Ferien:** Nach Schulschluss zeigt die Karte den ersten Schultag nach den Ferien (laut Schulkalender) statt beim Ferien-Montag stehen zu bleiben – mit Band „krank gemeldet“ und „Gemeldet“, wenn dieser Tag schon gemeldet ist. Auch während der Ferien steht dort der erste Schultag danach. Hinweise und Arbeiten gehören zu diesem Tag.
+
 **4.1.0+9494** – Krankmeldung: Korrekturen nach der Gesamtprüfung
 
 - **Widget bei Verspätung:** Fällt bei einem verspätet gemeldeten Kind die erste Stunde aus oder verschiebt sich der Beginn, zeigt das Widget wieder „ab 09:45“ bzw. den Ausfall – das ist für ein verspätetes Kind die wichtigste Angabe. „verspätet gemeldet“ steht nur, wenn sonst nichts abweicht.

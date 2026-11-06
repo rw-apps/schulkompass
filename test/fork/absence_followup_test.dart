@@ -99,6 +99,27 @@ void main() {
     expect(missed.detail, de.hintExamMissedDetail);
   });
 
+  test('nächster Schultag nach Ferien: Hinweise und Arbeit dieses Tages', () {
+    // Freitag vor den Ferien; nächster Schultag laut Kalender Mo 26.10.
+    final now = DateTime(2026, 10, 9, 15);
+    final after = DateTime(2026, 10, 26);
+    final k = kid(sick: {after});
+    final examAfter = WeekItem(
+      day: after,
+      title: 'Mathematik: Arbeit',
+      kind: WeekKind.exam,
+      childIndex: 0,
+    );
+    final h = kidHints(k, now, de, exams: [examAfter], next: after);
+    expect(
+      h.singleWhere((x) => x.kind == HintKind.exam).what,
+      de.hintExamMissed,
+    );
+    expect(examIsHint(examAfter, now, next: after), isTrue);
+    // Ohne den Tag (nextSchoolDay = Ferien-Montag) kein Hinweis.
+    expect(examIsHint(examAfter, now), isFalse);
+  });
+
   test('Frist kurz: gleicher Tag nur Uhrzeit, sonst mit Wochentag', () {
     expect(mealCancelLabel(de, '06.11.26 08:30', fri), '08:30');
     expect(mealCancelLabel(de, '05.11.26 08:30', fri), 'Do 08:30');

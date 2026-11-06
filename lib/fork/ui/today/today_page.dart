@@ -211,7 +211,12 @@ class TodayPage extends StatelessWidget {
     final paired = wide && cards.length > 1;
     final side = !paired || width >= Sz.wideLandscape;
     final upcoming =
-        upcomingWithoutHints(data.week, data.now, data.kids.length).isEmpty
+        upcomingWithoutHints(
+          data.week,
+          data.now,
+          data.kids.length,
+          next: data.nextDate,
+        ).isEmpty
         ? null
         : UpcomingList(
             data: data,
@@ -358,7 +363,7 @@ class KidCard extends StatelessWidget {
       kid.school,
       classLabel(kid.className),
     ].where((s) => s.isNotEmpty).join(' · ');
-    final hints = kidHints(kid, now, t, exams: exams);
+    final hints = kidHints(kid, now, t, exams: exams, next: nextDate);
     // Nach Schulschluss bzw. an freien Tagen: nächster Schultag.
     final next = nextDay;
     final showNext =
@@ -1324,8 +1329,12 @@ class UpcomingList extends StatelessWidget {
   Widget build(BuildContext context) {
     final k = Kit.of(context);
     final t = context.t;
-    final items = upcomingWithoutHints(data.week, data.now, data.kids.length)
-      ..sort((a, b) => a.day.compareTo(b.day));
+    final items = upcomingWithoutHints(
+      data.week,
+      data.now,
+      data.kids.length,
+      next: data.nextDate,
+    )..sort((a, b) => a.day.compareTo(b.day));
     final shown = items.take(max).toList();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
