@@ -151,6 +151,13 @@ Set<int> hoursOf(String stunde) {
     return (kind: ChangeKind.cancelled, detail: hint);
   }
 
+  // Freisetzung (PortalRules.releaseKind): kein Ausfall, aber auch keine
+  // Vertretung durch jemanden – Vertreter- und Raumspalten nennen dort die
+  // freigesetzte Lehrkraft bzw. den alten Raum (Rückmeldung 06.11.26).
+  if (PortalRules.releaseKind.hasMatch(art)) {
+    return (kind: ChangeKind.substitution, detail: hint ?? _plain(s.art));
+  }
+
   final sameTeacher = (sub == null && subText == null) || sub == absent;
   final roomMoved = room != null && room != roomBefore;
   if (art.contains('raum') || (sameTeacher && roomMoved)) {
@@ -583,7 +590,14 @@ KidPlan planWithSubstitutions({
               (i < plan.days[wd].length && !plan.days[wd][i].isEmpty) ||
               plan.classCodesAt(wd, i).isNotEmpty,
         );
-        if (classHasLesson || c.kind == ChangeKind.cancelled) continue;
+        // Freisetzung: wie ein Ausfall nie eine Zusatzstunde (Prüfung
+        // 06.11.26, PortalRules.releaseKind).
+        final released = PortalRules.releaseKind.hasMatch(
+          (_plain(s.art) ?? '').toLowerCase(),
+        );
+        if (classHasLesson || c.kind == ChangeKind.cancelled || released) {
+          continue;
+        }
       }
       final code = _plain(s.fach) ?? _plain(s.fach_alt) ?? '';
       add(

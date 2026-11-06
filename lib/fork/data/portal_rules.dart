@@ -11,14 +11,30 @@ abstract final class PortalRules {
   /// Vertretungsplan, Spalte „Art“ (klein geschrieben): Stunde fällt aus.
   ///
   /// „frei“ nur am Wortende („frei“, „Klasse frei“, „unterrichtsfrei“) oder
-  /// als „Freistunde“/„Freisetzung“/„freigesetzt“. Ursache (Prüfung
-  /// 27.10.26): Als bloße Teilzeichenkette traf „frei“ auch „Freiarbeit“ –
-  /// ein sicherer Ausfall für eine Stunde, die stattfindet. Buchstaben mit
-  /// Umlaut zählen mit, weil \b in Dart nur ASCII kennt.
+  /// als „Freistunde“. Ursache (Prüfung 27.10.26): Als bloße Teilzeichenkette
+  /// traf „frei“ auch „Freiarbeit“ – ein sicherer Ausfall für eine Stunde,
+  /// die stattfindet. Buchstaben mit Umlaut zählen mit, weil \b in Dart nur
+  /// ASCII kennt.
+  ///
+  /// „Freisetzung“/„freigesetzt“ ist KEIN Ausfall (Rückmeldung 06.11.26,
+  /// Bildschirmfoto Vertretungsplan Schule B): Die Lehrkraft ist frei, die
+  /// Klasse hat statt der Stunde etwas anderes (Unterrichtsersatz). Den
+  /// echten Ausfall schreibt dieselbe Schule als „Entfall“. Siehe
+  /// [releaseKind]. Grenze: „Lehrer frei“ trifft weiter „frei“ und gilt als
+  /// Ausfall; so geschrieben ist bisher keine Freisetzung belegt.
   static final cancelKind = RegExp(
-    r'entfall|ausfall|fällt aus|entfällt|frei(?![a-zäöüß])|'
-    r'freistunde|freisetzung|freigesetzt',
+    r'entfall|ausfall|fällt aus|entfällt|frei(?![a-zäöüß])|freistunde',
   );
+
+  /// Vertretungsplan, Spalte „Art“: Lehrkraft freigesetzt, die Klasse hat
+  /// statt der Stunde etwas anderes. Gilt als Vertretung (gelb) mit dem Wort
+  /// der Schule bzw. dem Hinweis, nie mit einem Namen – der Name in der
+  /// Zeile ist die freigesetzte Lehrkraft (classifySubstitution,
+  /// today_from_lanis.dart). Grenze: Belegt nur bei Schule B (Rückmeldung
+  /// 06.11.26); bei Untis heißt Freisetzung mitunter auch „Klasse fehlt“
+  /// (Klassenfahrt) – dann wäre rot genauer, gelb ist die gewollte
+  /// Fehlerrichtung. Nie eine Zusatzstunde in einer Freistunde des Kindes.
+  static final releaseKind = RegExp(r'freisetzung|freigesetzt');
 
   /// Vertretungsplan, Spalte „Hinweis“: Stunde fällt aus.
   static final cancelHint = RegExp(r'entfällt|fällt aus');

@@ -1,5 +1,9 @@
 ## Schulkompass (rw-apps, bis 9472 „Schulportal“) – Änderungen gegenüber Lanis-Mobile
 
+**4.1.0+9497** – Vertretungsplan: Freisetzung ist kein Ausfall
+
+- **Freisetzung:** Steht im Vertretungsplan „Freisetzung“, zeigt die App die Stunde nicht mehr rot als „fällt aus“, sondern gelb als Änderung mit dem Wort der Schule – die Klasse hat dann statt der Stunde etwas anderes. Echte Ausfälle („Entfall“) bleiben rot.
+
 **4.1.0+9496** – Feiertage, nächster Schultag je Kind
 
 - **Gesetzliche Feiertage:** Die App kennt jetzt die Feiertage in Hessen (Ostern, Himmelfahrt, Pfingsten, Fronleichnam usw.) auch dann, wenn der Schulkalender sie nicht führt oder nicht geladen ist. Heute, Stundenplan, Unterricht, Hausaufgaben-Fristen, Widget und „Krank melden“ zeigen bzw. schlagen dafür keinen Unterricht mehr vor.

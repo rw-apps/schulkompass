@@ -568,12 +568,34 @@ void main() {
       ChangeKind kind(String art) =>
           classifySubstitution(_sub('x', '1', art: art), t: de).kind;
       expect(kind('Freiarbeit'), ChangeKind.substitution);
+      // Freisetzung: Unterrichtsersatz, kein Ausfall (Rückmeldung 06.11.26).
+      expect(kind('Freisetzung'), ChangeKind.substitution);
+      expect(kind('freigesetzt'), ChangeKind.substitution);
+      expect(
+        classifySubstitution(_sub('x', '1', art: 'Freisetzung'), t: de).detail,
+        'Freisetzung',
+      );
+      // Vertreter = freigesetzte Lehrkraft: kein Name als Vertretung.
+      final same = classifySubstitution(
+        _sub('x', '1', art: 'Freisetzung', lehrer: 'SSS', vertreter: 'SSS'),
+        t: de,
+      );
+      expect(
+        (same.kind, same.detail),
+        (ChangeKind.substitution, 'Freisetzung'),
+      );
+      expect(
+        classifySubstitution(
+          _sub('x', '1', art: 'Freisetzung', hinweis: 'Projekt'),
+          t: de,
+        ).detail,
+        'Projekt',
+      );
       for (final a in [
         'frei',
         'Klasse frei',
         'unterrichtsfrei',
         'Freistunde',
-        'Freisetzung',
         'Entfall',
       ]) {
         expect(kind(a), ChangeKind.cancelled, reason: a);
