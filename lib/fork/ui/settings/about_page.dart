@@ -18,6 +18,7 @@ import '../kit.dart';
 import 'anon_export_page.dart';
 import 'error_report_page.dart';
 import 'settings_widgets.dart';
+import 'share_app_page.dart';
 
 /// „Über die App“ als eigene Seite (Entwurf 20.10.26 „verdichtet“):
 /// Version, Neuigkeiten, Datenschutz, Quellcode und Lizenz, Bibliotheken,
@@ -110,6 +111,14 @@ class _AboutSettingsPageState extends State<AboutSettingsPage> {
               icon: Icons.new_releases_outlined,
               label: t.whatsNew,
               onTap: () => _open(forkLatestReleaseUrl),
+            ),
+            SettingsRow(
+              icon: Icons.qr_code_2,
+              label: t.shareAppTitle,
+              detail: t.shareAppDetail,
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(builder: (_) => const ShareAppPage()),
+              ),
             ),
             SettingsRow(
               icon: Icons.privacy_tip_outlined,

@@ -35,6 +35,10 @@ const forkIssuesUrl = '$forkRepoUrl/issues';
 const forkReleasesApiUrl = 'https://api.github.com/repos/$forkRepo/releases';
 const forkLatestReleaseUrl = '$forkRepoUrl/releases/latest';
 
+/// Feste Kopie der neuesten APK (release-fork.yml legt jedem Release
+/// `schulkompass.apk` bei, ab 9503) – für „App weitergeben“.
+const forkApkUrl = '$forkLatestReleaseUrl/download/schulkompass.apk';
+
 /// Datenschutzhinweis des Forks (liegt als PRIVACY.md im Repo).
 const forkPrivacyPolicyUrl = '$forkRepoUrl/blob/main/PRIVACY.md';
 

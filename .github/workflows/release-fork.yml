@@ -3,8 +3,7 @@ name: Release (Fork Schulkompass)
 # Baut bei jeder neuen Version in pubspec.yaml eine signierte APK und legt
 # Tag + GitHub-Release an.
 # Obtainium auf den Familien-/Freundes-Handys erkennt das Release und bietet
-# das Update an; die App selbst prüft dieselben Releases (lib/utils/whats_new.dart,
-# forkReleasesApiUrl in lib/fork_identity.dart).
+# das Update an; die App selbst liest die Releases nicht (Stand 08.11.26).
 #
 # Tag-Format ist „v<version>+<build>“, abgeleitet aus pubspec.yaml „version:“.
 # Ursache: compareVersions() in whats_new.dart zerlegt den Tag an „.“ und „+“
@@ -114,8 +113,16 @@ jobs:
             --dart-define=cronetHttpNoPlay=true
           tag="${{ steps.ver.outputs.tag }}"
           mv build/app/outputs/flutter-apk/app-arm64-v8a-release.apk "schulkompass-$tag-arm64-v8a.apk"
+          # Feste Kopie für einen gleichbleibenden Direktlink
+          # (…/releases/latest/download/schulkompass.apk, Wunsch 08.11.26:
+          # Weitergeben per Link/QR). Grenze: Obtainium sieht damit eine
+          # APK mehr. Filtert es nach CPU-Art (Name mit „arm64-v8a“), fällt
+          # diese ohne Architektur im Namen heraus; sonst kann es fragen,
+          # welche es nehmen soll – nicht auf dem Gerät geprüft (08.11.26).
+          # Abhilfe dort: APK-Filter „-arm64-v8a\.apk$“.
+          cp "schulkompass-$tag-arm64-v8a.apk" schulkompass.apk
           mv build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk "schulkompass-$tag-armeabi-v7a.apk"
-          ls -la schulkompass-*.apk
+          ls -la schulkompass-*.apk schulkompass.apk
 
       - name: Debug-Symbole sichern
         if: steps.ver.outputs.neu == 'true'
@@ -139,5 +146,5 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           # Prüfsummen zum Abgleich (Sicherheitsprüfung 03.11.26).
-          sha256sum schulkompass-*.apk > SHA256SUMS.txt
-          gh release create "${{ steps.ver.outputs.tag }}" schulkompass-*.apk SHA256SUMS.txt --target "$GITHUB_SHA" --title "Schulkompass ${{ steps.ver.outputs.tag }}" --notes-file notes.md
+          sha256sum schulkompass-*.apk schulkompass.apk > SHA256SUMS.txt
+          gh release create "${{ steps.ver.outputs.tag }}" schulkompass-*.apk schulkompass.apk SHA256SUMS.txt --target "$GITHUB_SHA" --title "Schulkompass ${{ steps.ver.outputs.tag }}" --notes-file notes.md

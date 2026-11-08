@@ -23,7 +23,7 @@ The app is a fork of [Lanis-Mobile](https://github.com/lanis-mobile/lanis) and, 
 The app is available for **Android** only.
 
 1. Download and install the APK from the [releases](https://github.com/rw-apps/schulkompass/releases/latest). Android asks once whether installs from this source are allowed.
-2. For automatic updates: install [Obtainium](https://github.com/ImranR98/Obtainium) and add `https://github.com/rw-apps/schulkompass`. If you added the former address `…/rw-apps/schulportal`, nothing needs to change – GitHub redirects.
+2. For automatic updates: install [Obtainium](https://github.com/ImranR98/Obtainium) and add `https://github.com/rw-apps/schulkompass`. If you added the former address `…/rw-apps/schulportal`, nothing needs to change – GitHub redirects. Direct link to the latest APK: `https://github.com/rw-apps/schulkompass/releases/latest/download/schulkompass.apk`.
 
 The app has its own app ID (`io.github.rwapps.sph`) and runs alongside Lanis-Mobile.
 

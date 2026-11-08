@@ -1,5 +1,10 @@
 ## Schulkompass (rw-apps, bis 9472 „Schulportal“) – Änderungen gegenüber Lanis-Mobile
 
+**4.1.0+9503** – App weitergeben, Direktlink zur APK
+
+- **App weitergeben:** Unter Einstellungen → Über die App zeigt ein neuer Eintrag einen QR-Code zum Abscannen und teilt Link und Kurzanleitung über andere Apps.
+- Jedes Release enthält zusätzlich `schulkompass.apk`; der Link `github.com/rw-apps/schulkompass/releases/latest/download/schulkompass.apk` lädt immer die neueste Version.
+
 **4.1.0+9502** – Bessere Fehlerberichte für neue Schulen
 
 - **Unbekannte Fachbegriffe:** Trifft die App in Spalten, die die Schule mit eigenen Wörtern füllt, auf ein Wort, das sie nicht kennt – etwa eine neue Art von Vertretung wie „Freisetzung“, eine Spalte der Anwesenheit oder eine Kalender-Kategorie –, meldet sie dieses eine Wort mit dem Fehlerbericht. So fällt eine falsche Deutung auf, bevor jemand falsch informiert wird. Einsehen und löschen lässt sich alles unter „Erkannte Probleme“.
