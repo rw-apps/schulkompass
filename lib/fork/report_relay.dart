@@ -5,6 +5,7 @@ import 'package:liblanis/liblanis.dart';
 
 import 'demo/demo_mode.dart' show demoActive;
 import 'error_log.dart';
+import 'report_terms.dart';
 
 /// Adresse des Weiterleitungsdiensts (Cloudflare Worker,
 /// tools/report-relay/worker.js, eingerichtet 26.10.26, Probebericht
@@ -24,8 +25,32 @@ bool get relayConfigured => reportRelayUrl.isNotEmpty;
 /// gefragt (Karte auf Heute, AutoReportPrompt).
 const autoReportKey = 'fork/auto-report';
 
-/// Schon gemeldete Einträge des Fehlerprotokolls: {ErrorRecord.key: count}.
+/// Schon gemeldete Einträge des Fehlerprotokolls: {ErrorRecord.key: count},
+/// dazu gemeldete Begriffe als {„term:“ + TermEntry.key: 1}.
 const autoReportSentKey = 'fork/auto-report-sent';
+
+/// Umfang der Zustimmung (report_terms.dart): fehlt oder 1 = nur das
+/// Fehlerprotokoll (Zustimmung bis 9501); [autoReportScopeTerms] = auch
+/// unbekannte Begriffe und Kontext. Ursache (Wunsch 08.11.26): Der
+/// Datenschutzhinweis versprach „keine Portal-Inhalte“; Begriffe aus festen
+/// Spalten sind Portal-Inhalte (ohne Personenbezug) – dafür braucht es die
+/// neue Zustimmung, die Heute einmal erfragt (autoReportPromptDue).
+const autoReportScopeKey = 'fork/auto-report-scope';
+
+/// Einmal nach der erweiterten Zustimmung gefragt und „Nicht jetzt“
+/// gewählt: nicht erneut fragen; das Fehlerprotokoll geht weiter.
+const autoReportAskedTermsKey = 'fork/auto-report-asked-terms';
+
+/// Schließt die Zustimmung Begriffe und Kontext ein?
+bool autoReportTermsAllowed(TypedSettings settings) =>
+    settings.getBool(autoReportKey) == true &&
+    (settings.getInt(autoReportScopeKey) ?? 1) >= autoReportScopeTerms;
+
+/// Zustimmung speichern; [allow] schließt Begriffe und Kontext ein.
+void setAutoReport(TypedSettings settings, bool allow) {
+  settings.setBool(autoReportKey, allow);
+  settings.setInt(autoReportScopeKey, allow ? autoReportScopeTerms : 1);
+}
 
 /// Einen Bericht an den Dienst senden. true = angenommen.
 ///
@@ -69,12 +94,17 @@ Future<bool> sendReport({
 /// Neue Einträge des Fehlerprotokolls melden, wenn zugestimmt wurde.
 /// Neu = Schlüssel unbekannt oder Anzahl gestiegen. Gemeldet wird der
 /// ganze Bericht (ErrorLog.report) – derselbe Text, den „Teilen“ zeigt.
+/// Mit erweiterter Zustimmung (autoReportTermsAllowed) dazu Kontext und
+/// unbekannte Begriffe (termsReport); ein neuer Begriff allein löst den
+/// Bericht auch aus.
 ///
 /// Aufgerufen beim Start (PreviewShell) und gleich nach der Zustimmung.
 Future<bool> flushErrorReports(
   TypedSettings settings, {
   required String os,
   ErrorLog? log,
+  TermLog? terms,
+  ReportContext? context,
   Dio? dio,
   Future<bool> Function({
     required String kind,
@@ -85,11 +115,14 @@ Future<bool> flushErrorReports(
   send,
 }) async {
   final l = log ?? ErrorLog.instance;
+  final tl = terms ?? TermLog.instance;
   if (!relayConfigured && send == null) return false;
   // Demo (demo_mode.dart): keine Berichte, auch nicht die alten der echten
   // Konten – die gehen nach dem Beenden wie gewohnt raus.
   if (demoActive) return false;
-  if (settings.getBool(autoReportKey) != true || l.records.isEmpty) {
+  final withTerms = autoReportTermsAllowed(settings);
+  if (settings.getBool(autoReportKey) != true ||
+      (l.records.isEmpty && (!withTerms || tl.entries.isEmpty))) {
     return false;
   }
   Map<String, dynamic> sent;
@@ -104,7 +137,23 @@ Future<bool> flushErrorReports(
     for (final r in l.records)
       if (sent[r.key] != r.count) r,
   ];
-  if (fresh.isEmpty) return false;
+  final freshTerms = withTerms
+      ? [
+          for (final e in tl.entries)
+            if (sent['term:${e.key}'] == null) e,
+        ]
+      : const <TermEntry>[];
+  if (fresh.isEmpty && freshTerms.isEmpty) return false;
+  final head = fresh.isNotEmpty
+      ? (
+          version: fresh.first.version,
+          area: '${fresh.first.area} · ${fresh.first.type}',
+        )
+      : (
+          version: freshTerms.first.version,
+          area:
+              'Begriff · ${freshTerms.first.area} · ${freshTerms.first.column}',
+        );
   final ok =
       await (send ??
           ({required kind, required version, required area, required text}) =>
@@ -116,14 +165,20 @@ Future<bool> flushErrorReports(
                 dio: dio,
               ))(
         kind: 'fehler',
-        version: fresh.first.version,
-        area: '${fresh.first.area} · ${fresh.first.type}',
-        text: l.report(os: os),
+        version: head.version,
+        area: head.area,
+        text:
+            l.report(os: os) +
+            (withTerms ? termsReport(log: tl, context: context) : ''),
       );
   if (ok) {
     settings.setString(
       autoReportSentKey,
-      jsonEncode({for (final r in l.records) r.key: r.count}),
+      jsonEncode({
+        for (final r in l.records) r.key: r.count,
+        if (withTerms)
+          for (final e in tl.entries) 'term:${e.key}': 1,
+      }),
     );
   }
   return ok;

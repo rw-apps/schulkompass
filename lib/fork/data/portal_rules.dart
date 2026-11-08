@@ -23,7 +23,8 @@ abstract final class PortalRules {
   /// [releaseKind]. Grenze: „Lehrer frei“ trifft weiter „frei“ und gilt als
   /// Ausfall; so geschrieben ist bisher keine Freisetzung belegt.
   static final cancelKind = RegExp(
-    r'entfall|ausfall|fällt aus|entfällt|frei(?![a-zäöüß])|freistunde',
+    r'entfall|ausfall|fällt aus|entfällt|frei(?![a-zäöüß])|freistunde|'
+    r'kein unterricht',
   );
 
   /// Vertretungsplan, Spalte „Art“: Lehrkraft freigesetzt, die Klasse hat
@@ -35,6 +36,22 @@ abstract final class PortalRules {
   /// (Klassenfahrt) – dann wäre rot genauer, gelb ist die gewollte
   /// Fehlerrichtung. Nie eine Zusatzstunde in einer Freistunde des Kindes.
   static final releaseKind = RegExp(r'freisetzung|freigesetzt');
+
+  /// Spalte „Art“: Wörter, deren Bedeutung die App kennt (neben
+  /// [cancelKind] und [releaseKind]). Alles andere meldet sie als
+  /// unbekannten Begriff (report_terms.dart, classifySubstitution). Ursache
+  /// (Wunsch 08.11.26): Ein neues Wort einer Schule fiel sonst erst auf,
+  /// wenn jemand die falsche Anzeige bemerkte (Freisetzung, 06.11.26).
+  /// Grenze: Teilwörter – „Statt-Vertretung“ gilt über „vertret“ als
+  /// bekannt, auch wenn eine Schule damit etwas anderes meint. Beginnt die
+  /// Angabe mit „ohne“ oder „kein“ („ohne Vertretung“), gilt sie als
+  /// unbekannt (Prüfung 08.11.26: genau solche Fälle soll die Meldung
+  /// finden); „kein Unterricht“ ist ein Ausfall ([cancelKind]).
+  static final knownArt = RegExp(
+    r'^(?!ohne|kein)(?=.*(vertret|vtr|raum|verleg|tausch|betreu|statt|'
+    r'klausur|zusatz|sonder|aufsicht|verschieb|verschob|unterricht|eva\b|'
+    r'selbst))',
+  );
 
   /// Vertretungsplan, Spalte „Hinweis“: Stunde fällt aus.
   static final cancelHint = RegExp(r'entfällt|fällt aus');

@@ -8,6 +8,7 @@ import 'package:lanis/fork_identity.dart';
 import 'package:lanis/utils/safe_launch.dart';
 
 import '../../error_log.dart';
+import '../../report_terms.dart';
 import '../../l10n/l10n.dart';
 import '../kit.dart';
 
@@ -59,6 +60,11 @@ class _ErrorReportPageState extends State<ErrorReportPage> {
     final k = Kit.of(context);
     final t = context.t;
     final text = _log.report(os: _os);
+    // Kontext und Begriffe (report_terms.dart) sichtbar und löschbar, aber
+    // nicht in „Teilen“/GitHub: Ein Issue dort ist öffentlich (Prüfung
+    // 08.11.26: vorher sah man nirgends, was gesammelt wird).
+    final extras = termsReport().trim();
+    final any = _log.records.isNotEmpty || extras.isNotEmpty;
     final bottom = MediaQuery.paddingOf(context).bottom;
     return Scaffold(
       backgroundColor: k.p.bg,
@@ -80,6 +86,21 @@ class _ErrorReportPageState extends State<ErrorReportPage> {
             ),
             child: SelectableText(text, style: k.planMeta(k.p.ink)),
           ),
+          if (extras.isNotEmpty) ...[
+            const SizedBox(height: Sp.l),
+            Text(t.reportExtrasTitle, style: k.section),
+            const SizedBox(height: Sp.xs),
+            Text(t.reportExtrasNote, style: k.meta),
+            const SizedBox(height: Sp.s),
+            Container(
+              padding: const EdgeInsets.all(Sp.m),
+              decoration: BoxDecoration(
+                color: k.p.card,
+                borderRadius: BorderRadius.circular(Rad.row),
+              ),
+              child: SelectableText(extras, style: k.planMeta(k.p.ink)),
+            ),
+          ],
           const SizedBox(height: Sp.l),
           FilledButton.icon(
             onPressed: _log.records.isEmpty
@@ -104,10 +125,11 @@ class _ErrorReportPageState extends State<ErrorReportPage> {
           ),
           const SizedBox(height: Sp.s),
           TextButton(
-            onPressed: _log.records.isEmpty
+            onPressed: !any
                 ? null
                 : () {
                     _log.clear();
+                    clearReportExtras();
                     ScaffoldMessenger.of(
                       context,
                     ).showSnackBar(SnackBar(content: Text(t.errorsDeleted)));

@@ -1,5 +1,13 @@
 ## Schulkompass (rw-apps, bis 9472 „Schulportal“) – Änderungen gegenüber Lanis-Mobile
 
+**4.1.0+9502** – Bessere Fehlerberichte für neue Schulen
+
+- **Unbekannte Fachbegriffe:** Trifft die App in Spalten, die die Schule mit eigenen Wörtern füllt, auf ein Wort, das sie nicht kennt – etwa eine neue Art von Vertretung wie „Freisetzung“, eine Spalte der Anwesenheit oder eine Kalender-Kategorie –, meldet sie dieses eine Wort mit dem Fehlerbericht. So fällt eine falsche Deutung auf, bevor jemand falsch informiert wird. Einsehen und löschen lässt sich alles unter „Erkannte Probleme“.
+- **„kein Unterricht“** im Vertretungsplan gilt jetzt als Ausfall.
+- **Kontext ohne Namen:** Berichte nennen Kontoart, Zahl der Kinder, angebotene Module (als Dateiname) und Gerätesprache.
+- **Hinweise auf „Heute“:** Längere Hinweise nutzen die ganze Breite der Karte, Knöpfe stehen unten rechts; „Nicht jetzt“ sitzt in der Karte.
+- **Neue Zustimmung:** Beides nur mit Zustimmung; wer schon zugestimmt hatte, wird auf „Heute“ einmal gefragt. Datenschutzhinweis Abschnitt 5 entsprechend erweitert.
+
 **4.1.0+9501** – Neue Adresse: Schulkompass; Essen nach der Anmeldung
 
 - **Essen – Anmeldung beim Caterer:** Konnte „Essen“ den Plan nicht lesen und meldet man sich über „Bestellen oder ändern“ beim Caterer an, kehrt die App danach von selbst in ihre Ansicht zurück und lädt den Plan neu.

@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lanis/fork/report_terms.dart' show TermLog;
 import 'package:lanis/fork/data/holidays_hessen.dart';
 import 'package:lanis/fork/l10n/l10n.dart';
 import 'package:lanis/fork/school_links.dart';
@@ -568,6 +569,18 @@ void main() {
       ChangeKind kind(String art) =>
           classifySubstitution(_sub('x', '1', art: art), t: de).kind;
       expect(kind('Freiarbeit'), ChangeKind.substitution);
+      // Unbekanntes Wort in „Art“ landet in der Begriffsliste, bekanntes
+      // nicht (report_terms.dart, Wunsch 08.11.26).
+      TermLog.instance.clear();
+      kind('Exkursion');
+      kind('Vertretung');
+      kind('Vtr. ohne Lehrer');
+      kind('ohne Vertretung');
+      expect(kind('kein Unterricht'), ChangeKind.cancelled);
+      expect(
+        [for (final e in TermLog.instance.entries) e.word],
+        ['ohne Vertretung', 'Exkursion'],
+      );
       // Freisetzung: Unterrichtsersatz, kein Ausfall (Rückmeldung 06.11.26).
       expect(kind('Freisetzung'), ChangeKind.substitution);
       expect(kind('freigesetzt'), ChangeKind.substitution);

@@ -36,6 +36,8 @@ import '../../absence/absence_form.dart' show AbsenceEntry;
 import '../../absence/absence_parser.dart' show loadAbsenceEntries;
 import '../../class_choice.dart';
 import '../../portal_extras.dart';
+import '../../report_terms.dart' show noteLoadTerms;
+import '../../data/portal_rules.dart';
 import '../today/today_from_lanis.dart' show classFromCourses;
 
 /// Schlüssel der Gruppenwahl in den Einstellungen des Kontos (unter
@@ -646,6 +648,40 @@ class _LiveDataScopeState extends ConsumerState<LiveDataScope>
       // Zurückkehren nach mehr als 10 Minuten lief mit force – das Foto kam
       // jedes Mal neu vom Portal.
       await _loadExtras(user);
+      _noteTerms(supported);
+    }
+  }
+
+  /// Kontext und unbekannte Begriffe für die Fehlerberichte
+  /// (report_terms.dart); gesendet nur mit erweiterter Zustimmung.
+  void _noteTerms(Set<String> supported) {
+    final session = ref.read(sessionProvider).asData?.value;
+    if (session == null || !mounted) return;
+    final p = _lessons.parser;
+    final type = session.accountTypeOrNull;
+    try {
+      noteLoadTerms(
+        account: session.account.localId,
+        type: switch (type) {
+          AccountType.parent => 'Eltern',
+          AccountType.student => 'Schüler',
+          AccountType.teacher => 'Lehrkraft',
+          null => 'unbekannt',
+        },
+        kids: p is LessonsParentAwareParser ? p.lastKids.length : 0,
+        modules: session.travelMenu,
+        categories: [
+          for (final e in _cal.feed.content ?? const <CalendarEvent>[])
+            ?e.category?.name,
+        ],
+        knownCategory: (c) =>
+            PortalRules.freeCategories.any(c.contains) ||
+            PortalRules.examCategories.any(c.contains) ||
+            PortalRules.skipCategories.any(c.contains),
+      );
+    } catch (_) {
+      // Nur Hilfe für Fehlerberichte; ein unerwarteter Aufbau der App-Liste
+      // darf das Laden nicht stören.
     }
   }
 

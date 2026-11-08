@@ -9,6 +9,7 @@ import '../../l10n/l10n.dart';
 import '../plan/plan_model.dart';
 import 'today_model.dart';
 import '../../data/portal_rules.dart';
+import '../../report_terms.dart' show TermLog;
 
 /// Übersetzt Stundenplan, Vertretungsplan und Kalender eines Kontos in die
 /// Datenform von „Heute“ ([ChildToday], [WeekItem]).
@@ -158,6 +159,11 @@ Set<int> hoursOf(String stunde) {
     return (kind: ChangeKind.substitution, detail: hint ?? _plain(s.art));
   }
 
+  // Unbekanntes Wort in „Art“ melden (report_terms.dart, nur mit
+  // erweiterter Zustimmung gesendet); die Zeile gilt weiter als Vertretung.
+  if (art.isNotEmpty && !PortalRules.knownArt.hasMatch(art)) {
+    TermLog.instance.note('vertretungsplan.php', 'Art', _plain(s.art));
+  }
   final sameTeacher = (sub == null && subText == null) || sub == absent;
   final roomMoved = room != null && room != roomBefore;
   if (art.contains('raum') || (sameTeacher && roomMoved)) {

@@ -1,6 +1,6 @@
 # Datenschutzhinweis – App „Schulkompass“
 
-Stand: 06.11.2026
+Stand: 08.11.2026
 
 ## 1. Wer verantwortlich ist
 
@@ -25,6 +25,7 @@ Die App hat **keinen eigenen Server**. Sie verbindet sich direkt mit dem Schulpo
 | Adresse der Bestellseite des Caterers, gelesene Gerichte und Guthaben | „Essen und Caterer“, Hinweise auf „Heute“ | bis du die Adresse löschst |
 | Benutzername und Passwort beim Caterer – **nur wenn du sie hinterlegst** | automatische Anmeldung nur auf dieser Bestellseite | bis du sie löschst oder die Adresse änderst |
 | Fehlerprotokoll **ohne Inhalte** (App-Version, Bereich, Fehlerart, Stelle im Code) | Fehlersuche | die letzten Einträge; gelöscht mit der App |
+| Fachbegriffe, die die App nicht kennt, und Kontext ohne Namen (Abschnitt 5) | Fehlersuche | höchstens 40 Begriffe; löschbar unter „Erkannte Probleme“, sonst mit der App |
 
 Passwörter liegen im geschützten Schlüsselspeicher von Android (Keystore). Benachrichtigungen und das Startbildschirm-Widget entstehen auf dem Gerät; es gibt keinen Push-Dienst.
 
@@ -40,7 +41,12 @@ GitHub und Cloudflare sitzen in den USA. Beide nehmen am EU-US-Datenschutzrahmen
 
 ## 5. Fehlerberichte – nur mit deiner Einwilligung
 
-- **Automatisch melden:** Nur wenn du zustimmst (Frage auf „Heute“ oder Einstellungen → Über die App → Fehlersuche). Ein Bericht enthält App-Version, Bereich, Fehlerart und Stellen im Code – **keine** Namen, Noten, Nachrichten, Zugangsdaten oder sonstigen Portal-Inhalte. Du kannst jeden Bericht vorher unter „Erkannte Probleme“ ansehen.
+- **Automatisch melden:** Nur wenn du zustimmst (Frage auf „Heute“ oder Einstellungen → Über die App → Fehlersuche). Ein Bericht enthält:
+  - App-Version, Bereich, Fehlerart und Stellen im Code;
+  - **Kontext ohne Namen:** Kontoart (Eltern, Schüler oder Lehrkraft), Zahl der Kinder im Konto, welche Module deine Schule anbietet (Dateinamen wie „kalender“), Sprache des Geräts;
+  - **Fachbegriffe, die die App noch nicht kennt**, aus Spalten, die die Schule mit eigenen Wörtern füllt: die Art einer Vertretung (z. B. „Freisetzung“), die Spaltenköpfe der Anwesenheit in einer Kursmappe und die Kategorien des Kalenders. Gemeldet wird nur das einzelne Wort mit dem Bereich, in dem es stand – höchstens drei Wörter, nur Buchstaben und einfache Satzzeichen, keine Ziffern.
+
+  Die App filtert Namen in üblicher Form (mit Anrede oder „Nachname, Vorname“), Lehrerkürzel, Klassen und Räume heraus und meldet nie Noten, Nachrichten, Hinweistexte, Vermerke zu einzelnen Stunden deines Kindes, Zugangsdaten, Schulname oder Schulnummer. Die Angaben sind damit pseudonym: Aus der Liste der Module lässt sich unter Umständen auf die Schule schließen, nicht aber auf eine Person. Alles Erfasste siehst du unter „Erkannte Probleme“ und kannst es dort löschen. Wer vor dem 8.11.2026 zugestimmt hat, wird auf „Heute“ einmal gefragt, ob Kontext und Fachbegriffe dazukommen dürfen; ohne diese Zustimmung bleibt es beim Fehlerprotokoll.
 - **Anonym senden:** Kann die App eine Portalseite nicht lesen, kannst du deren Aufbau senden. Alle Wörter außer festen Beschriftungen werden durch Zufallsbuchstaben ersetzt, Noten zufällig neu vergeben, Schulnummer, Bilder und Anmeldedaten entfernt. Gesendet wird erst, nachdem du die unverändert gebliebenen Wörter gesehen und auf „Senden“ getippt hast.
 - **Weg:** Ein Weiterleitungsdienst bei Cloudflare legt den Bericht als Eintrag in einem **privaten** GitHub-Repository ab, das nur der Verantwortliche sehen kann. Cloudflare und GitHub erfahren dabei technisch bedingt deine IP-Adresse. Der Dienst selbst speichert sie nicht; er merkt sich nur zwei Tage lang einen nicht umkehrbaren, verschlüsselten Wert aus Tag und Adresse, um höchstens fünf Berichte je Absender und Tag anzunehmen.
 - **Speicherdauer:** Berichte werden gelöscht, sobald der Fehler behoben ist, spätestens nach 12 Monaten.
@@ -53,7 +59,7 @@ GitHub und Cloudflare sitzen in den USA. Beide nehmen am EU-US-Datenschutzrahmen
 
 ## 7. Kinder und Jugendliche
 
-Die App wird auch mit Schülerkonten genutzt. Sie sammelt von niemandem Daten für den Verantwortlichen, außer über die freiwilligen Fehlerberichte, die keine Personendaten enthalten. Bei Kindern unter 16 Jahren sollten die Eltern über die Zustimmung zu Fehlerberichten entscheiden.
+Die App wird auch mit Schülerkonten genutzt. Sie sammelt von niemandem Daten für den Verantwortlichen, außer über die freiwilligen Fehlerberichte, die keine Personendaten enthalten (Abschnitt 5). Bei Kindern unter 16 Jahren sollten die Eltern über die Zustimmung zu Fehlerberichten entscheiden.
 
 ## 8. Was die App nicht tut
 

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:ui' show PlatformDispatcher;
 
 import 'package:liblanis/liblanis.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -10,6 +11,7 @@ import 'package:riverpod/misc.dart' show Override;
 import '../core/native_adapter_instance.dart';
 import '../fork/db_wal.dart';
 import '../fork/error_log.dart';
+import '../fork/report_terms.dart';
 import '../fork/parent_support.dart';
 import '../utils/glitchtip.dart';
 import 'flutter_secret_store.dart';
@@ -54,6 +56,11 @@ Future<List<Override>> bootstrapLanisClient({
   ErrorLog.instance
     ..version = appVersionLabel(packageInfo.version, packageInfo.buildNumber)
     ..attach(File(p.join(persistentDir.path, 'fork_errors.json')));
+  // Fork: unbekannte Fachbegriffe für erweiterte Berichte (report_terms.dart).
+  TermLog.instance.attach(File(p.join(persistentDir.path, 'fork_terms.json')));
+  ReportContext.instance
+    ..language = PlatformDispatcher.instance.locale.languageCode
+    ..attach(File(p.join(persistentDir.path, 'fork_report_context.json')));
   final documents = p.join(tempDir.path, 'lanis_documents');
   unawaited(Future(() => pruneOldFiles(Directory(documents))));
 

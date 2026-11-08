@@ -2,6 +2,7 @@ import 'package:flutter/widgets.dart' show IconData;
 import 'package:liblanis/liblanis.dart';
 
 import '../../absences.dart' show sameLessonKey;
+import '../../report_terms.dart' show TermLog;
 import '../../data/course_rules.dart';
 import '../plan/plan_model.dart';
 
@@ -107,6 +108,10 @@ AttendanceCounts? attendanceCounts(Map<String, String> a) {
     } else if (CourseRules.present.any(k.contains)) {
       p += n;
     } else {
+      // Unbekannte Spalte (z. B. „verspätet“) melden (report_terms.dart).
+      if (!CourseRules.presenceNeutral.contains(k.trim())) {
+        TermLog.instance.note('meinunterricht.php', 'Anwesenheit', x.key);
+      }
       continue;
     }
     any = true;

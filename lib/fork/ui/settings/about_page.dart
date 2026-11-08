@@ -12,6 +12,7 @@ import 'package:lanis/view/settings/subsettings/debug_export.dart';
 import '../../error_log.dart';
 import '../../l10n/l10n.dart';
 import '../../report_relay.dart';
+import '../../report_terms.dart' show TermLog;
 import '../today/auto_report_prompt.dart' show reportOs;
 import '../kit.dart';
 import 'anon_export_page.dart';
@@ -136,10 +137,12 @@ class _AboutSettingsPageState extends State<AboutSettingsPage> {
         SettingsSection(
           title: t.sectionDebug,
           children: [
-            if (errors > 0)
+            // Auch ohne Fehler, wenn Begriffe gesammelt sind – dort lassen
+            // sie sich ansehen und löschen (report_terms.dart).
+            if (errors > 0 || TermLog.instance.entries.isNotEmpty)
               SettingsRow(
                 icon: Icons.error_outline,
-                label: t.errorsFound(errors),
+                label: errors > 0 ? t.errorsFound(errors) : t.reportDataTitle,
                 detail: t.errorsFoundDetail,
                 onTap: () async {
                   await Navigator.of(context).push(
@@ -162,12 +165,31 @@ class _AboutSettingsPageState extends State<AboutSettingsPage> {
               SettingsRow(
                 icon: Icons.outgoing_mail,
                 label: t.autoReportSetting,
-                detail: t.autoReportSettingDetail,
+                // Alte Zustimmung (nur Fehler): sagen, und ein Tipp erweitert
+                // (Prüfung 08.11.26: vorher stand dort „Fachbegriffe“, obwohl
+                // keine gesendet wurden).
+                detail:
+                    _settings?.getBool(autoReportKey) == true &&
+                        !autoReportTermsAllowed(_settings!)
+                    ? t.autoReportSettingOld
+                    : t.autoReportSettingDetail,
+                onTap:
+                    _settings?.getBool(autoReportKey) == true &&
+                        !autoReportTermsAllowed(_settings!)
+                    ? () => setState(() {
+                        setAutoReport(_settings!, true);
+                        flushErrorReports(_settings!, os: reportOs());
+                      })
+                    : null,
                 chevron: false,
                 trailing: Switch(
+                  // Einschalten = erweiterte Zustimmung (Begriffe und
+                  // Kontext, report_terms.dart). Eine alte Zustimmung ohne
+                  // sie bleibt „an“ (es wird ja gemeldet); Heute fragt dann
+                  // einmal nach der Erweiterung (autoReportPromptDue).
                   value: _settings?.getBool(autoReportKey) == true,
                   onChanged: (v) => setState(() {
-                    _settings?.setBool(autoReportKey, v);
+                    if (_settings != null) setAutoReport(_settings!, v);
                     if (v && _settings != null) {
                       flushErrorReports(_settings!, os: reportOs());
                     }
