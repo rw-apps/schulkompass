@@ -18,14 +18,18 @@ library;
 ///
 /// Umbenennung 04.11.26 (Build 9473): „Schulportal“ war der Name des Portals
 /// selbst und ließ die App wie ein offizielles Angebot des Landes wirken.
-/// Grenze: App-ID (io.github.rwapps.sph) und Repo-Name bleiben – ein neuer
-/// Paketname hätte eine zweite, getrennte App erzeugt, und Obtainium-Quellen
-/// (github.com/rw-apps/schulportal) sowie APK-Dateinamen (schulportal-v….apk)
-/// zeigen weiter auf dieselbe Stelle.
+/// Repo und APK-Dateien folgten am 08.11.26 (Build 9501): github.com/
+/// rw-apps/schulkompass, schulkompass-v….apk. GitHub leitet die alte Adresse
+/// (rw-apps/schulportal) weiter, auch für die Release-Schnittstelle, die
+/// Obtainium abfragt. Grenze: Die Weiterleitung endet, sobald unter rw-apps
+/// wieder ein Repo „schulportal“ entsteht. App-ID (io.github.rwapps.sph) und
+/// interne Kennungen (Kanal „schulportal/…“, Widget-Schema, Format der
+/// Geräteübertragung) bleiben – ein neuer Paketname hätte eine zweite,
+/// getrennte App erzeugt, neue Kennungen alte Dateien und Widgets ungültig.
 const forkAppName = 'Schulkompass';
 
 /// GitHub-Repo des Forks: Quelle für Update-Prüfung, Fehlermeldungen, Quellcode.
-const forkRepo = 'rw-apps/schulportal';
+const forkRepo = 'rw-apps/schulkompass';
 const forkRepoUrl = 'https://github.com/$forkRepo';
 const forkIssuesUrl = '$forkRepoUrl/issues';
 const forkReleasesApiUrl = 'https://api.github.com/repos/$forkRepo/releases';

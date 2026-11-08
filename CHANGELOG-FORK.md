@@ -1,5 +1,10 @@
 ## Schulkompass (rw-apps, bis 9472 „Schulportal“) – Änderungen gegenüber Lanis-Mobile
 
+**4.1.0+9501** – Neue Adresse: Schulkompass; Essen nach der Anmeldung
+
+- **Essen – Anmeldung beim Caterer:** Konnte „Essen“ den Plan nicht lesen und meldet man sich über „Bestellen oder ändern“ beim Caterer an, kehrt die App danach von selbst in ihre Ansicht zurück und lädt den Plan neu.
+- **Repo und Download heißen jetzt wie die App:** github.com/rw-apps/schulkompass, Dateien `schulkompass-v….apk`. Die alte Adresse leitet weiter; Obtainium-Quellen und Links müssen nicht geändert werden.
+
 **4.1.0+9500** – Abwesenheiten
 
 - **Doppelte Fehlzeit:** Steht dieselbe Stunde zweimal in der Kursmappe, zeigen Abwesenheiten und Kursseite sie nur noch einmal. Eine schon gesendete Entschuldigung bleibt vermerkt.

@@ -22,8 +22,8 @@ The app is a fork of [Lanis-Mobile](https://github.com/lanis-mobile/lanis) and, 
 
 The app is available for **Android** only.
 
-1. Download and install the APK from the [releases](https://github.com/rw-apps/schulportal/releases/latest). Android asks once whether installs from this source are allowed.
-2. For automatic updates: install [Obtainium](https://github.com/ImranR98/Obtainium) and add `https://github.com/rw-apps/schulportal`.
+1. Download and install the APK from the [releases](https://github.com/rw-apps/schulkompass/releases/latest). Android asks once whether installs from this source are allowed.
+2. For automatic updates: install [Obtainium](https://github.com/ImranR98/Obtainium) and add `https://github.com/rw-apps/schulkompass`. If you added the former address `…/rw-apps/schulportal`, nothing needs to change – GitHub redirects.
 
 The app has its own app ID (`io.github.rwapps.sph`) and runs alongside Lanis-Mobile.
 
@@ -43,7 +43,7 @@ The app signs in **directly with the school portal**; credentials stay on the de
 
 In the app under **Settings → About → Troubleshooting**: share the detected problems or – with consent – report them automatically. If the app can't read a portal page (e.g. at another school or with a teacher account), the **anonymous export** helps: it shows the structure of the pages without names, grades or texts.
 
-Questions and hints are welcome as an [issue](https://github.com/rw-apps/schulportal/issues).
+Questions and hints are welcome as an [issue](https://github.com/rw-apps/schulkompass/issues).
 
 ## For developers
 

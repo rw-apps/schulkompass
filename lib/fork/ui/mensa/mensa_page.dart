@@ -32,7 +32,23 @@ class MensaPage extends ConsumerStatefulWidget {
     required this.owner,
     this.childName,
     this.open,
+    this.returnAfterLogin = false,
   });
+
+  /// Nach der Anmeldung zurück in die App-Ansicht, sobald eine Woche lesbar
+  /// ist. Ursache (Rückmeldung 08.11.26): Ohne gemerkten Zugang konnte
+  /// „Essen“ den Plan nicht lesen; nach „Bestellen oder ändern“ und der
+  /// Anmeldung blieb man auf der Seite des Caterers statt in der Ansicht der
+  /// App. MealWeekPage._order setzt das nur im Zustand „Laden
+  /// fehlgeschlagen“ und liest nach der Rückkehr neu (_refresh). Grenze:
+  /// erst nach der Rückfrage „Anmeldung merken?“, nur mit einer Woche, die
+  /// NACH dem Abschicken der Anmeldung gelesen wurde (selbst oder mit dem
+  /// gemerkten Zugang), und nur, wenn die Sitzung diesem Kind gehört
+  /// (_otherName == null). Kein Rücksprung, wenn man noch per Cookie
+  /// angemeldet ist (dann gibt es keine Anmeldung) oder der Caterer ohne
+  /// neue Seite anmeldet (kein onPageFinished). Ein falsches Passwort führt
+  /// auf die Anmeldeseite zurück – ohne lesbare Woche, also bleibt man.
+  final bool returnAfterLogin;
 
   /// Genau diese Adresse öffnen (eine Woche aus „Essen“); null = die
   /// Bestellwoche (mensaWeekUrl). Ursache: Sonst ersetzte mensaWeekUrl die
@@ -66,6 +82,37 @@ class _MensaPageState extends ConsumerState<MensaPage> {
   bool _triedLogin = false;
   bool _afterLogin = false;
   bool _asked = false;
+
+  /// Für [MensaPage.returnAfterLogin] (mensaShouldReturn): Seitenzähler
+  /// [_starts] beim Abschicken bzw. Ausfüllen der Anmeldung (-1 = keine;
+  /// „abgeschickt“, nicht „vom Caterer angenommen“) und beim Lesen der
+  /// letzten Woche; [_deciding] solange _onLogin läuft (Speicherzugriffe,
+  /// Rückfrage „merken?“).
+  int _signedInAt = -1;
+  int _weekAt = -1;
+  int _deciding = 0;
+  bool _returned = false;
+
+  void _maybeReturn() {
+    if (!mounted) return;
+    final route = ModalRoute.of(context);
+    if (!mensaShouldReturn(
+      enabled: widget.returnAfterLogin,
+      returned: _returned,
+      signedInAt: _signedInAt,
+      weekAt: _weekAt,
+      deciding: _deciding > 0,
+      otherSession: _otherName != null,
+      // Nur wenn diese Seite oben liegt (Prüfung 08.11.26): Nach Android-
+      // Zurück ist sie während der Ausblendung noch eingehängt – ein pop
+      // träfe dann die Woche darunter; ein offener Dialog wäre das Ziel.
+      onTop: route?.isCurrent ?? false,
+    )) {
+      return;
+    }
+    _returned = true;
+    Navigator.of(context).pop();
+  }
 
   String get _start => widget.open ?? mensaWeekUrl(widget.url, DateTime.now());
 
@@ -168,6 +215,7 @@ class _MensaPageState extends ConsumerState<MensaPage> {
         _triedLogin = true;
         _afterLogin = true;
         _fillStarts = _starts;
+        _signedInAt = _starts;
         _claim();
       }
     } catch (_) {
@@ -181,7 +229,20 @@ class _MensaPageState extends ConsumerState<MensaPage> {
   var _fillStarts = 0;
 
   /// Anmeldung eingegeben: einmal fragen, ob die App sie merken soll.
+  /// Seitenzähler beim Eingang festhalten: Bis die Prüfungen fertig sind,
+  /// kann schon die nächste Seite laufen.
   Future<void> _onLogin(String message) async {
+    final at = _starts;
+    _deciding++;
+    try {
+      await _onLoginAt(message, at);
+    } finally {
+      _deciding--;
+      _maybeReturn();
+    }
+  }
+
+  Future<void> _onLoginAt(String message, int at) async {
     final Object? v;
     try {
       v = jsonDecode(message);
@@ -212,8 +273,13 @@ class _MensaPageState extends ConsumerState<MensaPage> {
     }
     if (!'$typed'.contains('yes') || !mounted) return;
     // Selbst angemeldet: ab jetzt die Sitzung dieses Kindes.
+    if (at > _signedInAt) _signedInAt = at;
     _claim();
+    // Sofort sperren: Das Skript meldet Klick, Absenden und Enter – zwei
+    // Meldungen je Anmeldung kamen sonst beide bis zur Rückfrage (Prüfung
+    // 08.11.26).
     if (_asked) return;
+    _asked = true;
     final old = await readMensaLogin(widget.owner);
     if (old != null && old.user == u && old.pass == p && old.host == h) {
       // Selbst eingegeben, also wieder gültig: eine frühere Ablehnung
@@ -225,7 +291,6 @@ class _MensaPageState extends ConsumerState<MensaPage> {
     }
     if (old == null && await mensaLoginDeclined(widget.owner)) return;
     if (!mounted) return;
-    _asked = true;
     final t = context.t;
     final yes = await showDialog<bool>(
       context: context,
@@ -254,6 +319,7 @@ class _MensaPageState extends ConsumerState<MensaPage> {
   /// Gelesene Woche für „Essen“ und Heute merken (mensa_store.dart): Nach
   /// einer Bestellung hier stimmt die Anzeige ohne weiteren Abruf.
   Future<void> _remember() async {
+    final at = _starts;
     final src = await pageHtml(_c);
     final url = await _c.currentUrl();
     final w = (src == null ? null : parseMealWeek(src))?.withUrl(url);
@@ -267,6 +333,8 @@ class _MensaPageState extends ConsumerState<MensaPage> {
         ..attach(ref.read(sharedOverAccountSettingsProvider))
         ..put(widget.owner, [w]);
     } catch (_) {}
+    if (at > _weekAt) _weekAt = at;
+    _maybeReturn();
   }
 
   /// Erste Seite ohne Woche und ohne Anmeldemaske (Hinweisseite nach der
@@ -453,3 +521,25 @@ class _MensaPageState extends ConsumerState<MensaPage> {
     );
   }
 }
+
+/// Entscheidung für MensaPage.returnAfterLogin, ohne WebView prüfbar.
+/// [signedInAt]/[weekAt]: Seitenzähler beim Abschicken der Anmeldung bzw.
+/// beim Lesen der Woche (-1 = nie); die Woche muss von einer SPÄTEREN Seite
+/// stammen – eine lesbare Seite vor der Anmeldung zählt nicht (Prüfung
+/// 08.11.26).
+bool mensaShouldReturn({
+  required bool enabled,
+  required bool returned,
+  required int signedInAt,
+  required int weekAt,
+  required bool deciding,
+  required bool otherSession,
+  required bool onTop,
+}) =>
+    enabled &&
+    !returned &&
+    signedInAt >= 0 &&
+    weekAt > signedInAt &&
+    !deciding &&
+    !otherSession &&
+    onTop;

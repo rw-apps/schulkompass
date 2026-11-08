@@ -191,7 +191,9 @@ class _MealWeekPageState extends ConsumerState<MealWeekPage> {
     }
   }
 
-  Future<void> _order(MealWeek? w) async {
+  /// [afterFailure]: aus „Laden fehlgeschlagen“ – nach der Anmeldung zurück
+  /// und neu lesen (MensaPage.returnAfterLogin, Rückmeldung 08.11.26).
+  Future<void> _order(MealWeek? w, {bool afterFailure = false}) async {
     if (blockedInDemo(context)) return;
     await pushFullScreen<void>(
       context,
@@ -202,6 +204,7 @@ class _MealWeekPageState extends ConsumerState<MealWeekPage> {
             : mealWeekPageUrl(w, w.start, _base),
         owner: widget.owner,
         childName: widget.childName,
+        returnAfterLogin: afterFailure,
       ),
     );
     if (mounted) _refresh();
@@ -421,7 +424,7 @@ class _MealWeekPageState extends ConsumerState<MealWeekPage> {
                         ),
                         if (fetch == null)
                           FilledButton.icon(
-                            onPressed: () => _order(null),
+                            onPressed: () => _order(null, afterFailure: true),
                             icon: const Icon(Icons.open_in_new),
                             label: Text(t.mealChange),
                           ),

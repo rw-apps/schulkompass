@@ -22,8 +22,8 @@ Die App ist eine Abwandlung von [Lanis-Mobile](https://github.com/lanis-mobile/l
 
 Die App gibt es nur für **Android**.
 
-1. Die APK aus den [Releases](https://github.com/rw-apps/schulportal/releases/latest) herunterladen und installieren. Android fragt einmal, ob Installationen aus dieser Quelle erlaubt sind.
-2. Für automatische Updates: [Obtainium](https://github.com/ImranR98/Obtainium) installieren und dort `https://github.com/rw-apps/schulportal` hinzufügen.
+1. Die APK aus den [Releases](https://github.com/rw-apps/schulkompass/releases/latest) herunterladen und installieren. Android fragt einmal, ob Installationen aus dieser Quelle erlaubt sind.
+2. Für automatische Updates: [Obtainium](https://github.com/ImranR98/Obtainium) installieren und dort `https://github.com/rw-apps/schulkompass` hinzufügen. Wer noch die frühere Adresse `…/rw-apps/schulportal` eingetragen hat, muss nichts ändern – GitHub leitet weiter.
 
 Die App hat eine eigene App-ID (`io.github.rwapps.sph`) und läuft parallel zu Lanis-Mobile.
 
@@ -43,7 +43,7 @@ Die App meldet sich **direkt beim Schulportal** an; Zugangsdaten bleiben auf dem
 
 In der App unter **Einstellungen → Über die App → Fehlersuche**: „Erkannte Probleme“ teilen oder – mit Zustimmung – automatisch melden. Kann die App eine Seite des Portals nicht lesen (z. B. an einer anderen Schule oder mit einem Lehrerkonto), hilft der **anonyme Export**: Er zeigt den Aufbau der Seiten ohne Namen, Noten und Texte.
 
-Fragen und Hinweise gern als [Issue](https://github.com/rw-apps/schulportal/issues).
+Fragen und Hinweise gern als [Issue](https://github.com/rw-apps/schulkompass/issues).
 
 ## Für Entwickler
 
