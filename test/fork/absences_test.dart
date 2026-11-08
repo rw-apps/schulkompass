@@ -37,6 +37,44 @@ Widget _app(Widget child) => MaterialApp(
 );
 
 void main() {
+  test('gleiche Stunde nur einmal, Doppelstunde zählt 2', () {
+    // Rückmeldung 08.11.26: dieselbe Fehlzeit stand doppelt da.
+    const courses = [
+      CourseItem(id: 'p', title: 'Projekt', fullName: 'P'),
+      CourseItem(id: 'p', title: 'Projekt', fullName: 'P'),
+    ];
+    final d = DateTime(2026, 9, 24);
+    final x = absencesFrom(courses, {
+      'p': _page([
+        _e('4', d, 'fehlend', '2. - 3.'),
+        _e('5', d, 'fehlend', '2.-3.'),
+        _e('6', d, 'entschuldigt', '2. - 3.'),
+      ]),
+    });
+    expect([for (final a in x) a.key], ['p|4', 'p|6']);
+    // Vermerk „gesendet“ am verworfenen Eintrag bleibt gültig.
+    expect(x.first.keys, ['p|4', 'p|5']);
+    final sent = {'p|5': DateTime(2026, 9, 25)};
+    expect(x.first.sentIn(sent), DateTime(2026, 9, 25));
+    expect(x.last.sentIn(sent), isNull);
+    // Andere Tage und Platzhalter-Stunde „0.“ bleiben getrennt.
+    final y = absencesFrom(courses.sublist(0, 1), {
+      'p': _page([
+        _e('1', d, 'fehlend', '0.'),
+        _e('2', d, 'fehlend', '0.'),
+        _e('3', DateTime(2026, 9, 25), 'fehlend', '2. - 3.'),
+        _e('7', d, 'fehlend', '2. - 3.'),
+      ]),
+    });
+    expect([for (final a in y) a.key], ['p|3', 'p|1', 'p|2', 'p|7']);
+    expect(lessonCount('1. - 4.'), 4);
+    expect(lessonCount('0.'), 1);
+    expect(lessonCount('2. - 3.'), 2);
+    expect(lessonCount('3.'), 1);
+    expect(lessonCount(null), 1);
+    expect(lessonCount('5. - 4.'), 1);
+  });
+
   test('Fehlstunden aus den Kursmappen, neueste zuerst', () {
     expect(isExcused('entschuldigt'), isTrue);
     expect(isExcused('unentschuldigt'), isFalse);

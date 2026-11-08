@@ -118,7 +118,9 @@ class _LiveAbsencesPageState extends ConsumerState<LiveAbsencesPage> {
       ),
     );
     if (sent != true || !mounted) return;
-    final next = {..._sent, a.key: DateTime.now()};
+    // Alle zusammengelegten Einträge markieren (AbsenceItem.alsoKeys).
+    final now = DateTime.now();
+    final next = {..._sent, for (final k in a.keys) k: now};
     setState(() => _sent = next);
     settings?.setString(absenceSentSetting, encodeSent(next));
   }
@@ -232,7 +234,12 @@ class AbsencesView extends StatelessWidget {
           child: Text(
             shown.isEmpty
                 ? t.absenceNone
-                : t.absencesSummary(open.length, excused.length),
+                // Stunden, nicht Einträge: eine Doppelstunde zählt 2, wie
+                // im Portal (lessonCount, absences.dart, mit Beleg).
+                : t.absencesSummary(
+                    open.fold(0, (n, a) => n + lessonCount(a.hours)),
+                    excused.fold(0, (n, a) => n + lessonCount(a.hours)),
+                  ),
             style: k.body,
           ),
         ),
@@ -291,7 +298,7 @@ class AbsencesView extends StatelessWidget {
       for (final a in open)
         _AbsenceCard(
           item: a,
-          sent: sent[a.key],
+          sent: a.sentIn(sent),
           onExcuse: onExcuse == null ? null : () => onExcuse!(a),
         ),
       if (excused.isNotEmpty) _Head(t.absenceExcusedTitle),

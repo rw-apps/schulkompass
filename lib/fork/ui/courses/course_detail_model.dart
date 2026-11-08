@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart' show IconData;
 import 'package:liblanis/liblanis.dart';
 
+import '../../absences.dart' show sameLessonKey;
 import '../../data/course_rules.dart';
 import '../plan/plan_model.dart';
 
@@ -114,13 +115,21 @@ AttendanceCounts? attendanceCounts(Map<String, String> a) {
 }
 
 /// Einträge mit Abwesenheit („fehlend“, „entschuldigt“ …), neueste zuerst.
-List<CurrentEntry> absentEntries(List<CurrentEntry> history) => [
-  for (final e in history)
-    if (!CourseRules.presenceNeutral.contains(
-      (e.presence ?? '').trim().toLowerCase(),
-    ))
-      e,
-];
+/// Gleiche Stunde mit gleichem Vermerk nur einmal – wie absencesFrom
+/// (absences.dart, Rückmeldung 08.11.26: Fehlzeit doppelt angezeigt).
+List<CurrentEntry> absentEntries(List<CurrentEntry> history) {
+  final seen = <String>{};
+  return [
+    for (final e in history)
+      if (!CourseRules.presenceNeutral.contains(
+            (e.presence ?? '').trim().toLowerCase(),
+          ) &&
+          seen.add(
+            sameLessonKey(e.topicDate, e.schoolHours, e.presence, e.entryID),
+          ))
+        e,
+  ];
+}
 
 /// Alle Dateien des Halbjahrs mit dem Tag ihrer Stunde.
 List<(FileInfo, DateTime?)> allFiles(List<CurrentEntry> history) => [

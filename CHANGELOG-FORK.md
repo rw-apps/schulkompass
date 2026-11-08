@@ -1,5 +1,10 @@
 ## Schulkompass (rw-apps, bis 9472 „Schulportal“) – Änderungen gegenüber Lanis-Mobile
 
+**4.1.0+9500** – Abwesenheiten
+
+- **Doppelte Fehlzeit:** Steht dieselbe Stunde zweimal in der Kursmappe, zeigen Abwesenheiten und Kursseite sie nur noch einmal. Eine schon gesendete Entschuldigung bleibt vermerkt.
+- **Zählung:** Die Übersicht zählt Unterrichtsstunden statt Einträge – eine Doppelstunde sind 2 Stunden, wie im Portal.
+
 **4.1.0+9499** – Datenschutzhinweis
 
 - Kontakt des Verantwortlichen nur noch per E-Mail; an der Datenverarbeitung ändert sich nichts.
