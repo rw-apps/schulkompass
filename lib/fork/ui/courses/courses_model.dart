@@ -1,5 +1,6 @@
 import 'package:liblanis/liblanis.dart';
 
+import '../../name_repair.dart' show repairWithKuerzel;
 import '../../lessons_parent.dart';
 import '../plan/plan_model.dart';
 import 'course_detail_model.dart';
@@ -171,7 +172,7 @@ List<CourseItem> courseItemsFrom(
       final name = own.isNotEmpty
           ? own
           : (t.teacher != null && t.teacher!.trim().isNotEmpty
-                ? portalNameToDisplay(t.teacher!)
+                ? portalNameToDisplay(repairWithKuerzel(t.teacher!, kz))
                 : kz);
       if (name.isNotEmpty) pairs.add((kz, name));
     }

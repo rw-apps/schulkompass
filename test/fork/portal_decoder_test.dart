@@ -49,8 +49,8 @@ void main() {
     final seen = <int>[];
     onMixedEncoding = seen.add;
     addTearDown(() => onMixedEncoding = null);
-    decodePortalText([...latin1.encode('Jäger'), 0x20, ...utf8.encode('ü')]);
-    decodePortalText(utf8.encode('Jäger'));
+    decodePortalText([...latin1.encode('Möwe'), 0x20, ...utf8.encode('ü')]);
+    decodePortalText(utf8.encode('Möwe'));
     expect(seen, [1]);
   });
 }

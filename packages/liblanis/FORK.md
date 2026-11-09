@@ -42,3 +42,4 @@ Die übrigen Befundnummern der Prüfung (1, 7, 8) waren nicht Teil dieser
 Runde.
 - 28.10.26: `Homework.isPlaceholder` – „-“, „keine HA“ u. Ä. gelten nicht als Hausaufgabe (getHome, getDetailedCourseView).
 - 09.11.26: `session/portal_decoder.dart` – Antworten als UTF-8, einzelne Latin-1-Bytes (Namen mit Umlaut) als Zeichen statt „�“ (Dio liest sonst mit allowMalformed).
+- 09.11.26: `models/conversations.dart` – `authorNameHook` für Verfasser im Verlauf (getSingleConversation, Antworten); die App setzt gelernte Namensreparaturen ein.

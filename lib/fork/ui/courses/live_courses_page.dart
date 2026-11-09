@@ -269,7 +269,10 @@ Widget liveCourseDetail(
         ? (kz) => pushFullScreen<bool>(
             context,
             (_) => ComposePage(
-              candidates: candidatesFrom(s.lessons.content ?? const []),
+              candidates: candidatesFrom(
+                s.lessons.content ?? const [],
+                ownNames: s.ownNames,
+              ),
               backend: portalBackend(ref),
               initialKuerzel: kz,
             ),

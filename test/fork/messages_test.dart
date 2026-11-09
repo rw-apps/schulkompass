@@ -14,7 +14,7 @@ Lesson _l(String name, List<LessonTeacher> t) =>
 /// Erfundenes Portal: Suche nach Nachnamen, Versand wird nur protokolliert.
 class _FakeBackend implements ComposeBackend {
   final sent = <({List<String> receivers, String subject, String text})>[];
-  final directory = const [
+  final directory = <ReceiverEntry>[
     ReceiverEntry('l-1', 'Alt, Anna', true),
     ReceiverEntry('l-2', 'Alt, Bernd', true),
     ReceiverEntry('l-3', 'Bau, Clara', true),
@@ -36,6 +36,26 @@ class _FakeBackend implements ComposeBackend {
     sent.add((receivers: receivers, subject: subject, text: text));
     return true;
   }
+}
+
+/// Protokolliert die Suchbegriffe und reicht weiter.
+class _ProbeBackend implements ComposeBackend {
+  _ProbeBackend(this.inner, this.queries);
+  final _FakeBackend inner;
+  final List<String> queries;
+
+  @override
+  Future<List<ReceiverEntry>> search(String q) {
+    queries.add(q);
+    return inner.search(q);
+  }
+
+  @override
+  Future<bool> send({
+    required List<String> receivers,
+    required String subject,
+    required String text,
+  }) => inner.send(receivers: receivers, subject: subject, text: text);
 }
 
 void main() {
@@ -121,6 +141,72 @@ void main() {
     await t.pumpAndSettle();
     expect(b.sent.single.receivers, ['l-1']);
     expect(b.sent.single.subject, 'Frage zur Hausaufgabe');
+  });
+
+  testWidgets('Nachname mit „�“: Suche über Teilstück, Versand an Treffer', (
+    t,
+  ) async {
+    // Erfunden: Das Portal schickt „M\uFFFDwe“, seine Suche findet „Möwe“
+    // nicht, das Stück „we“ aber schon (Rückmeldung 09.11.26).
+    final b = _FakeBackend();
+    b.directory.add(const ReceiverEntry('l-7', 'M\uFFFDwe, Ina', true));
+    final queries = <String>[];
+    final probe = _ProbeBackend(b, queries);
+    await pump(
+      t,
+      ComposePage(
+        candidates: candidatesFrom([
+          _l('Musik', [
+            LessonTeacher(teacher: 'M\uFFFDwe, Ina', teacherKuerzel: 'Mö'),
+          ]),
+        ]),
+        backend: probe,
+      ),
+    );
+    await t.tap(find.text('Ina Möwe'));
+    // Die Zeile dreht, solange die Auswahl offen ist: kein pumpAndSettle.
+    await t.pump();
+    await t.pump(const Duration(seconds: 1));
+    expect(queries, ['Möwe', 'we']);
+    // Über das Teilstück gefunden: erst Auswahl, dann gewählt.
+    expect(find.text('M\uFFFDwe, Ina'), findsOneWidget);
+    await t.tap(find.text('M\uFFFDwe, Ina'));
+    await t.pumpAndSettle();
+    await t.tap(find.text('Frage zur Hausaufgabe'));
+    await t.pumpAndSettle();
+    final send = find.text('Senden an Ina Möwe');
+    await t.ensureVisible(send);
+    await t.tap(send);
+    await t.pumpAndSettle();
+    await t.tap(find.text('Senden').last);
+    await t.pumpAndSettle();
+    expect(b.sent.single.receivers, ['l-7']);
+  });
+
+  testWidgets('Nur über Platzhalter passender Treffer wird nicht selbst '
+      'gewählt', (t) async {
+    final b = _FakeBackend();
+    b.directory.add(const ReceiverEntry('l-8', 'Mäwe, Ina', true));
+    await pump(
+      t,
+      ComposePage(
+        candidates: candidatesFrom([
+          _l('Musik', [
+            LessonTeacher(teacher: 'M\uFFFDwe, Ina', teacherKuerzel: 'Mö'),
+          ]),
+        ]),
+        backend: b,
+      ),
+    );
+    await t.tap(find.text('Ina Möwe'));
+    // Die Zeile dreht, solange die Auswahl offen ist: kein pumpAndSettle.
+    await t.pump();
+    await t.pump(const Duration(seconds: 1));
+    // Rückfrage zeigt den Portal-Namen, nichts ist gewählt.
+    expect(find.text('Mäwe, Ina'), findsOneWidget);
+    await t.tapAt(const Offset(10, 10));
+    await t.pumpAndSettle();
+    expect(find.textContaining('Senden an'), findsNothing);
   });
 
   for (final scale in [1.0, 1.4 * 1.3]) {

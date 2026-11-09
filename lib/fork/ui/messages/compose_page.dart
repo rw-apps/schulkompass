@@ -148,17 +148,27 @@ class _ComposePageState extends State<ComposePage> {
       return;
     }
     setState(() => _state[c.kuerzel] = _State.resolving);
-    List<ReceiverEntry> hits;
-    try {
-      hits = matchReceivers(await widget.backend.search(c.lastName), c);
-    } catch (_) {
-      hits = const [];
+    // Mehrere Suchbegriffe nacheinander (searchQueries): Nachnamen mit „�“
+    // findet die Portal-Suche womöglich nur über einen Teil.
+    // Ohne Rückfrage nur über den ersten Begriff: Ein Stück wie „we“ findet
+    // zu viel, um selbst zu wählen (Prüfbefund 09.11.26).
+    var hits = const <ReceiverEntry>[];
+    var firstQuery = true;
+    final queries = c.searchNames.isEmpty ? [c.lastName] : c.searchNames;
+    for (final (i, q) in queries.indexed) {
+      try {
+        hits = matchReceivers(await widget.backend.search(q), c);
+      } catch (_) {
+        hits = const [];
+      }
+      firstQuery = i == 0;
+      if (hits.isNotEmpty || !mounted) break;
     }
     if (!mounted) return;
     // Ohne Rückfrage nur ein sicherer Treffer (isSureReceiver); ein
     // einzelner, der nur im Nachnamen passt, geht in die Auswahl.
     ReceiverEntry? pick;
-    if (hits.length == 1 && isSureReceiver(hits.single, c)) {
+    if (hits.length == 1 && firstQuery && isSureReceiver(hits.single, c)) {
       pick = hits.single;
     } else if (hits.isNotEmpty) {
       pick = await _choose(c.display, hits);

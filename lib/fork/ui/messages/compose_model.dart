@@ -1,5 +1,6 @@
 import 'package:liblanis/liblanis.dart';
 
+import '../../name_repair.dart';
 import '../courses/courses_model.dart' show courseTitle;
 import '../plan/plan_model.dart' show portalNameToDisplay;
 
@@ -11,14 +12,25 @@ class RecipientCandidate {
     required this.lastName,
     required this.subjects,
     this.firstName,
+    this.knownLastName,
+    this.searchNames = const [],
   });
 
   final String kuerzel;
 
-  /// „Anna Alt“
+  /// „Anna Alt“ – eigener Name, sonst der Portal-Name (repariert).
   final String display;
+
+  /// Nachname, wie das Portal ihn schickt (auch mit „�“).
   final String lastName;
+
+  /// Über das Kürzel reparierter Nachname (repairWithKuerzel); null, wenn
+  /// nichts zu reparieren war oder nicht ging.
+  final String? knownLastName;
   final String? firstName;
+
+  /// Suchbegriffe für die Portal-Suche, in dieser Reihenfolge (searchQueries).
+  final List<String> searchNames;
 
   /// „Mathematik, Training“ – woher das Kind sie kennt.
   final List<String> subjects;
@@ -30,7 +42,14 @@ class RecipientCandidate {
 /// zu durchsuchen, wählt man aus dem Unterricht des eigenen Kindes
 /// („Mathematik – Herr …“). Grenze: Wer keinen Kurs in „Mein Unterricht“
 /// hat (Schule A: Ästhetik), fehlt hier – dafür bleibt die freie Suche.
-List<RecipientCandidate> candidatesFrom(Lessons lessons) {
+///
+/// [ownNames] (Kürzel → eigener Name, PlanPage „Name eintragen“) gehen vor
+/// (Wunsch 09.11.26: der eigene Name gilt überall); sonst wird der
+/// Portal-Name über das Kürzel repariert (repairWithKuerzel).
+List<RecipientCandidate> candidatesFrom(
+  Lessons lessons, {
+  Map<String, String> ownNames = const {},
+}) {
   final byK = <String, RecipientCandidate>{};
   final order = <String>[];
   // Kleinste Teamgröße je Kürzel: Wer nur in großen Teams vorkommt (Schule A:
@@ -56,12 +75,21 @@ List<RecipientCandidate> candidatesFrom(Lessons lessons) {
         continue;
       }
       final parts = raw.split(',');
+      final fixed = repairWithKuerzel(raw, k);
+      final own = ownNames[k]?.trim() ?? '';
+      final lastName = parts.first.trim();
       byK[k] = RecipientCandidate(
         kuerzel: k,
-        display: portalNameToDisplay(raw),
-        lastName: parts.first.trim(),
+        display: own.isNotEmpty ? own : portalNameToDisplay(fixed),
+        lastName: lastName,
+        knownLastName: fixed == raw ? null : fixed.split(',').first.trim(),
         firstName: parts.length > 1 ? parts.sublist(1).join(',').trim() : null,
         subjects: [subject],
+        searchNames: searchQueries(
+          lastName,
+          repaired: fixed.split(',').first.trim(),
+          own: own,
+        ),
       );
       order.add(k);
     }
@@ -77,6 +105,44 @@ List<RecipientCandidate> candidatesFrom(Lessons lessons) {
   ];
 }
 
+/// Suchbegriffe für einen Nachnamen mit möglichem „�“.
+///
+/// Ursache (Rückmeldung 09.11.26): Das Portal schickt manche Nachnamen mit
+/// „�“. Wie seine Suche (searchRecipt) solche Namen findet, ist nicht
+/// belegt – mit Umlaut, mit „�“ oder gar nicht. Daher nacheinander: der
+/// reparierte Nachname, der Nachname aus dem eigenen Namen (letztes Wort,
+/// wenn es dem Portal-Namen bis auf „�“ gleicht), dann das längste Stück
+/// ohne „�“. Treffer prüft immer [matchReceivers]; ein kurzes Stück findet
+/// mehr, wählt aber nicht selbst (compose_page.dart, _toggle: nur der
+/// erste Begriff darf ohne Rückfrage wählen). Grenze: Das Stück ohne „�“
+/// ist breit („we“); kappt das Portal seine Trefferliste, fehlt die
+/// gesuchte Lehrkraft womöglich – dann bleibt die freie Suche. Unter 2
+/// Zeichen sucht die App nicht (searchTeacher in liblanis).
+List<String> searchQueries(
+  String lastName, {
+  String? repaired,
+  String own = '',
+}) {
+  final out = <String>[];
+  void add(String q) {
+    final v = q.trim();
+    if (v.length >= 2 && !v.contains(replacementChar) && !out.contains(v)) {
+      out.add(v);
+    }
+  }
+
+  add(repaired ?? lastName);
+  final ownLast = own.trim().split(RegExp(r'\s+')).last;
+  if (sameNameIgnoringBroken(ownLast, lastName)) add(ownLast);
+  add(lastName);
+  if (lastName.contains(replacementChar)) {
+    final pieces = lastName.split(replacementChar)
+      ..sort((a, b) => b.trim().length.compareTo(a.trim().length));
+    add(pieces.first);
+  }
+  return out;
+}
+
 /// Kommt [word] in [text] als ganzes Wort vor (Groß-/Kleinschreibung egal)?
 ///
 /// Wortgrenze ist alles außer Buchstaben, Ziffern und Bindestrich. Ursache
@@ -84,11 +150,14 @@ List<RecipientCandidate> candidatesFrom(Lessons lessons) {
 /// und „Walther“. Der Bindestrich zählt zum Wort, damit „Alt“ nicht den
 /// Doppelnamen „Bau-Alt“ trifft. Grenze: Mehrteilige Namen („von Alt“)
 /// müssen als Ganzes in derselben Schreibweise (Leerzeichen) vorkommen.
-bool _hasWord(String text, String word) {
+/// Mit [tolerant] steht „�“ auf einer der beiden Seiten für einen Umlaut
+/// u. Ä. (brokenTolerantPattern, Rückmeldung 09.11.26), sonst nur für sich.
+bool _hasWord(String text, String word, {bool tolerant = true}) {
   final w = word.trim();
   if (w.isEmpty) return false;
+  final body = tolerant ? brokenTolerantPattern(w) : RegExp.escape(w);
   return RegExp(
-    '(^|[^\\p{L}\\p{N}-])${RegExp.escape(w)}(\$|[^\\p{L}\\p{N}-])',
+    '(^|[^\\p{L}\\p{N}\uFFFD-])$body(\$|[^\\p{L}\\p{N}\uFFFD-])',
     caseSensitive: false,
     unicode: true,
   ).hasMatch(text);
@@ -100,21 +169,41 @@ bool _hasWord(String text, String word) {
 /// (Lehrkraft im Unterricht: „Alt, Anna“, candidatesFrom): Dann muss der Teil
 /// VOR dem Komma der ganze Nachname sein – sonst träfe „Alt“ auch „Bau, Alt“
 /// (Vorname Alt). Ohne Komma („Anna Alt“) reicht der Nachname als ganzes Wort.
-bool _lastNameMatches(String portal, String lastName) {
+///
+/// Verglichen wird mit dem Portal-Namen und dem reparierten Nachnamen
+/// (knownLastName). [tolerant]: „�“ zählt als beliebiger Nicht-ASCII-
+/// Buchstabe (sameNameIgnoringBroken) – gut für die Auswahl, aber nicht
+/// eindeutig: „M�we“ passt dann auch auf „Mäwe“. Ohne [tolerant] muss der
+/// Treffer genau so heißen wie im Unterricht (mit „�“ an derselben Stelle)
+/// oder wie repariert (Prüfbefund 09.11.26).
+bool _lastNameMatches(
+  String portal,
+  RecipientCandidate c, {
+  bool tolerant = true,
+}) {
+  final names = [c.lastName, ?c.knownLastName];
   final comma = portal.indexOf(',');
   if (comma >= 0) {
-    return portal.substring(0, comma).trim().toLowerCase() ==
-        lastName.trim().toLowerCase();
+    final last = portal.substring(0, comma).trim();
+    return names.any(
+      (n) => tolerant
+          ? sameNameIgnoringBroken(last, n)
+          : last.toLowerCase() == n.trim().toLowerCase(),
+    );
   }
-  return _hasWord(portal, lastName);
+  return names.any((n) => _hasWord(portal, n, tolerant: tolerant));
 }
 
 /// Vorname (erster Teil) oder Kürzel der Lehrkraft als ganzes Wort im
 /// Portal-Treffer.
-bool _firstOrCodeMatches(String portal, RecipientCandidate c) {
+bool _firstOrCodeMatches(
+  String portal,
+  RecipientCandidate c, {
+  bool tolerant = true,
+}) {
   final first = c.firstName?.trim().split(RegExp(r'\s+')).first ?? '';
-  return (first.isNotEmpty && _hasWord(portal, first)) ||
-      _hasWord(portal, c.kuerzel);
+  return (first.isNotEmpty && _hasWord(portal, first, tolerant: tolerant)) ||
+      _hasWord(portal, c.kuerzel, tolerant: tolerant);
 }
 
 /// Passende Einträge der Portal-Suche (nachrichten.php?a=searchRecipt) zu
@@ -131,7 +220,7 @@ List<ReceiverEntry> matchReceivers(
 ) {
   final teachers = [
     for (final r in results)
-      if (r.isTeacher && _lastNameMatches(r.name, c.lastName)) r,
+      if (r.isTeacher && _lastNameMatches(r.name, c)) r,
   ];
   if (teachers.length <= 1) return teachers;
   final narrowed = [
@@ -148,10 +237,13 @@ List<ReceiverEntry> matchReceivers(
 /// statt an Anna Alt. Jetzt nur, wenn neben dem Nachnamen auch der Vorname
 /// (oder das Kürzel) passt; kennt der Unterricht keinen Vornamen, reicht der
 /// ganze Nachname. Sonst fragt die Seite nach (compose_page.dart, _choose)
-/// und zeigt den Namen, wie das Portal ihn nennt.
+/// und zeigt den Namen, wie das Portal ihn nennt. Namen mit „�“ zählen hier
+/// nur genau (ohne Platzhalter), siehe [_lastNameMatches].
 bool isSureReceiver(ReceiverEntry hit, RecipientCandidate c) {
-  if (!hit.isTeacher || !_lastNameMatches(hit.name, c.lastName)) return false;
+  if (!hit.isTeacher || !_lastNameMatches(hit.name, c, tolerant: false)) {
+    return false;
+  }
   final first = c.firstName?.trim() ?? '';
   if (first.isEmpty) return true;
-  return _firstOrCodeMatches(hit.name, c);
+  return _firstOrCodeMatches(hit.name, c, tolerant: false);
 }

@@ -9,6 +9,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:riverpod/misc.dart' show Override;
 
 import '../core/native_adapter_instance.dart';
+import '../fork/name_repair.dart' show NameRepairs;
 import '../fork/db_wal.dart';
 import '../fork/error_log.dart';
 import '../fork/report_terms.dart';
@@ -61,6 +62,9 @@ Future<List<Override>> bootstrapLanisClient({
   // nur die Zahl fremder Bytes, kein Inhalt.
   onMixedEncoding = (n) =>
       ErrorLog.instance.notice('portal', 'MixedEncoding', {'bytes': n});
+  // Fork: Verfasser im Verlauf mit gelernten Reparaturen und eigenen Namen
+  // zeigen (name_repair.dart, Rückmeldung 09.11.26).
+  authorNameHook = NameRepairs.global.apply;
   TermLog.instance.attach(File(p.join(persistentDir.path, 'fork_terms.json')));
   ReportContext.instance
     ..language = PlatformDispatcher.instance.locale.languageCode

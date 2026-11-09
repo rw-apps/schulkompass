@@ -5,6 +5,7 @@ import 'package:liblanis/liblanis.dart';
 import 'package:lanis/applets/conversations/chat_pages.dart'
     show ConversationChatPage;
 
+import '../../name_repair.dart' show NameRepairs;
 import '../../l10n/l10n.dart';
 import '../login_errors.dart';
 import '../kit.dart';
@@ -59,6 +60,10 @@ class LiveMessagesPage extends ConsumerWidget {
             ),
           );
         }
+        final me = FamilyData.of(
+          context,
+        ).where((m) => identical(m.snapshot, s)).firstOrNull;
+        // Ohne Familie (me == null) gilt der kontenübergreifende Stand.
         final entries = s.conversations.content ?? const <OverviewEntry>[];
         final items = [
           for (final e in entries)
@@ -66,7 +71,10 @@ class LiveMessagesPage extends ConsumerWidget {
               MessageItem(
                 id: e.id,
                 subject: e.title,
-                sender: e.fullName,
+                sender: NameRepairs.global.apply(
+                  e.fullName,
+                  account: me?.accountId,
+                ),
                 date: e.date,
                 unread: e.unread,
               ),
@@ -75,9 +83,6 @@ class LiveMessagesPage extends ConsumerWidget {
         // versuchen“) statt unbehandelt, und kein zweiter Durchgang läuft
         // parallel (Prüfbefund 17.10.26).
         final reload = s.refreshMessages;
-        final me = FamilyData.of(
-          context,
-        ).where((m) => identical(m.snapshot, s)).firstOrNull;
         return MessagesPage(
           // Krankmeldungen über dem Postfach (Wunsch 05.11.26).
           reports: absenceReportsOf(
@@ -102,7 +107,10 @@ class LiveMessagesPage extends ConsumerWidget {
           onCompose: () => pushFullScreen<bool>(
             context,
             (_) => ComposePage(
-              candidates: candidatesFrom(s.lessons.content ?? const []),
+              candidates: candidatesFrom(
+                s.lessons.content ?? const [],
+                ownNames: s.ownNames,
+              ),
               backend: portalBackend(ref),
             ),
           ),
@@ -163,7 +171,7 @@ class LiveAllMessagesPage extends StatelessWidget {
           MessageItem(
             id: key,
             subject: e.title,
-            sender: e.fullName,
+            sender: NameRepairs.global.apply(e.fullName, account: m.accountId),
             date: e.date,
             unread: e.unread,
             kidName: kidLabel(m.snapshot),
@@ -228,6 +236,7 @@ class LiveAllMessagesPage extends StatelessWidget {
                     builder: (c, ref, _) => ComposePage(
                       candidates: candidatesFrom(
                         m.snapshot.lessons.content ?? const [],
+                        ownNames: m.snapshot.ownNames,
                       ),
                       backend: portalBackend(ref),
                     ),

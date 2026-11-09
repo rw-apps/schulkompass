@@ -7,14 +7,14 @@ import 'package:dio/dio.dart';
 /// anderen Kodierung aber als Windows-1252 retten.
 ///
 /// Ursache (Rückmeldung 09.11.26, Bildschirmfoto „Neue Nachricht“): Namen
-/// von Lehrkräften mit Umlaut erschienen als „L�cke“, während Fächer
+/// von Lehrkräften mit Umlaut erschienen als „M�we“, während Fächer
 /// derselben Antwort (meinunterricht.php, `h2` gegen `title` am Knopf der
 /// Lehrkraft) richtig waren – Vermutung: gemischte Kodierung im Portal.
 /// Exporte vom 17.10. und 28.10.26 zeigten die Namen noch richtig; geändert
 /// hat sich das danach. Dio liest jede Antwort mit
 /// `utf8.decode(allowMalformed: true)` (FusedTransformer) und macht aus
 /// jedem solchen Byte ein „�“ – unwiderruflich. Folge über die Anzeige
-/// hinaus: Die Suche nach „L�cke“ fand die Lehrkraft nicht.
+/// hinaus: Die Suche nach „M�we“ fand die Lehrkraft nicht.
 ///
 /// Belegt wird die Vermutung über [onMixedEncoding] (Fork: Fehlerprotokoll,
 /// nur Zahl der Bytes). Grenzen: Schickt das Portal selbst „�“ (EF BF BD),

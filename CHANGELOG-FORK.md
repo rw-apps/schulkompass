@@ -1,12 +1,18 @@
 ## Schulkompass (rw-apps, bis 9472 „Schulportal“) – Änderungen gegenüber Lanis-Mobile
 
+**4.1.0+9506** – Namen mit „�“ reparieren, eigene Namen überall
+
+- **Umlaute über das Kürzel:** Manche Namen schickt schon das Portal mit „�“ statt Umlaut (im Browser genauso zu sehen). Steht im Kürzel derselben Lehrkraft der richtige Buchstabe an derselben Stelle, setzt die App ihn ein – im Stundenplan, bei den Kursen und bei „Neue Nachricht“. Absender in „Nachrichten“ und im Verlauf bekommen die Reparatur, wenn es dieselbe Lehrkraft ist (ganzer Name). Geraten wird nicht: Ohne passendes Kürzel bleibt „�“ stehen.
+- **Eigene Namen überall:** Ein im Stundenplan eingetragener Name zu einem Kürzel gilt jetzt auch bei „Neue Nachricht“, in der Nachrichtenliste und im Verlauf.
+- **Empfänger mit „�“ finden:** „Neue Nachricht“ sucht solche Lehrkräfte im Portal nacheinander mit mehreren Schreibweisen. Ohne Rückfrage wählt sie nur einen genau passenden Treffer; Auswahl und Bestätigung zeigen den Namen so, wie das Portal ihn führt.
+
 **4.1.0+9505** – Stundenzeiten der Schule
 
 - **Hinterlegte Stundenzeiten:** Für Schulen, deren Stundenplan im Portal keine Uhrzeiten zeigt, kennt die App jetzt die Zeiten der Schule selbst – ohne Eintragen auf jedem Gerät. Der Stundenplan zeigt dann „Stundenzeiten der Schule“. Selbst eingetragene Zeiten gehen weiter vor; wer sie löscht (Stundenplan → Ändern → Löschen), bekommt die der Schule.
 
 **4.1.0+9504** – Umlaute in Namen
 
-- **Namen mit Umlaut:** Lehrkräfte wie „Lücke“ oder „Jäger“ erschienen mit „�“ (z. B. bei „Neue Nachricht“). Vermutlich liefert das Portal solche Namen in einer anderen Kodierung als den Rest der Seite; die App liest diese Zeichen jetzt als Umlaute statt sie zu verwerfen und vermerkt den Fall im Fehlerprotokoll (nur die Anzahl).
+- **Namen mit Umlaut:** Lehrkräfte mit Umlaut im Namen erschienen mit „�“ (z. B. bei „Neue Nachricht“). Vermutlich liefert das Portal solche Namen in einer anderen Kodierung als den Rest der Seite; die App liest diese Zeichen jetzt als Umlaute statt sie zu verwerfen und vermerkt den Fall im Fehlerprotokoll (nur die Anzahl).
 
 **4.1.0+9503** – App weitergeben, Direktlink zur APK
 

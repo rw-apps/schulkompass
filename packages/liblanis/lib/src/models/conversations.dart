@@ -138,6 +138,16 @@ class KnownParticipant {
   }
 }
 
+/// Fork: Anzeigename eines Verfassers im Verlauf anpassen.
+///
+/// Ursache (Rückmeldung 09.11.26): Das Portal schickt manche Namen mit „�“
+/// statt Umlaut; die App kennt die Reparatur oft schon (Fork: NameRepairs,
+/// lib/fork/name_repair.dart) und setzt diesen Haken beim Start. Ohne App
+/// bleibt der Name, wie er ist.
+String Function(String name) authorNameHook = _sameName;
+
+String _sameName(String name) => name;
+
 final getUsernameInsideHTML = RegExp(r'</i> (.*)</span>');
 
 class OverviewEntry {

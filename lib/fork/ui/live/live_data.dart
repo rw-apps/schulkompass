@@ -9,6 +9,7 @@ import 'package:liblanis/liblanis.dart';
 
 import 'package:lanis/utils/applet_settings.dart';
 
+import '../../name_repair.dart';
 import '../../courses_scan.dart';
 import '../../homework_ledger.dart';
 import '../../login_guard.dart';
@@ -136,7 +137,8 @@ Map<String, String> settingStrings(Object? m) => <String, String>{
       final kz = t.teacherKuerzel;
       final n = t.teacher;
       if (kz != null && n != null && n.isNotEmpty) {
-        names[kz] = portalNameToDisplay(n);
+        // „�“ vom Portal über das Kürzel reparieren (name_repair.dart).
+        names[kz] = portalNameToDisplay(repairWithKuerzel(n, kz));
       }
     }
   }
@@ -876,6 +878,13 @@ class _LiveDataScopeState extends ConsumerState<LiveDataScope>
     // Katalog der Schule (school_times_catalog.dart); ein const-Wert, daher
     // bleibt sameLiveData (family.dart, identical) ohne eigenes Flag stabil.
     final catalogTimes = catalogLessonTimes('${account.schoolID}');
+    // Für Namen ohne Kürzel (Absender, Verlauf): aus Kursen und eigenen
+    // Namen lernen (NameRepairs); gleiche Eingaben kosten nichts.
+    NameRepairs.global.learnFor(
+      '${account.localId}',
+      _lessons.feed.content ?? const [],
+      _names,
+    );
     final snapshot = LiveSnapshot(
       session: session,
       supported: supported,

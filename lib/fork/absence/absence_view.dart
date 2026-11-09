@@ -210,6 +210,7 @@ class _AbsencePageState extends ConsumerState<AbsencePage> {
                       (_) => ComposePage(
                         candidates: candidatesFrom(
                           live.lessons.content ?? const [],
+                          ownNames: live.ownNames,
                         ),
                         backend: backend,
                       ),

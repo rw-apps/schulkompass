@@ -201,7 +201,9 @@ class ConversationsParser extends AppletParser<List<OverviewEntry>> {
       final UnparsedMessage parent = UnparsedMessage(
         id: conversation['Uniquid'],
         date: unescape.convert(conversation['Datum']),
-        author: unescape.convert(fixUsername(conversation['username'])),
+        author: authorNameHook(
+          unescape.convert(fixUsername(conversation['username'])),
+        ),
         own: conversation['own'],
         content: unescape.convert(conversation['Inhalt']),
       );
@@ -212,7 +214,9 @@ class ConversationsParser extends AppletParser<List<OverviewEntry>> {
           UnparsedMessage(
             id: reply['Uniquid'],
             date: unescape.convert(reply['Datum']),
-            author: unescape.convert(fixUsername(reply['username'])),
+            author: authorNameHook(
+              unescape.convert(fixUsername(reply['username'])),
+            ),
             own: reply['own'],
             content: unescape.convert(reply['Inhalt']),
           ),
@@ -337,7 +341,9 @@ class ConversationsParser extends AppletParser<List<OverviewEntry>> {
           return UnparsedMessage(
             id: message['Uniquid'],
             date: unescape.convert(message['Datum']),
-            author: unescape.convert(fixUsername(message['username'])),
+            author: authorNameHook(
+              unescape.convert(fixUsername(message['username'])),
+            ),
             own: message['own'],
             content: unescape.convert(message['Inhalt']),
           );

@@ -1595,7 +1595,7 @@ class _GridCell extends StatelessWidget {
           // Nur ganze Zeilen, soweit Platz ist (kurze Einzelstunden: Fach +
           // Raum, Doppelstunden zusätzlich die Lehrkraft). Ursache
           // (Bildschirmfoto 17.10.26, 10 Stunden je Tag): Vorher wurde die
-          // letzte Zeile mitten durchgeschnitten („Jäger“ halb sichtbar).
+          // letzte Zeile mitten durchgeschnitten (Name halb sichtbar).
           // Die erste Zeile (Fach) bleibt immer.
           child: LayoutBuilder(
             builder: (context, box) {

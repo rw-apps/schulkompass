@@ -110,7 +110,10 @@ class _LiveAbsencesPageState extends ConsumerState<LiveAbsencesPage> {
     final sent = await pushFullScreen<bool>(
       context,
       (_) => ComposePage(
-        candidates: candidatesFrom(s.lessons.content ?? const []),
+        candidates: candidatesFrom(
+          s.lessons.content ?? const [],
+          ownNames: s.ownNames,
+        ),
         backend: backend,
         initialKuerzel: a.teacherCodes.where((k) => k.isNotEmpty).firstOrNull,
         initialSubject: m.subject,
