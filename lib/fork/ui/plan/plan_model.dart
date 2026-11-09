@@ -91,6 +91,7 @@ class KidPlan {
     this.teacherNames = const {},
     this.timed = true,
     this.customTimes = false,
+    this.schoolTimes = false,
     this.classCodes = const [],
   });
 
@@ -122,6 +123,26 @@ class KidPlan {
 
   /// Uhrzeiten selbst eingetragen (LessonTimes), nicht vom Portal.
   final bool customTimes;
+
+  /// [customTimes] stammen aus dem Katalog der Schule
+  /// (school_times_catalog.dart), nicht vom Gerät – Hinweis im Plan heißt
+  /// dann „Stundenzeiten der Schule“ statt „selbst eingetragen“.
+  final bool schoolTimes;
+
+  /// Gleicher Plan, Zeiten als Katalog-Zeiten markiert (livePlanOf).
+  KidPlan withSchoolTimes() => KidPlan(
+    firstName: firstName,
+    colorIndex: colorIndex,
+    slots: slots,
+    days: days,
+    teacherNames: teacherNames,
+    timed: timed,
+    customTimes: customTimes,
+    // Nur wenn die Zeiten überhaupt eigene sind: Liefert das Portal Zeiten,
+    // gehen diese vor, und es gibt keinen Hinweis (Prüfung 09.11.26).
+    schoolTimes: customTimes,
+    classCodes: classCodes,
+  );
   final int colorIndex;
   final List<PlanSlot> slots;
 
@@ -156,6 +177,7 @@ class KidPlan {
       teacherNames: merged,
       timed: timed,
       customTimes: customTimes,
+      schoolTimes: schoolTimes,
       classCodes: classCodes,
     );
   }

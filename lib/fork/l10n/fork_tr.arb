@@ -319,6 +319,7 @@
   "lessonTimesLength": "Bir dersin süresi",
   "minutesShort": "{n} dk",
   "enterLessonTimes": "Ders saatlerini gir",
+  "schoolLessonTimes": "Okulun ders saatleri (uygulamada kayıtlı)",
   "ownLessonTimes": "Kendi girdiğiniz ders saatleri",
   "changeAction": "Değiştir",
   "pauseAfter": "Sonraki teneffüs",

@@ -319,6 +319,7 @@
   "lessonTimesLength": "Length of a lesson",
   "minutesShort": "{n} min",
   "enterLessonTimes": "Enter lesson times",
+  "schoolLessonTimes": "School lesson times (stored in the app)",
   "ownLessonTimes": "Lesson times entered by you",
   "changeAction": "Change",
   "pauseAfter": "Break after",

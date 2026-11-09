@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show mapEquals;
 import 'package:flutter/material.dart';
 
 import '../../l10n/l10n.dart';
@@ -144,8 +145,17 @@ class LiveCalendarPage extends StatelessWidget {
               context,
               m.lessonTimes,
               count: slots > 10 ? slots : 10,
+              deletable: !m.lessonTimesFromSchool,
             );
-            if (r != null) save(r.times);
+            if (r == null) return;
+            // Katalog-Zeiten unverändert übernommen: nichts speichern, sonst
+            // fröre der Eintrag sie ein und spätere Korrekturen im Katalog
+            // kämen auf diesem Gerät nie an (Prüfung 09.11.26).
+            final same =
+                m.lessonTimesFromSchool &&
+                r.times != null &&
+                mapEquals(r.times!.toMap(), m.lessonTimes?.toMap());
+            if (!same) save(r.times);
           },
           initialChoices: {
             for (final (i, (m, _)) in shown.indexed) i: m.snapshot.userChoice,

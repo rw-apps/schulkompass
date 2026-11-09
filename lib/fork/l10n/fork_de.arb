@@ -848,6 +848,7 @@
     }
   },
   "enterLessonTimes": "Stundenzeiten eintragen",
+  "schoolLessonTimes": "Stundenzeiten der Schule (in der App hinterlegt)",
   "ownLessonTimes": "Selbst eingetragene Stundenzeiten",
   "changeAction": "Ändern",
   "pauseAfter": "Pause danach",

@@ -20,15 +20,25 @@ Future<LessonTimesResult?> askLessonTimes(
   BuildContext context,
   LessonTimes? current, {
   int count = 10,
+  bool deletable = true,
 }) => showDialog<LessonTimesResult>(
   context: context,
-  builder: (_) => _LessonTimesDialog(current: current, count: count),
+  builder: (_) =>
+      _LessonTimesDialog(current: current, count: count, deletable: deletable),
 );
 
 class _LessonTimesDialog extends StatefulWidget {
-  const _LessonTimesDialog({this.current, required this.count});
+  const _LessonTimesDialog({
+    this.current,
+    required this.count,
+    this.deletable = true,
+  });
 
   final LessonTimes? current;
+
+  /// false bei Zeiten aus dem Katalog der Schule: Löschen bewirkte nichts
+  /// (ohne eigenen Eintrag gelten wieder dieselben; Prüfung 09.11.26).
+  final bool deletable;
   final int count;
 
   @override
@@ -182,7 +192,7 @@ class _LessonTimesDialogState extends State<_LessonTimesDialog> {
         ),
       ),
       actions: [
-        if (widget.current != null)
+        if (widget.current != null && widget.deletable)
           TextButton(
             onPressed: () => Navigator.pop(context, (times: null)),
             child: Text(t.delete, style: k.link),

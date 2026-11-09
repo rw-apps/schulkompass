@@ -1,5 +1,9 @@
 ## Schulkompass (rw-apps, bis 9472 „Schulportal“) – Änderungen gegenüber Lanis-Mobile
 
+**4.1.0+9505** – Stundenzeiten der Schule
+
+- **Hinterlegte Stundenzeiten:** Für Schulen, deren Stundenplan im Portal keine Uhrzeiten zeigt, kennt die App jetzt die Zeiten der Schule selbst – ohne Eintragen auf jedem Gerät. Der Stundenplan zeigt dann „Stundenzeiten der Schule“. Selbst eingetragene Zeiten gehen weiter vor; wer sie löscht (Stundenplan → Ändern → Löschen), bekommt die der Schule.
+
 **4.1.0+9504** – Umlaute in Namen
 
 - **Namen mit Umlaut:** Lehrkräfte wie „Lücke“ oder „Jäger“ erschienen mit „�“ (z. B. bei „Neue Nachricht“). Vermutlich liefert das Portal solche Namen in einer anderen Kodierung als den Rest der Seite; die App liest diese Zeichen jetzt als Umlaute statt sie zu verwerfen und vermerkt den Fall im Fehlerprotokoll (nur die Anzahl).

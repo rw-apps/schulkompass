@@ -106,13 +106,15 @@ class _OfflinePageState extends ConsumerState<OfflinePage> {
         const <String, dynamic>{},
       ),
     );
+    final times = effectiveLessonTimes(settings, '${s.account.schoolID}');
     final (:plan, :auto) = livePlan(
       tt: s.timetable,
       lessons: const [],
       // Vorname des Kindes ist offline nicht gespeichert – Schulname statt
       // leerer Karte.
       firstName: shortSchoolName(s.account.schoolName),
-      lessonTimes: storedLessonTimes(settings),
+      lessonTimes: times.times,
+      lessonTimesFromSchool: times.fromSchool,
     );
     final named = plan.withTeacherNames(ownNames);
     final choice = effectiveChoice(auto, userChoice);

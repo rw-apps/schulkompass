@@ -878,7 +878,14 @@ class DayPlan extends StatelessWidget {
           padding: const EdgeInsets.only(left: Sp.xs, bottom: Sp.s),
           child: Row(
             children: [
-              Expanded(child: Text(context.t.ownLessonTimes, style: k.meta)),
+              Expanded(
+                child: Text(
+                  plan.schoolTimes
+                      ? context.t.schoolLessonTimes
+                      : context.t.ownLessonTimes,
+                  style: k.meta,
+                ),
+              ),
               if (onEditTimes != null)
                 TextButton(
                   onPressed: onEditTimes,

@@ -203,7 +203,7 @@ Future<void> _run(
     tt: tt,
     lessons: lessons,
     firstName: firstName,
-    lessonTimes: storedLessonTimes(s),
+    lessonTimes: effectiveLessonTimes(s, '${session.account.schoolID}').times,
   );
   final courses = [for (final l in lessons) l.name];
   final className = storedClass(s)?.name ?? classFromCourses(courses);

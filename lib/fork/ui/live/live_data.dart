@@ -26,6 +26,7 @@ import '../../mensa_catalog.dart' show mensaCatererForUrl;
 import '../../mensa_login.dart' show forgetMensaLogin;
 import '../../mensa_store.dart' show MealCache;
 import '../plan/lesson_times.dart';
+import '../../school_times_catalog.dart';
 import '../plan/plan_from_lanis.dart';
 import '../plan/plan_model.dart';
 import '../../kid_name.dart';
@@ -53,6 +54,22 @@ const teacherNamesSetting = 'fork-teacher-names';
 /// Selbst eingetragene Stundenzeiten (LessonTimes.toMap), je Konto; nur für
 /// Schulen ohne Uhrzeiten im Stundenplan.
 const lessonTimesSetting = 'fork-lesson-times';
+
+/// Selbst eingetragene Zeiten, sonst die der Schule aus dem Katalog
+/// (school_times_catalog.dart, Wunsch 09.11.26). Für App, Offline-Seite und
+/// Hintergrund gleich, damit Benachrichtigungen dieselben Zeiten nennen.
+/// [fromSchool]: Die Zeiten stammen aus dem Katalog (Hinweis im Plan,
+/// livePlan). Grenze: Uhrzeiten aus dem Portal gehen beidem vor
+/// (kidPlanFromTimetable).
+({LessonTimes? times, bool fromSchool}) effectiveLessonTimes(
+  TypedSettings s,
+  String schoolId,
+) {
+  final own = storedLessonTimes(s);
+  if (own != null) return (times: own, fromSchool: false);
+  final cat = catalogLessonTimes(schoolId);
+  return (times: cat, fromSchool: cat != null);
+}
 
 /// Gespeicherte Stundenzeiten eines Kontos, null = keine.
 LessonTimes? storedLessonTimes(TypedSettings s) => LessonTimes.fromMap(
@@ -104,6 +121,7 @@ Map<String, String> settingStrings(Object? m) => <String, String>{
   required String firstName,
   int colorIndex = 0,
   LessonTimes? lessonTimes,
+  bool lessonTimesFromSchool = false,
   List<ChildLessons> kids = const [],
 }) {
   final planKid = shownPlanKid(kids);
@@ -139,7 +157,12 @@ Map<String, String> settingStrings(Object? m) => <String, String>{
     courses: courses,
   );
   final auto = autoGroupChoice(plan, courses);
-  return (plan: plan, auto: auto);
+  // Katalog-Zeiten markieren (KidPlan.schoolTimes) – hier, damit App,
+  // Offline-Seite und Hintergrund dieselbe Regel nutzen (Prüfung 09.11.26).
+  return (
+    plan: lessonTimesFromSchool ? plan.withSchoolTimes() : plan,
+    auto: auto,
+  );
 }
 
 /// Was eine Quelle gerade hat: letzter guter Inhalt plus Zustand.
@@ -186,6 +209,7 @@ class LiveSnapshot {
     required this.refreshMessages,
     required this.setMensaUrl,
     this.lessonTimes,
+    this.lessonTimesFromSchool = false,
     this.setLessonTimes,
     this.courseScan,
     this.setCourseScan,
@@ -268,9 +292,11 @@ class LiveSnapshot {
   final GroupChoice userChoice;
   final Map<String, String> ownNames;
 
-  /// Selbst eingetragene Stundenzeiten (null = keine) und Speichern
-  /// (null = löschen).
+  /// Stundenzeiten (null = keine): selbst eingetragen oder, ohne Eintrag,
+  /// aus dem Katalog der Schule ([lessonTimesFromSchool]); Speichern
+  /// (null = löschen) schreibt immer den eigenen Eintrag.
   final LessonTimes? lessonTimes;
+  final bool lessonTimesFromSchool;
   final void Function(LessonTimes? times)? setLessonTimes;
 
   /// Letzte Auswertung aller Kursseiten (courses_scan.dart): anstehende
@@ -847,6 +873,9 @@ class _LiveDataScopeState extends ConsumerState<LiveDataScope>
         ? lessonsParser.lastKids
         : const <ChildLessons>[];
 
+    // Katalog der Schule (school_times_catalog.dart); ein const-Wert, daher
+    // bleibt sameLiveData (family.dart, identical) ohne eigenes Flag stabil.
+    final catalogTimes = catalogLessonTimes('${account.schoolID}');
     final snapshot = LiveSnapshot(
       session: session,
       supported: supported,
@@ -872,7 +901,8 @@ class _LiveDataScopeState extends ConsumerState<LiveDataScope>
         return _loader.run(force: true);
       },
       mensa: _mensa,
-      lessonTimes: _times,
+      lessonTimes: _times ?? catalogTimes,
+      lessonTimesFromSchool: _times == null && catalogTimes != null,
       setLessonTimes: (v) {
         setState(() => _times = v);
         _write(lessonTimesSetting, v?.toMap() ?? const {});
@@ -1003,6 +1033,7 @@ extension on String {
     firstName: s.firstName.isEmpty ? fallbackName : s.firstName,
     colorIndex: colorIndex,
     lessonTimes: s.lessonTimes,
+    lessonTimesFromSchool: s.lessonTimesFromSchool,
     kids: s.kids,
   );
   return (plan: r.plan.withTeacherNames(s.ownNames), auto: r.auto);

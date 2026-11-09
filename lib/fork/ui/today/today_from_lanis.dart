@@ -476,6 +476,7 @@ KidPlan planWithSubstitutions({
       teacherNames: plan.teacherNames,
       timed: plan.timed,
       customTimes: plan.customTimes,
+      schoolTimes: plan.schoolTimes,
       classCodes: plan.classCodes,
     ),
     unmatched: unmatched,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lanis/fork/l10n/l10n.dart';
+import 'package:lanis/fork/ui/live/live_data.dart' show livePlan;
 import 'package:lanis/fork/ui/plan/lesson_times.dart';
 import 'package:lanis/fork/ui/plan/lesson_times_dialog.dart';
 import 'package:lanis/fork/ui/plan/plan_from_lanis.dart';
@@ -173,6 +174,25 @@ void main() {
     final l = dayLessonsFor(p, 0, const {}, t: forkL10nFor('de'));
     expect(l.first.start, '08:00');
     expect(dayStatus(l, DateTime(2026, 10, 19, 8, 10)).phase, DayPhase.running);
+  });
+
+  test('Katalog-Zeiten: livePlan markiert schoolTimes (Wunsch 09.11.26)', () {
+    const v = LessonTimes(start: 8 * 60);
+    final school = livePlan(
+      tt: _tt(),
+      lessons: const [],
+      firstName: 'B',
+      lessonTimes: v,
+      lessonTimesFromSchool: true,
+    ).plan;
+    expect((school.customTimes, school.schoolTimes), (true, true));
+    final own = livePlan(
+      tt: _tt(),
+      lessons: const [],
+      firstName: 'B',
+      lessonTimes: v,
+    ).plan;
+    expect((own.customTimes, own.schoolTimes), (true, false));
   });
 
   testWidgets('Knopf „Stundenzeiten eintragen“ und Dialog', (t) async {
