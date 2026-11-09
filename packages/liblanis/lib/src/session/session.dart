@@ -10,6 +10,7 @@ import 'package:html/dom.dart';
 import 'package:html/parser.dart';
 import 'package:http/http.dart' show ClientException;
 
+import 'portal_decoder.dart';
 import '../applets/definition.dart';
 import '../config.dart';
 import '../connection/connection_checker.dart';
@@ -50,6 +51,9 @@ class LanisSession {
     if (config.httpAdapter != null) {
       dio.httpClientAdapter = config.httpAdapter!;
     }
+    // Fork: Latin-1-Bytes in UTF-8-Seiten retten statt „�“
+    // (portal_decoder.dart, Rückmeldung 09.11.26).
+    dio.options.responseDecoder = portalResponseDecoder;
     dio.interceptors.add(CookieManager(jar));
     dio.interceptors.add(
       InterceptorsWrapper(

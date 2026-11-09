@@ -10,6 +10,7 @@ import 'package:dio/dio.dart';
 import 'package:encrypt/encrypt.dart' as encrypt;
 import 'package:pointycastle/asymmetric/api.dart';
 
+import 'portal_decoder.dart';
 import '../exceptions.dart';
 
 /// Lanis RSA handshake + AES decrypt for SPH payloads.
@@ -173,7 +174,15 @@ class Cryptor {
   static String? decryptWithKeyString(String encryptedData, encrypt.Key key) {
     final decryptedBytes = decryptWithKey(base64.decode(encryptedData), key);
     if (decryptedBytes != null) {
-      return utf8.decode(decryptedBytes);
+      // Fork: wie die Antworten selbst (portal_decoder.dart, 09.11.26) –
+      // einzelne fremde Bytes im Klartext retten statt werfen. Grenze: Bei
+      // vielen fremden Bytes (falscher Schlüssel) wirft es weiter wie
+      // bisher – das löst die Neuanmeldung aus (decryptEncodedTags).
+      final text = decodeMostlyUtf8(decryptedBytes);
+      if (text == null) {
+        throw const FormatException('Entschlüsselter Inhalt ist kein Text');
+      }
+      return text;
     }
     return null;
   }

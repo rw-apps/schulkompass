@@ -1,5 +1,9 @@
 ## Schulkompass (rw-apps, bis 9472 „Schulportal“) – Änderungen gegenüber Lanis-Mobile
 
+**4.1.0+9504** – Umlaute in Namen
+
+- **Namen mit Umlaut:** Lehrkräfte wie „Lücke“ oder „Jäger“ erschienen mit „�“ (z. B. bei „Neue Nachricht“). Vermutlich liefert das Portal solche Namen in einer anderen Kodierung als den Rest der Seite; die App liest diese Zeichen jetzt als Umlaute statt sie zu verwerfen und vermerkt den Fall im Fehlerprotokoll (nur die Anzahl).
+
 **4.1.0+9503** – App weitergeben, Direktlink zur APK
 
 - **App weitergeben:** Unter Einstellungen → Über die App zeigt ein neuer Eintrag einen QR-Code zum Abscannen und teilt Link und Kurzanleitung über andere Apps.

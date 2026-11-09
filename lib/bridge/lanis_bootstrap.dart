@@ -57,6 +57,10 @@ Future<List<Override>> bootstrapLanisClient({
     ..version = appVersionLabel(packageInfo.version, packageInfo.buildNumber)
     ..attach(File(p.join(persistentDir.path, 'fork_errors.json')));
   // Fork: unbekannte Fachbegriffe für erweiterte Berichte (report_terms.dart).
+  // Fork: gemischte Kodierung im Portal belegen (portal_decoder.dart):
+  // nur die Zahl fremder Bytes, kein Inhalt.
+  onMixedEncoding = (n) =>
+      ErrorLog.instance.notice('portal', 'MixedEncoding', {'bytes': n});
   TermLog.instance.attach(File(p.join(persistentDir.path, 'fork_terms.json')));
   ReportContext.instance
     ..language = PlatformDispatcher.instance.locale.languageCode

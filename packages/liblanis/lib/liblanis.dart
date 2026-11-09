@@ -35,6 +35,8 @@ export 'src/providers/applet_providers.dart';
 export 'src/providers/core_providers.dart';
 export 'src/secret_store.dart';
 export 'src/session/session.dart';
+export 'src/session/portal_decoder.dart'
+    show decodeMostlyUtf8, decodePortalText, onMixedEncoding;
 export 'src/settings/typed_settings.dart';
 export 'src/lanis_client.dart';
 export 'src/storage/storage_manager.dart';
