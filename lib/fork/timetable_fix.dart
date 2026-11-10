@@ -155,11 +155,22 @@ Map<String, int> emptyTimetablePageKind(Document document) {
 /// zweite Versuch, bleibt das sichtbar: liblanis meldet die
 /// UnknownException über onUnexpectedError (lanis_bootstrap.dart). Leere
 /// Pläne MIT Tabelle und andere Seiten ohne Tabelle werden weiter gemeldet.
+///
+/// Auch eine ganz leere Seite (`text` 0, kein Passwortfeld) zählt als
+/// Sitzungsende. Ursache (Fehlerbericht Nr. 14: „EmptyTimetable(all=0 own=0
+/// rows=0 … text=0 … acct=1)“ 1×): Die Sitzung fragt ohne Weiterleitungen
+/// (LanisSession.prepareDio, followRedirects false, 302 gilt als gültig).
+/// Bei abgelaufener Sitzung antwortet stundenplan.php mit einer leeren
+/// Weiterleitung; der Körper ist leer. Die App fängt das wie oben ab
+/// (Neuanmeldung, zweiter Versuch – daher nur 1×). Grenze: Nur völlig leere
+/// Seiten; scheitert auch der zweite Versuch, meldet liblanis weiter die
+/// UnknownException.
 bool isSessionEndPage(Document document, [Map<String, int>? kind]) {
   if (document.querySelector('#all') != null ||
       document.querySelector('#own') != null) {
     return false;
   }
   final k = kind ?? emptyTimetablePageKind(document);
+  if (k['text'] == 0 && k['wartung'] == 0) return true;
   return k['wartung'] == 0 && (k['login'] == 1 || k['anmeld'] == 1);
 }

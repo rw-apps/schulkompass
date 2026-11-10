@@ -181,4 +181,27 @@ void main() {
     parseTimetableKeepingFirstRow(table);
     expect(count(), 1);
   });
+
+  test('leere Antwort (Weiterleitung ohne Körper): kein EmptyTimetable', () {
+    final log = ErrorLog.instance;
+    log.clear();
+    addTearDown(log.clear);
+    int count() =>
+        log.records.where((r) => r.type.startsWith('EmptyTimetable')).length;
+
+    // Fehlerbericht Nr. 14: Körper leer (text=0), keine Tabelle.
+    for (final body in ['', '   ', '<html><head></head><body></body></html>']) {
+      final empty = parse(body);
+      expect(emptyTimetablePageKind(empty)['text'], 0);
+      expect(isSessionEndPage(empty), isTrue);
+      parseTimetableKeepingFirstRow(empty);
+    }
+    expect(count(), 0);
+
+    // Kurzer, unbekannter Text bleibt gemeldet (text > 0).
+    final short = parse('<html><body><p>x</p></body></html>');
+    expect(isSessionEndPage(short), isFalse);
+    parseTimetableKeepingFirstRow(short);
+    expect(count(), 1);
+  });
 }
