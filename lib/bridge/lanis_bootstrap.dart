@@ -62,6 +62,15 @@ Future<List<Override>> bootstrapLanisClient({
   // nur die Zahl fremder Bytes, kein Inhalt.
   onMixedEncoding = (n) =>
       ErrorLog.instance.notice('portal', 'MixedEncoding', {'bytes': n});
+  // Fork: unlesbare App-Liste bei der Anmeldung belegen (session.dart,
+  // parseFastTravelMenu; Fehlerbericht Nr. 13/14): nur Kennzahlen, Länge
+  // in 100 Zeichen wie bei EmptyTimetable (timetable_fix.dart).
+  onUnreadableAppList = (status, length, start) =>
+      ErrorLog.instance.notice('anmeldung', 'AppListUnreadable', {
+        'status': status,
+        'len': (length / 100).ceil().clamp(0, 99),
+        'start': start,
+      });
   // Fork: Verfasser im Verlauf mit gelernten Reparaturen und eigenen Namen
   // zeigen (name_repair.dart, Rückmeldung 09.11.26).
   authorNameHook = NameRepairs.global.apply;

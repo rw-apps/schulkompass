@@ -375,7 +375,7 @@ class LanisSession {
     final response = await dio.get(
       'https://start.schulportal.hessen.de/startseite.php?a=ajax&f=apps',
     );
-    return jsonDecode(response.data.toString())['entrys'] as List<dynamic>;
+    return parseFastTravelMenu(response.statusCode, response.data.toString());
   }
 
   Map<String, String> parseUserData(Document document) {
@@ -494,3 +494,39 @@ bool dioMeansOffline(DioException e) {
       return false;
   }
 }
+
+/// App-Liste aus der Antwort von `startseite.php?a=ajax&f=apps` lesen.
+///
+/// Fork (Diagnose, Fehlerbericht Nr. 13/14: „anmeldung · FormatException“
+/// mehrmals in wenigen Minuten, Stapel jsonDecode ← getFastTravelMenu ←
+/// _authenticate): Der JSON-Leser scheiterte erst am Ende der Eingabe
+/// (_ChunkedJsonParser.close) – die Antwort war leer oder abgeschnitten,
+/// keine HTML-Seite. Vermutung: eine leere Weiterleitung (302), weil das
+/// Portal die eben eingelöste Anmeldung nicht annahm; die Sitzung folgt
+/// keinen Weiterleitungen (followRedirects false). Belegt wird das über
+/// [onUnreadableAppList]: Statuscode, Länge, erstes Zeichen als Klasse –
+/// kein Inhalt. Grenze: Verhalten unverändert, die FormatException geht
+/// weiter an den Aufrufer.
+List<dynamic> parseFastTravelMenu(int? status, String body) {
+  try {
+    return jsonDecode(body)['entrys'] as List<dynamic>;
+  } on FormatException {
+    final t = body.trimLeft();
+    onUnreadableAppList?.call(
+      status ?? 0,
+      t.length,
+      t.isEmpty
+          ? 0
+          : t.startsWith('<')
+          ? 1
+          : t.startsWith('{') || t.startsWith('[')
+          ? 2
+          : 3,
+    );
+    rethrow;
+  }
+}
+
+/// Meldet eine unlesbare App-Liste: Statuscode, Länge der Antwort und Art
+/// des ersten Zeichens (0 leer, 1 „<“ HTML, 2 JSON-Anfang, 3 anderes).
+void Function(int status, int length, int start)? onUnreadableAppList;
