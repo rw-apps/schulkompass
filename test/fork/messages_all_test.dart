@@ -47,6 +47,7 @@ LiveSnapshot _snap(int id, String first, List<OverviewEntry> msgs) {
     ownNames: const {},
     setUserChoice: (_) {},
     setOwnNames: (_) {},
+    nameTeacher: (_, _) {},
     refresh: () async {},
     refreshMessages: () async {},
     setMensaUrl: (_, _) {},

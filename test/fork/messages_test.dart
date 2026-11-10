@@ -183,6 +183,83 @@ void main() {
     expect(b.sent.single.receivers, ['l-7']);
   });
 
+  testWidgets('Name korrigieren: nur bei „�“, „�“ markiert, gilt sofort', (
+    t,
+  ) async {
+    final saved = <(String, String)>[];
+    final b = _FakeBackend();
+    b.directory.add(const ReceiverEntry('l-9', 'L\uFFFDber, Lena', true));
+    final queries = <String>[];
+    final probe = _ProbeBackend(b, queries);
+    await pump(
+      t,
+      ComposePage(
+        candidates: candidatesFrom([
+          _l('Chemie', [
+            LessonTeacher(teacher: 'L\uFFFDber, Lena', teacherKuerzel: 'Lb'),
+          ]),
+          _l('Musik', [
+            LessonTeacher(teacher: 'Rosen, Mia', teacherKuerzel: 'RO'),
+          ]),
+        ]),
+        backend: probe,
+        onNameTeacher: (kz, n) => saved.add((kz, n)),
+      ),
+    );
+    expect(find.text('Name korrigieren'), findsOneWidget);
+    await t.tap(find.text('Name korrigieren'));
+    await t.pumpAndSettle();
+    final field = t.widget<TextField>(
+      find.descendant(
+        of: find.byType(AlertDialog),
+        matching: find.byType(TextField),
+      ),
+    );
+    expect(
+      field.controller!.selection,
+      const TextSelection(baseOffset: 6, extentOffset: 7),
+    );
+    await t.enterText(
+      find.descendant(
+        of: find.byType(AlertDialog),
+        matching: find.byType(TextField),
+      ),
+      'Lena Lüber',
+    );
+    await t.tap(find.text('Speichern'));
+    await t.pumpAndSettle();
+    expect(saved, [('Lb', 'Lena Lüber')]);
+    expect(find.text('Lena Lüber'), findsOneWidget);
+    // Link bleibt für Tippfehler (Prüfbefund 10.11.26).
+    expect(find.text('Name korrigieren'), findsOneWidget);
+    // Suche nutzt sofort den korrigierten Nachnamen. Die Testsuche findet
+    // ihn nicht (Portal führt „L�ber“), erst das Stück „ber“ – dann wählt
+    // man selbst.
+    await t.tap(find.text('Lena Lüber'));
+    await t.pump();
+    await t.pump(const Duration(seconds: 1));
+    expect(queries, ['Lüber', 'ber']);
+    await t.tap(find.text('L\uFFFDber, Lena'));
+    await t.pumpAndSettle();
+    expect(find.byIcon(Icons.check_circle), findsOneWidget);
+    await t.tap(find.text('Frage zur Hausaufgabe'));
+    await t.pumpAndSettle();
+    expect(find.text('Senden an Lena Lüber'), findsOneWidget);
+    // Erneut korrigieren ändert auch den gewählten Empfänger.
+    await t.tap(find.text('Name korrigieren'));
+    await t.pumpAndSettle();
+    await t.enterText(
+      find.descendant(
+        of: find.byType(AlertDialog),
+        matching: find.byType(TextField),
+      ),
+      'Frau Lüber',
+    );
+    await t.tap(find.text('Speichern'));
+    await t.pumpAndSettle();
+    expect(find.text('Senden an Frau Lüber'), findsOneWidget);
+  });
+
   testWidgets('Nur über Platzhalter passender Treffer wird nicht selbst '
       'gewählt', (t) async {
     final b = _FakeBackend();

@@ -7,6 +7,8 @@ import '../../l10n/l10n.dart';
 import '../../demo/demo_entry.dart' show blockedInDemo;
 import '../kit.dart';
 import '../pinned_page.dart';
+import '../../name_repair.dart' show replacementChar;
+import '../plan/plan_page.dart' show TeacherNameDialog;
 import 'compose_model.dart';
 
 /// Abfrage und Versand, austauschbar für Tests (kein Portal nötig).
@@ -70,7 +72,14 @@ class ComposePage extends StatefulWidget {
     this.initialKuerzel,
     this.initialSubject,
     this.initialText,
+    this.onNameTeacher,
   });
+
+  /// Eigenen Namen zu einem Kürzel speichern (LiveSnapshot.nameTeacher, ein
+  /// Eintrag: [candidates] ist ein Stand vom Öffnen, die ganze Map daraus
+  /// verlöre frühere Korrekturen); leer = eigenen Eintrag löschen. Ohne
+  /// Rückruf kein „Name korrigieren“.
+  final void Function(String kuerzel, String name)? onNameTeacher;
 
   /// Vorausgefüllter Betreff und Text (Entschuldigung aus „Abwesenheiten“).
   final String? initialSubject;
@@ -100,6 +109,52 @@ class _ComposePageState extends State<ComposePage> {
   /// Welche Portal-ID zu welcher Lehrkraft (Kürzel) gehört.
   final _idOf = <String, String>{};
   final _state = <String, _State>{};
+
+  /// Hier korrigierte Lehrkräfte (Kürzel → Kandidat mit neuem Namen und
+  /// neuen Suchbegriffen). Die Liste kommt beim Öffnen fertig mit
+  /// (candidates), daher die Korrektur hier sofort nachziehen – auch für die
+  /// Portal-Suche (searchQueries mit dem eigenen Namen, Prüfbefund 10.11.26).
+  final _renamed = <String, RecipientCandidate>{};
+
+  RecipientCandidate _cand(RecipientCandidate c) => _renamed[c.kuerzel] ?? c;
+  String _display(RecipientCandidate c) => _cand(c).display;
+
+  /// „Name korrigieren“ (Wunsch 10.11.26): Das Portal schickt manche Namen
+  /// mit „�“, und nicht jedes Kürzel verrät den Buchstaben („Lk“ statt
+  /// „Lü“, repairWithKuerzel). Der eigene Name gilt danach überall.
+  /// Grenzen: Markiert ist nur das erste „�“ (TeacherNameDialog); der Link
+  /// bleibt nach einer Korrektur hier stehen, um Tippfehler zu beheben.
+  Future<void> _rename(RecipientCandidate c) async {
+    final name = await showDialog<String>(
+      context: context,
+      builder: (_) =>
+          TeacherNameDialog(kuerzel: c.kuerzel, initial: _display(c)),
+    );
+    if (name == null || !mounted) return;
+    widget.onNameTeacher?.call(c.kuerzel, name);
+    setState(() {
+      if (name.isEmpty) {
+        _renamed.remove(c.kuerzel);
+      } else {
+        _renamed[c.kuerzel] = RecipientCandidate(
+          kuerzel: c.kuerzel,
+          display: name,
+          lastName: c.lastName,
+          knownLastName: ownLastName(name, c.lastName) ?? c.knownLastName,
+          firstName: c.firstName,
+          subjects: c.subjects,
+          searchNames: searchQueries(
+            c.lastName,
+            repaired: c.knownLastName ?? c.lastName,
+            own: name,
+          ),
+        );
+      }
+      final id = _idOf[c.kuerzel];
+      if (id != null && _chosen.containsKey(id)) _chosen[id] = _display(c);
+    });
+  }
+
   final _subject = TextEditingController();
   final _text = TextEditingController();
   final _search = TextEditingController();
@@ -138,7 +193,8 @@ class _ComposePageState extends State<ComposePage> {
       !_sending &&
       !_confirming;
 
-  Future<void> _toggle(RecipientCandidate c) async {
+  Future<void> _toggle(RecipientCandidate given) async {
+    final c = _cand(given);
     final id = _idOf[c.kuerzel];
     if (id != null && _chosen.containsKey(id)) {
       setState(() {
@@ -171,7 +227,7 @@ class _ComposePageState extends State<ComposePage> {
     if (hits.length == 1 && firstQuery && isSureReceiver(hits.single, c)) {
       pick = hits.single;
     } else if (hits.isNotEmpty) {
-      pick = await _choose(c.display, hits);
+      pick = await _choose(_display(c), hits);
     }
     if (!mounted) return;
     setState(() {
@@ -181,7 +237,7 @@ class _ComposePageState extends State<ComposePage> {
       }
       _state[c.kuerzel] = _State.idle;
       _idOf[c.kuerzel] = pick.id;
-      _chosen[pick.id] = c.display;
+      _chosen[pick.id] = _display(c);
       _portalName[pick.id] = pick.name;
     });
   }
@@ -365,9 +421,16 @@ class _ComposePageState extends State<ComposePage> {
               padding: const EdgeInsets.only(bottom: Sp.s),
               child: _CandidateTile(
                 candidate: c,
+                display: _display(c),
                 selected: _chosen.containsKey(_idOf[c.kuerzel]),
                 state: _state[c.kuerzel] ?? _State.idle,
                 onTap: () => _toggle(c),
+                onRename:
+                    widget.onNameTeacher != null &&
+                        (c.display.contains(replacementChar) ||
+                            _renamed.containsKey(c.kuerzel))
+                    ? () => _rename(c)
+                    : null,
               ),
             ),
           const SizedBox(height: Sp.s),
@@ -480,12 +543,19 @@ class _ComposePageState extends State<ComposePage> {
 class _CandidateTile extends StatelessWidget {
   const _CandidateTile({
     required this.candidate,
+    required this.display,
     required this.selected,
     required this.state,
     required this.onTap,
+    this.onRename,
   });
 
   final RecipientCandidate candidate;
+  final String display;
+
+  /// Link „Name korrigieren“ unter den Fächern: bei Namen mit „�“ und nach
+  /// einer Korrektur hier (für Tippfehler).
+  final VoidCallback? onRename;
   final bool selected;
   final _State state;
   final VoidCallback onTap;
@@ -512,13 +582,26 @@ class _CandidateTile extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      candidate.display,
+                      display,
                       style: k.planSubject(selected ? tone.onTint : k.p.ink),
                     ),
                     Text(
                       sub,
                       style: k.planMeta(selected ? tone.meta : k.p.muted),
                     ),
+                    // Knopf statt Text mit InkWell (Prüfbefund 10.11.26):
+                    // Trefferfläche nach Material und als Schaltfläche
+                    // vorgelesen; sonst wählte ein knapper Tipp die
+                    // Lehrkraft aus.
+                    if (onRename != null)
+                      TextButton(
+                        onPressed: onRename,
+                        style: TextButton.styleFrom(
+                          padding: EdgeInsets.zero,
+                          alignment: Alignment.centerLeft,
+                        ),
+                        child: Text(context.t.fixTeacherName, style: k.link),
+                      ),
                   ],
                 ),
               ),

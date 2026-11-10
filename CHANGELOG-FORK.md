@@ -1,5 +1,9 @@
 ## Schulkompass (rw-apps, bis 9472 „Schulportal“) – Änderungen gegenüber Lanis-Mobile
 
+**4.1.0+9507** – Namen mit „�“ selbst korrigieren
+
+- **„Name korrigieren“:** Verrät das Kürzel den fehlenden Buchstaben nicht, zeigt „Neue Nachricht“ unter dem Namen den Link „Name korrigieren“, ebenso die Stunden-Details im Stundenplan. In der Eingabe ist das „�“ schon markiert – den richtigen Buchstaben tippen, speichern. Der Name gilt danach überall.
+
 **4.1.0+9506** – Namen mit „�“ reparieren, eigene Namen überall
 
 - **Umlaute über das Kürzel:** Manche Namen schickt schon das Portal mit „�“ statt Umlaut (im Browser genauso zu sehen). Steht im Kürzel derselben Lehrkraft der richtige Buchstabe an derselben Stelle, setzt die App ihn ein – im Stundenplan, bei den Kursen und bei „Neue Nachricht“. Absender in „Nachrichten“ und im Verlauf bekommen die Reparatur, wenn es dieselbe Lehrkraft ist (ganzer Name). Geraten wird nicht: Ohne passendes Kürzel bleibt „�“ stehen.

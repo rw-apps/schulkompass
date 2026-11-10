@@ -207,6 +207,7 @@ class LiveSnapshot {
     required this.ownNames,
     required this.setUserChoice,
     required this.setOwnNames,
+    required this.nameTeacher,
     required this.refresh,
     required this.refreshMessages,
     required this.setMensaUrl,
@@ -326,6 +327,11 @@ class LiveSnapshot {
   final String accountKey;
   final void Function(GroupChoice) setUserChoice;
   final void Function(Map<String, String>) setOwnNames;
+
+  /// Einen eigenen Namen setzen (leer = löschen), ohne die übrigen zu
+  /// kennen: „Neue Nachricht“ hält einen Stand vom Öffnen, zwei Korrekturen
+  /// nacheinander über [setOwnNames] mit [ownNames] verlören die erste.
+  final void Function(String kuerzel, String name) nameTeacher;
 
   /// Alles neu vom Portal holen (Ziehen zum Aktualisieren).
   final Future<void> Function() refresh;
@@ -902,6 +908,16 @@ class _LiveDataScopeState extends ConsumerState<LiveDataScope>
       },
       setOwnNames: (n) {
         setState(() => _names = {...n});
+        _write(teacherNamesSetting, n);
+      },
+      nameTeacher: (kz, name) {
+        final n = {..._names};
+        if (name.isEmpty) {
+          n.remove(kz);
+        } else {
+          n[kz] = name;
+        }
+        setState(() => _names = n);
         _write(teacherNamesSetting, n);
       },
       refresh: () {

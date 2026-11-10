@@ -82,7 +82,9 @@ List<RecipientCandidate> candidatesFrom(
         kuerzel: k,
         display: own.isNotEmpty ? own : portalNameToDisplay(fixed),
         lastName: lastName,
-        knownLastName: fixed == raw ? null : fixed.split(',').first.trim(),
+        knownLastName:
+            ownLastName(own, lastName) ??
+            (fixed == raw ? null : fixed.split(',').first.trim()),
         firstName: parts.length > 1 ? parts.sublist(1).join(',').trim() : null,
         subjects: [subject],
         searchNames: searchQueries(
@@ -103,6 +105,21 @@ List<RecipientCandidate> candidatesFrom(
       if (!big.contains(k)) byK[k]!,
     for (final k in big) byK[k]!,
   ];
+}
+
+/// Letztes Wort des eigenen Namens, wenn es dem Portal-Nachnamen bis auf
+/// „�“ gleicht („Lena Lüber“ zu „L�ber“), sonst null. Der eigene Name ist
+/// eingetippt, nicht geraten – daher darf er wie eine Kürzel-Reparatur
+/// zählen (isSureReceiver, Prüfbefund 10.11.26).
+String? ownLastName(String own, String lastName) {
+  final words = own.trim().split(RegExp(r'\s+'));
+  final last = words.last;
+  return last.isNotEmpty &&
+          !last.contains(replacementChar) &&
+          lastName.contains(replacementChar) &&
+          sameNameIgnoringBroken(last, lastName)
+      ? last
+      : null;
 }
 
 /// Suchbegriffe für einen Nachnamen mit möglichem „�“.

@@ -1,4 +1,8 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lanis/fork/l10n/l10n.dart';
+import 'package:lanis/fork/ui/plan/plan_model.dart';
+import 'package:lanis/fork/ui/plan/plan_page.dart';
 import 'package:lanis/fork/name_repair.dart';
 import 'package:lanis/fork/ui/courses/courses_model.dart';
 import 'package:lanis/fork/ui/live/live_data.dart';
@@ -159,4 +163,36 @@ void main() {
       );
     },
   );
+
+  testWidgets('Stunden-Details: „Name korrigieren“ nur bei „�“', (t) async {
+    Future<void> show(Map<String, String> names) => t.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: ForkL10n.localizationsDelegates,
+        supportedLocales: ForkL10n.supportedLocales,
+        locale: const Locale('de'),
+        home: Scaffold(
+          body: LessonSheet(
+            plan: KidPlan(
+              firstName: 'Kind',
+              colorIndex: 0,
+              slots: const [],
+              days: const [],
+              teacherNames: names,
+            ),
+            lesson: const PlanLesson(
+              subject: 'Chemie',
+              short: 'CH',
+              teacher: 'Lb',
+            ),
+            time: '1. Stunde',
+            onNameTeacher: (_) {},
+          ),
+        ),
+      ),
+    );
+    await show({'Lb': 'Lena L${x}ber'});
+    expect(find.text('Name korrigieren'), findsOneWidget);
+    await show({'Lb': 'Lena Lüber'});
+    expect(find.text('Name korrigieren'), findsNothing);
+  });
 }

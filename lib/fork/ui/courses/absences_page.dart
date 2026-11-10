@@ -114,6 +114,7 @@ class _LiveAbsencesPageState extends ConsumerState<LiveAbsencesPage> {
           s.lessons.content ?? const [],
           ownNames: s.ownNames,
         ),
+        onNameTeacher: s.nameTeacher,
         backend: backend,
         initialKuerzel: a.teacherCodes.where((k) => k.isNotEmpty).firstOrNull,
         initialSubject: m.subject,

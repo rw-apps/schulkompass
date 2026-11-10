@@ -273,6 +273,7 @@ Widget liveCourseDetail(
                 s.lessons.content ?? const [],
                 ownNames: s.ownNames,
               ),
+              onNameTeacher: s.nameTeacher,
               backend: portalBackend(ref),
               initialKuerzel: kz,
             ),

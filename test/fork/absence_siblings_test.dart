@@ -45,6 +45,7 @@ LiveSnapshot parent({CourseScan? scan, List<ChildLessons>? kids}) {
     ownNames: const {},
     setUserChoice: (_) {},
     setOwnNames: (_) {},
+    nameTeacher: (_, _) {},
     refresh: () async {},
     refreshMessages: () async {},
     setMensaUrl: (_, _) {},

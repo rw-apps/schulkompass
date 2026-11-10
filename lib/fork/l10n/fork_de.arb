@@ -2265,5 +2265,7 @@
         "type": "String"
       }
     }
-  }
+  },
+  "fixTeacherName": "Name korrigieren",
+  "fixTeacherNameHint": "Das Portal schickt „�“ statt eines Buchstabens. Tipp den richtigen ein."
 }

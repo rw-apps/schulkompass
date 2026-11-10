@@ -40,6 +40,7 @@ LiveSnapshot _snap(int id, String first, {String? url}) {
     ownNames: const {},
     setUserChoice: (_) {},
     setOwnNames: (_) {},
+    nameTeacher: (_, _) {},
     refresh: () async {},
     refreshMessages: () async {},
     setMensaUrl: (_, _) {},

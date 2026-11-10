@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../l10n/l10n.dart';
 import '../../mensa.dart' show isoWeek;
+import '../../name_repair.dart' show replacementChar;
 import '../calendar/event_list.dart';
 import '../kid_chips.dart';
 import '../kit.dart';
@@ -247,6 +248,17 @@ class _PlanPageState extends State<PlanPage> {
     final k = _validKid(widget.selectedKid);
     if (k != null && k != _kid) _kid = k;
     if (_kid >= widget.plans.length) _kid = 0;
+    // Eigene Namen von anderswo übernehmen (Prüfbefund 10.11.26): „Name
+    // korrigieren“ in „Neue Nachricht“ ändert sie, während diese Seite im
+    // Reiterstapel weiterlebt. Ohne Abgleich zeigte sie den alten Namen und
+    // schrieb ihn beim nächsten eigenen Eintrag (onNamesChanged, ganze Map)
+    // zurück. LiveSnapshot.ownNames ist nach jeder Änderung ein neues
+    // Objekt, daher genügt identical.
+    for (final e in widget.initialNames.entries) {
+      if (!identical(old.initialNames[e.key], e.value)) {
+        _names[e.key] = {...e.value};
+      }
+    }
   }
 
   KidPlan get _plan => _plans[_kid].withTeacherNames(_names[_kid] ?? const {});
@@ -1850,6 +1862,14 @@ class LessonSheet extends StatelessWidget {
                                   style: k.planTeacher(k.p.ink),
                                 ),
                                 Text(context.t.teacherCode(kz), style: k.meta),
+                                // Wunsch 10.11.26: Namen mit „�“ vom Portal,
+                                // die das Kürzel nicht auflöst
+                                // (repairWithKuerzel), hier anstoßen.
+                                if (plan.teacherNames[kz]?.contains(
+                                      replacementChar,
+                                    ) ??
+                                    false)
+                                  Text(context.t.fixTeacherName, style: k.link),
                               ],
                             ),
                           ),
@@ -1892,7 +1912,19 @@ class TeacherNameDialog extends StatefulWidget {
 }
 
 class _TeacherNameDialogState extends State<TeacherNameDialog> {
-  late final _c = TextEditingController(text: widget.initial);
+  /// Mit „�“ im Namen ist das erste „�“ markiert: Den richtigen Buchstaben
+  /// tippen ersetzt es (Wunsch 10.11.26). Sonst steht der Cursor am Ende.
+  late final _c = () {
+    final at = widget.initial.indexOf(replacementChar);
+    return TextEditingController.fromValue(
+      TextEditingValue(
+        text: widget.initial,
+        selection: at < 0
+            ? TextSelection.collapsed(offset: widget.initial.length)
+            : TextSelection(baseOffset: at, extentOffset: at + 1),
+      ),
+    );
+  }();
 
   @override
   void dispose() {
@@ -1908,7 +1940,13 @@ class _TeacherNameDialogState extends State<TeacherNameDialog> {
         controller: _c,
         autofocus: true,
         textCapitalization: TextCapitalization.words,
-        decoration: InputDecoration(hintText: context.t.teacherNameHint),
+        decoration: InputDecoration(
+          hintText: context.t.teacherNameHint,
+          helperText: widget.initial.contains(replacementChar)
+              ? context.t.fixTeacherNameHint
+              : null,
+          helperMaxLines: 3,
+        ),
         onSubmitted: (v) => Navigator.pop(context, v.trim()),
       ),
       actions: [

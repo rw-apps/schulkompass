@@ -212,6 +212,7 @@ class _AbsencePageState extends ConsumerState<AbsencePage> {
                           live.lessons.content ?? const [],
                           ownNames: live.ownNames,
                         ),
+                        onNameTeacher: live.nameTeacher,
                         backend: backend,
                       ),
                     );

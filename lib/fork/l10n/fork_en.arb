@@ -876,5 +876,7 @@
   "absenceChangeText": "A sent report cannot be changed or withdrawn in the portal. Write to the school what has changed – they will adjust it.",
   "absenceWriteSchool": "Message the school",
   "absenceRepeat": "Also report {day}",
-  "absenceOther": "Other report (day, late arrival)"
+  "absenceOther": "Other report (day, late arrival)",
+  "fixTeacherName": "Fix name",
+  "fixTeacherNameHint": "The portal sends “�” instead of a letter. Type the correct one."
 }
