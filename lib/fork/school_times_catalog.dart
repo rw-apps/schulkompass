@@ -14,7 +14,8 @@ import 'ui/plan/lesson_times.dart';
 ///
 /// Grenze: Stand der Angabe der Familie; ändert eine Schule ihre Zeiten,
 /// stimmt der Eintrag nicht mehr. Selbst eingetragene Zeiten des Geräts
-/// gehen immer vor (effectiveLessonTimes, live_data.dart), und Uhrzeiten
+/// gehen vor (effectiveLessonTimes, live_data.dart) – außer solchen von vor
+/// dem Katalogeintrag, die ownLessonTimes einmal verwirft. Uhrzeiten
 /// aus dem Portal gehen beidem vor (kidPlanFromTimetable).
 const schoolTimesCatalog = <String, LessonTimes>{
   // Angabe der Familie 09.11.26: 1. 08:00, 3. 09:50–10:35, 4. –11:20,

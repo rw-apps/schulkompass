@@ -1,5 +1,9 @@
 ## Schulkompass (rw-apps, bis 9472 „Schulportal“) – Änderungen gegenüber Lanis-Mobile
 
+**4.1.0+9508** – Schulzeiten statt alter eigener Zeiten
+
+- **Stundenzeiten der Schule gehen vor alten Einträgen:** Wer vor dem Schulzeiten-Katalog (9505) selbst Zeiten eingetragen hatte, sah sie weiter in Stundenplan, Widget und Benachrichtigungen statt der richtigen Schulzeiten. An Schulen mit hinterlegten Zeiten verwirft die App solche alten Einträge jetzt einmalig. Danach selbst eingetragene Zeiten bleiben bestehen.
+
 **4.1.0+9507** – Namen mit „�“ selbst korrigieren
 
 - **„Name korrigieren“:** Verrät das Kürzel den fehlenden Buchstaben nicht, zeigt „Neue Nachricht“ unter dem Namen den Link „Name korrigieren“, ebenso die Stunden-Details im Stundenplan. In der Eingabe ist das „�“ schon markiert – den richtigen Buchstaben tippen, speichern. Der Name gilt danach überall.

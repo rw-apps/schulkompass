@@ -10,6 +10,7 @@ import 'school_links.dart' show normalizeMensaUrl;
 import 'ui/live/live_data.dart'
     show
         groupChoiceSetting,
+        lessonTimesCatalogSetting,
         lessonTimesSetting,
         mensaUrlSetting,
         mensaUrlsSetting,
@@ -28,6 +29,7 @@ const transferKeys = [
   'stundenplan.php/$groupChoiceSetting', // Gruppenwahl im Stundenplan
   'stundenplan.php/$teacherNamesSetting', // selbst benannte Lehrkräfte
   'stundenplan.php/$lessonTimesSetting', // Stundenzeiten
+  lessonTimesCatalogSetting, // Stundenzeiten gegen Katalog geprüft
   'fork/$mensaUrlsSetting', // Mensa je Kind
   'fork/$mensaUrlSetting', // Mensa (alte Form)
   homeworkLedgerSetting, // abgehakte Hausaufgaben
@@ -244,8 +246,12 @@ List<AccountSummary> applyTransferValues(
   for (final a in accounts) {
     final incoming = data[transferAccountKey(a.schoolID, a.username)];
     if (incoming == null || incoming.isEmpty) continue;
+    final times = incoming.containsKey('stundenplan.php/$lessonTimesSetting');
     for (final e in incoming.entries) {
       if (!transferKeys.contains(e.key)) continue;
+      // Merker nur mit Zeiten: Allein übernommen, gälten alte Zeiten des
+      // Zielkontos als geprüft (Prüfbefund 12.11.26).
+      if (e.key == lessonTimesCatalogSetting && !times) continue;
       db.setAccountSetting(
         a.localId,
         e.key,
@@ -257,6 +263,14 @@ List<AccountSummary> applyTransferValues(
           encode: LanisDatabase.encodeValue,
         ),
       );
+    }
+    // Zeiten ohne Merker (Datei von vor 9508 oder von einem Gerät, das das
+    // Konto noch nicht gelesen hat) sind ungeprüft: Merker hier löschen,
+    // damit ownLessonTimes (live_data.dart) sie an Katalogschulen noch
+    // einmal verwirft. Ursache (Prüfbefund 12.11.26): Sonst kamen alte
+    // falsche Zeiten über die Übertragung dauerhaft zurück.
+    if (times && !incoming.containsKey(lessonTimesCatalogSetting)) {
+      db.deleteAccountSetting(a.localId, lessonTimesCatalogSetting);
     }
     out.add(a);
   }

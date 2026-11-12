@@ -66,10 +66,47 @@ const lessonTimesSetting = 'fork-lesson-times';
   TypedSettings s,
   String schoolId,
 ) {
-  final own = storedLessonTimes(s);
+  final own = ownLessonTimes(s, schoolId);
   if (own != null) return (times: own, fromSchool: false);
   final cat = catalogLessonTimes(schoolId);
   return (times: cat, fromSchool: cat != null);
+}
+
+/// Merker: Die eigenen Zeiten dieses Kontos sind gegen den Katalog geprüft
+/// ([ownLessonTimes]) – gesetzt auch, wenn nichts zu verwerfen war. Wandert
+/// mit den Zeiten beim Übertragen (settings_transfer.dart).
+const lessonTimesCatalogSetting = 'fork-lesson-times-catalog';
+
+/// Eigene Stundenzeiten eines Kontos – an einer Schule mit Katalogzeiten
+/// beim ersten Lesen nach dem Update einmal verworfen.
+///
+/// Ursache (Rückmeldung 12.11.26): Vor dem Katalog (9505) eingetragene
+/// Zeiten mit dem Vorschlagsraster waren falsch und gingen weiter vor
+/// (effectiveLessonTimes) – Stundenplan, Widget und Benachrichtigungen
+/// zeigten sie statt der Schulzeiten. Danach eingetragene Zeiten bleiben:
+/// Der Merker [lessonTimesCatalogSetting] steht dann schon.
+/// Grenzen: Auch ein vor dem Update bewusst abweichender Eintrag an einer
+/// Katalogschule geht einmal verloren; er lässt sich neu eintragen. Der
+/// Merker steht nur an Katalogschulen: Kommt eine Schule später in den
+/// Katalog, verwirft die App dort die bis dahin eingetragenen Zeiten
+/// einmal – gewollt, sie stammen aus der Zeit vor dem Eintrag.
+/// Schreibt beim Lesen, auch aus build heraus (LiveData._readSettings);
+/// unkritisch, weil die Einstellungen synchron in SQLite landen und kein
+/// setState folgt. Aufrufer: effectiveLessonTimes (notify_task.dart,
+/// offline_page.dart) und LiveData._readSettings.
+LessonTimes? ownLessonTimes(TypedSettings s, String schoolId) {
+  if (catalogLessonTimes(schoolId) != null &&
+      s.getString(lessonTimesCatalogSetting) == null) {
+    if (storedLessonTimes(s) != null) {
+      persistAppletSetting(
+        s,
+        'stundenplan.php/$lessonTimesSetting',
+        const <String, String>{},
+      );
+    }
+    s.setString(lessonTimesCatalogSetting, '1');
+  }
+  return storedLessonTimes(s);
 }
 
 /// Gespeicherte Stundenzeiten eines Kontos, null = keine.
@@ -582,7 +619,10 @@ class _LiveDataScopeState extends ConsumerState<LiveDataScope>
         const <String, dynamic>{},
       ),
     );
-    _times = storedLessonTimes(s);
+    final school = ref.read(activeAccountProvider)?.schoolID;
+    _times = school == null
+        ? storedLessonTimes(s)
+        : ownLessonTimes(s, '$school');
     _scan = storedCourseScan(s);
     _homework = HomeworkLedger.decode(s.getString(homeworkLedgerSetting));
     _subsHistory = SubstitutionHistory.decode(

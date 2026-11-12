@@ -4,6 +4,8 @@ import 'package:lanis/fork/ui/settings/transfer_page.dart';
 import 'package:lanis/fork/absences.dart';
 import 'package:lanis/fork/homework_ledger.dart';
 import 'package:lanis/fork/settings_transfer.dart';
+import 'package:lanis/fork/ui/live/live_data.dart'
+    show lessonTimesCatalogSetting;
 import 'package:liblanis/liblanis.dart';
 
 import '../helpers/test_app.dart';
@@ -115,5 +117,57 @@ void main() {
     expect(t.takeException(), isNull);
     expect(find.text('Als Datei senden'), findsOneWidget);
     expect(find.text('Datei übernehmen'), findsOneWidget);
+  });
+
+  test('Zeiten ohne Prüf-Merker setzen den Merker zurück', () async {
+    final db = LanisDatabase.open();
+    addTearDown(db.dispose);
+    final id = await db.addAccount(
+      schoolId: 1234,
+      schoolName: 'Muster-Gymnasium',
+      username: 'max.muster',
+      password: 'x',
+    );
+    final a = AccountSummary(
+      localId: id,
+      schoolID: 1234,
+      username: 'max.muster',
+      schoolName: '',
+      creationDate: DateTime(2026),
+    );
+    db.setAccountSetting(id, lessonTimesCatalogSetting, enc('1'));
+    // Datei von vor 9508: Zeiten, kein Merker → wieder ungeprüft.
+    applyTransferValues(
+      db,
+      {
+        '1234:max.muster': {
+          'stundenplan.php/fork-lesson-times': enc('{"start":"07:45"}'),
+        },
+      },
+      [a],
+    );
+    expect(db.getAccountSetting(id, lessonTimesCatalogSetting), isNull);
+    // Mit Merker: übernommen, Zeiten gelten als geprüft.
+    applyTransferValues(
+      db,
+      {
+        '1234:max.muster': {
+          'stundenplan.php/fork-lesson-times': enc('{"start":"07:45"}'),
+          lessonTimesCatalogSetting: enc('1'),
+        },
+      },
+      [a],
+    );
+    expect(dec(db.getAccountSetting(id, lessonTimesCatalogSetting)!), '1');
+    // Merker ohne Zeiten wird nicht übernommen.
+    db.deleteAccountSetting(id, lessonTimesCatalogSetting);
+    applyTransferValues(
+      db,
+      {
+        '1234:max.muster': {lessonTimesCatalogSetting: enc('1')},
+      },
+      [a],
+    );
+    expect(db.getAccountSetting(id, lessonTimesCatalogSetting), isNull);
   });
 }
