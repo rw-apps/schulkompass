@@ -1,5 +1,10 @@
 ## Schulkompass (rw-apps, bis 9472 „Schulportal“) – Änderungen gegenüber Lanis-Mobile
 
+**4.1.0+9509** – Stundenplan nach Sitzungsende, Diagnose Anmeldung
+
+- **Leerer Stundenplan nach Sitzungsende:** Lieferte das Portal nach abgelaufener Anmeldung eine leere Seite, meldete die App einen leeren Stundenplan als Fehler. Sie erkennt solche Seiten jetzt als Sitzungsende, meldet sich neu an und lädt den Plan noch einmal.
+- **Diagnose Anmeldung:** Kann die App die Liste der Module beim Anmelden nicht lesen, vermerkt sie im Fehlerprotokoll nur Kennzahlen (Statuscode, ungefähre Länge, Art des ersten Zeichens), keine Inhalte. Das Verhalten der App ändert sich nicht.
+
 **4.1.0+9508** – Schulzeiten statt alter eigener Zeiten
 
 - **Stundenzeiten der Schule gehen vor alten Einträgen:** Wer vor dem Schulzeiten-Katalog (9505) selbst Zeiten eingetragen hatte, sah sie weiter in Stundenplan, Widget und Benachrichtigungen statt der richtigen Schulzeiten. An Schulen mit hinterlegten Zeiten verwirft die App solche alten Einträge jetzt einmalig. Danach selbst eingetragene Zeiten bleiben bestehen.
