@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../l10n/l10n.dart';
+import '../kid_chips.dart' show compactHeader;
 import '../kit.dart';
 import '../pinned_page.dart';
 import '../../class_choice.dart' show classLabel;
@@ -140,28 +141,49 @@ class TodayPage extends StatelessWidget {
     final wide = MediaQuery.sizeOf(context).width >= Sz.wideLayout;
     final updated = data.updatedAt;
 
-    final head = Row(
-      crossAxisAlignment: CrossAxisAlignment.baseline,
-      textBaseline: TextBaseline.alphabetic,
-      children: [
-        // Verkleinern statt umbrechen (wie der Titel im Kalender).
-        Expanded(
-          child: FittedBox(
-            fit: BoxFit.scaleDown,
-            alignment: Alignment.centerLeft,
-            child: Text(
-              title ?? formatDate(t, t.dateLong, data.now),
-              style: k.pageTitle,
-              maxLines: 1,
-            ),
-          ),
-        ),
-        if (updated != null) ...[
-          const SizedBox(width: Sp.s),
-          Text(t.asOf(standLabel(t, updated, data.now)), style: k.meta),
-        ],
-      ],
-    );
+    final stand = updated == null
+        ? null
+        : Text(t.asOf(standLabel(t, updated, data.now)), style: k.meta);
+    // Quer (Handy und Tablet) teilt sich die Zeile mit den Kind-Pillen (PinnedPage):
+    // „Stand“ klein unter das Datum statt daneben. Ursache (Rückmeldung
+    // 14.11.26, Bildschirmfoto Pixel 9a quer): neben Datum und Pillen war es
+    // gequetscht.
+    final head = compactHeader(context)
+        ? Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  title ?? formatDate(t, t.dateLong, data.now),
+                  style: k.pageTitle,
+                  maxLines: 1,
+                ),
+              ),
+              ?stand,
+            ],
+          )
+        : Row(
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            children: [
+              // Verkleinern statt umbrechen (wie der Titel im Kalender).
+              Expanded(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    title ?? formatDate(t, t.dateLong, data.now),
+                    style: k.pageTitle,
+                    maxLines: 1,
+                  ),
+                ),
+              ),
+              if (stand != null) ...[const SizedBox(width: Sp.s), stand],
+            ],
+          );
 
     final width = MediaQuery.sizeOf(context).width;
     final cards = <Widget>[
@@ -1375,17 +1397,29 @@ class UpcomingList extends StatelessWidget {
       children: [
         Padding(
           padding: const EdgeInsets.only(left: Sp.xs),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.baseline,
-            textBaseline: TextBaseline.alphabetic,
-            children: [
-              Expanded(child: Text(t.upcoming, style: k.section)),
-              if (onOpenAll != null)
-                TextButton(
-                  onPressed: onOpenAll,
-                  child: Text(t.allEvents, style: k.link),
-                ),
-            ],
+          // „Alle Termine“ in natürlicher Breite, höchstens 55 %, dann
+          // verkleinert. Ursache (shell_nav_test, 14.11.26): In der schmalen
+          // Terminspalte (Tablet quer neben der Leiste, Schrift ×1,82) lief
+          // es knapp 2 px über.
+          child: LayoutBuilder(
+            builder: (context, box) => Row(
+              crossAxisAlignment: CrossAxisAlignment.baseline,
+              textBaseline: TextBaseline.alphabetic,
+              children: [
+                Expanded(child: Text(t.upcoming, style: k.section)),
+                if (onOpenAll != null)
+                  ConstrainedBox(
+                    constraints: BoxConstraints(maxWidth: box.maxWidth * 0.55),
+                    child: TextButton(
+                      onPressed: onOpenAll,
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(t.allEvents, style: k.link),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
           ),
         ),
         Container(

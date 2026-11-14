@@ -105,24 +105,21 @@ class KidChips extends StatelessWidget {
   }
 }
 
-/// Telefon quer: Kopf verdichten (Leiste links in PreviewShell, Pillen und
-/// Zurück in der Zeile der Überschrift, PinnedPage).
+/// Quer (Telefon und Tablet): Kopf verdichten (Leiste links in
+/// PreviewShell, Pillen und Zurück in der Zeile der Überschrift,
+/// PinnedPage).
 ///
 /// Ursache (Rückmeldung 14.11.26 zum Entwurf Querformat: „Der Platz oben
 /// kann besser genutzt werden“): Quer bleiben am Pixel 9a rund 411 dp Höhe;
 /// Pillenzeile und eigener Zurück-Pfeil über der Überschrift kosteten je
-/// eine Zeile. Tablets (kürzere Seite ab Sz.phoneShortestSide) behalten den
-/// gewohnten Aufbau. Grenze: Über Systemschrift ×1,3 bleibt es beim
+/// eine Zeile. Auf dem Tablet quer ebenso (Wunsch 14.11.26). Grenze: Über
+/// Systemschrift ×1,3 bleibt es beim
 /// gewohnten Aufbau – Überschrift, Pillen und Umschalter passten dann
 /// nicht mehr in eine Zeile (shell_nav_test, Kalender bei ×1,82: 169 px
 /// Überlauf). Liest nur Größe und Schrift (sizeOf, textScalerOf), damit
 /// die Tastatur keine Neuaufbauten auslöst.
-bool compactHeader(BuildContext context) {
-  final size = MediaQuery.sizeOf(context);
-  return size.width > size.height &&
-      size.shortestSide < Sz.phoneShortestSide &&
-      MediaQuery.textScalerOf(context).scale(10) <= 13;
-}
+bool compactHeader(BuildContext context) =>
+    isLandscape(context) && MediaQuery.textScalerOf(context).scale(10) <= 13;
 
 /// Pillen (und Zurück) für die Überschriftzeile, von [PinnedKidChips] im
 /// Querformat an die Seite darunter gereicht. Wer sie zeichnet
@@ -144,7 +141,7 @@ class HeaderChips extends InheritedWidget {
   final Widget? leading;
   final ValueNotifier<int> claims;
 
-  /// Quer am Telefon ([compactHeader]); sonst stehen die Pillen darüber.
+  /// Quer (Handy und Tablet) ([compactHeader]); sonst stehen die Pillen darüber.
   final bool active;
 
   static HeaderChips? of(BuildContext context) =>
@@ -165,7 +162,7 @@ class HeaderChips extends InheritedWidget {
 /// Seite darunter bekommt keinen oberen Rand mehr (sie liegt schon unter
 /// der Statusleiste).
 ///
-/// Quer am Telefon ([compactHeader]) wandern Pillen und [leading] in die
+/// Quer (Handy und Tablet) ([compactHeader]) wandern Pillen und [leading] in die
 /// Überschriftzeile der Seite (HeaderChips, PinnedPage, TitleChips).
 /// Grenzen: Beim ersten Aufbau quer fehlt die Pillenzeile, bis sich
 /// ClaimedChips nach dem Bild angemeldet hat; meldet sich keiner an,

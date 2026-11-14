@@ -73,7 +73,17 @@ class ComposePage extends StatefulWidget {
     this.initialSubject,
     this.initialText,
     this.onNameTeacher,
+    this.focus = const {},
+    this.extraTemplates = const [],
   });
+
+  /// Vorlagen vor den üblichen (Krankmeldung: sickNoteTemplate).
+  final List<MessageTemplate> extraTemplates;
+
+  /// Kürzel der Lehrkräfte, die zuerst stehen (Krankmeldung: Unterricht und
+  /// Vertretungen an den gemeldeten Tagen, absenceRecipients); die übrigen
+  /// hinter „Weitere Lehrkräfte“. Leer = alle wie bisher.
+  final Set<String> focus;
 
   /// Eigenen Namen zu einem Kürzel speichern (LiveSnapshot.nameTeacher, ein
   /// Eintrag: [candidates] ist ein Stand vom Öffnen, die ganze Map daraus
@@ -119,6 +129,48 @@ class _ComposePageState extends State<ComposePage> {
   RecipientCandidate _cand(RecipientCandidate c) => _renamed[c.kuerzel] ?? c;
   String _display(RecipientCandidate c) => _cand(c).display;
 
+  /// „Weitere Lehrkräfte“ aufgeklappt (nur mit [ComposePage.focus]).
+  bool _showOthers = false;
+
+  /// Zugeklappt angetippte „weitere“ Lehrkräfte bleiben sichtbar, auch nach
+  /// dem Abwählen – sonst verschwände die Kachel unter dem Finger
+  /// (Prüfbefund 14.11.26).
+  final _touched = <String>{};
+
+  bool _inFocus(RecipientCandidate c) => widget.focus.contains(c.kuerzel);
+
+  /// Lehrkräfte außerhalb von [ComposePage.focus]; leer ohne Fokus oder
+  /// wenn keine Lehrkraft des Fokus bekannt ist (dann alle wie bisher).
+  List<RecipientCandidate> get _others {
+    if (!widget.candidates.any(_inFocus)) return const [];
+    return [
+      for (final c in widget.candidates)
+        if (!_inFocus(c)) c,
+    ];
+  }
+
+  /// Zugeklappt verborgene Lehrkräfte (gewählte zählen nicht, sie bleiben
+  /// sichtbar).
+  int get _hidden => _showOthers ? 0 : _others.where((c) => !_keep(c)).length;
+
+  bool _keep(RecipientCandidate c) =>
+      _chosen.containsKey(_idOf[c.kuerzel]) || _touched.contains(c.kuerzel);
+
+  List<RecipientCandidate> _visible() {
+    final others = _others;
+    if (others.isEmpty || _showOthers) {
+      // Aufgeklappt: Fokus zuerst, dann die übrigen.
+      return [
+        ...widget.candidates.where(_inFocus),
+        ...widget.candidates.where((c) => !_inFocus(c)),
+      ];
+    }
+    return [
+      for (final c in widget.candidates)
+        if (_inFocus(c) || _keep(c)) c,
+    ];
+  }
+
   /// „Name korrigieren“ (Wunsch 10.11.26): Das Portal schickt manche Namen
   /// mit „�“, und nicht jedes Kürzel verrät den Buchstaben („Lk“ statt
   /// „Lü“, repairWithKuerzel). Der eigene Name gilt danach überall.
@@ -143,9 +195,16 @@ class _ComposePageState extends State<ComposePage> {
           knownLastName: ownLastName(name, c.lastName) ?? c.knownLastName,
           firstName: c.firstName,
           subjects: c.subjects,
+          substituteFor: c.substituteFor,
           searchNames: searchQueries(
             c.lastName,
-            repaired: c.knownLastName ?? c.lastName,
+            // Vertretung nur mit Kürzel (withSubstitutes: Nachname = Kürzel):
+            // nach dem eingetippten Nachnamen suchen (Prüfbefund 14.11.26).
+            repaired:
+                c.knownLastName ??
+                (c.lastName == c.kuerzel
+                    ? name.trim().split(RegExp(r'\s+')).last
+                    : c.lastName),
             own: name,
           ),
         );
@@ -195,6 +254,7 @@ class _ComposePageState extends State<ComposePage> {
 
   Future<void> _toggle(RecipientCandidate given) async {
     final c = _cand(given);
+    _touched.add(c.kuerzel);
     final id = _idOf[c.kuerzel];
     if (id != null && _chosen.containsKey(id)) {
       setState(() {
@@ -359,6 +419,7 @@ class _ComposePageState extends State<ComposePage> {
     'homeworkQuestion' => t.tplHomeworkQuestion,
     'callback' => t.tplCallback,
     'appointment' => t.tplAppointment,
+    'sickNote' => t.tplSickNote,
     _ => m.subject,
   };
 
@@ -411,12 +472,17 @@ class _ComposePageState extends State<ComposePage> {
         ],
         children: [
           _step(k, '1', t.stepToWhom),
+          if (_others.isNotEmpty && !_showOthers)
+            Padding(
+              padding: const EdgeInsets.only(left: Sp.xs, bottom: Sp.s),
+              child: Text(t.focusTeachersHint, style: k.meta),
+            ),
           if (widget.candidates.isEmpty)
             Padding(
               padding: const EdgeInsets.only(left: Sp.xs, bottom: Sp.s),
               child: Text(t.noKnownTeachers, style: k.meta),
             ),
-          for (final c in widget.candidates)
+          for (final c in _visible())
             Padding(
               padding: const EdgeInsets.only(bottom: Sp.s),
               child: _CandidateTile(
@@ -431,6 +497,24 @@ class _ComposePageState extends State<ComposePage> {
                             _renamed.containsKey(c.kuerzel))
                     ? () => _rename(c)
                     : null,
+              ),
+            ),
+          // Wunsch 14.11.26 (Krankmeldung): zuerst nur die Lehrkräfte der
+          // gemeldeten Tage, die übrigen auf Wunsch. Gewählte bleiben
+          // sichtbar, auch wenn sie zu den übrigen gehören.
+          if (_hidden > 0 || _showOthers && _others.isNotEmpty)
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                onPressed: () => setState(() => _showOthers = !_showOthers),
+                icon: Icon(
+                  _showOthers ? Icons.expand_less : Icons.expand_more,
+                  color: k.p.ink,
+                ),
+                label: Text(
+                  _showOthers ? t.fewerTeachers : t.moreTeachers(_hidden),
+                  style: k.link,
+                ),
               ),
             ),
           const SizedBox(height: Sp.s),
@@ -473,7 +557,7 @@ class _ComposePageState extends State<ComposePage> {
             spacing: Sp.s,
             runSpacing: Sp.s,
             children: [
-              for (final m in messageTemplates)
+              for (final m in [...widget.extraTemplates, ...messageTemplates])
                 ActionChip(
                   label: Text(
                     _templateLabel(t, m),
@@ -564,9 +648,15 @@ class _CandidateTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final k = Kit.of(context);
     final tone = k.kid(0);
+    // „Vertretung: Fach“ nur, wo sie nicht regulär unterrichtet
+    // (withSubstitutes, Wunsch 14.11.26).
     final sub = state == _State.notFound
         ? context.t.notReachable
-        : candidate.subjects.join(', ');
+        : [
+            if (candidate.subjects.isNotEmpty) candidate.subjects.join(', '),
+            if (candidate.substituteFor.isNotEmpty)
+              context.t.substituteFor(candidate.substituteFor.join(', ')),
+          ].join(' · ');
     return Material(
       color: selected ? tone.tint : k.p.card,
       borderRadius: BorderRadius.circular(Rad.signal),

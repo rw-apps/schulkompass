@@ -383,7 +383,7 @@ class _PlanPageState extends State<PlanPage> {
 
     final head = <Widget>[
       Padding(
-        // Quer am Telefon oben Sp.m wie die übrigen Seiten (PinnedPage kürzt
+        // Quer (Handy und Tablet) oben Sp.m wie die übrigen Seiten (PinnedPage kürzt
         // nur ihren eigenen Rand, dieser liegt innen; Prüfbefund 14.11.26).
         padding: EdgeInsets.fromLTRB(
           Sp.page + Sp.xs,
@@ -395,35 +395,46 @@ class _PlanPageState extends State<PlanPage> {
           children: [
             // Ab „Groß“ brach der Titel neben dem Umschalter mitten im Wort
             // um („Stundenpla/n“, Bildschirmfoto 16.10.26) – lieber kleiner.
-            // Quer am Telefon die Kind-Pillen direkt hinter der Überschrift
-            // (TitleChips, Wunsch 14.11.26), sonst stehen sie darüber.
+            // Quer (Handy und Tablet) die Kind-Pillen direkt hinter der Überschrift
+            // (TitleChips, Wunsch 14.11.26), sonst stehen sie darüber. Die
+            // Pillen in natürlicher Breite auf EINER Zeile (höchstens 65 %,
+            // sonst verkleinert): Mit zwei lockeren Flexibles bekamen sie
+            // nur die halbe Breite und brachen untereinander um
+            // (Bildschirmfoto Pixel 9a quer, 14.11.26).
             Expanded(
-              child: Row(
-                children: [
-                  Flexible(
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        context.t.navCalendar,
-                        style: k.pageTitle,
-                        maxLines: 1,
+              child: LayoutBuilder(
+                builder: (c, box) => Row(
+                  children: [
+                    Flexible(
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          context.t.navCalendar,
+                          style: k.pageTitle,
+                          maxLines: 1,
+                        ),
                       ),
                     ),
-                  ),
-                  // Nur quer eingehängt: Hoch teilte ein leeres Flexible die
-                  // Breite 1:1 und halbierte den Titel (Prüfbefund 14.11.26).
-                  // Flexible: Die Pillen brechen notfalls um, statt über den
-                  // Umschalter zu laufen.
-                  // Builder: Dieser Kopf entsteht im Zustand der Seite, also
-                  // ÜBER PinnedKidChips; erst der Builder liegt darunter und
-                  // sieht HeaderChips.
-                  Builder(
-                    builder: (c) => TitleChips.shows(c)
-                        ? const Flexible(child: TitleChips())
-                        : const SizedBox.shrink(),
-                  ),
-                ],
+                    // Builder: Dieser Kopf entsteht im Zustand der Seite, also
+                    // ÜBER PinnedKidChips; erst der Builder liegt darunter und
+                    // sieht HeaderChips.
+                    Builder(
+                      builder: (c2) => TitleChips.shows(c2)
+                          ? ConstrainedBox(
+                              constraints: BoxConstraints(
+                                maxWidth: box.maxWidth * 0.65,
+                              ),
+                              child: const FittedBox(
+                                fit: BoxFit.scaleDown,
+                                alignment: Alignment.centerLeft,
+                                child: TitleChips(),
+                              ),
+                            )
+                          : const SizedBox.shrink(),
+                    ),
+                  ],
+                ),
               ),
             ),
             const SizedBox(width: Sp.m),

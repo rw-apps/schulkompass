@@ -1,8 +1,11 @@
 import 'package:liblanis/liblanis.dart';
 
 import '../../name_repair.dart';
+import '../../data/portal_rules.dart';
+import '../today/today_from_lanis.dart'
+    show mixedClassPlan, plainCell, substitutionForClass;
 import '../courses/courses_model.dart' show courseTitle;
-import '../plan/plan_model.dart' show portalNameToDisplay;
+import '../plan/plan_model.dart';
 
 /// Eine Lehrkraft aus dem Unterricht des Kindes als mögliche Empfängerin.
 class RecipientCandidate {
@@ -14,6 +17,7 @@ class RecipientCandidate {
     this.firstName,
     this.knownLastName,
     this.searchNames = const [],
+    this.substituteFor = const [],
   });
 
   final String kuerzel;
@@ -34,6 +38,159 @@ class RecipientCandidate {
 
   /// „Mathematik, Training“ – woher das Kind sie kennt.
   final List<String> subjects;
+
+  /// Fächer, in denen sie an den gemeldeten Tagen vertritt, ohne dort
+  /// reguläre Lehrkraft zu sein (withSubstitutes); gezeigt als
+  /// „Vertretung: …“.
+  final List<String> substituteFor;
+}
+
+/// Vertretung an einem gemeldeten Tag (substitutesOnDays).
+typedef SubstituteTeacher = ({
+  String kuerzel,
+  String? name,
+  String subject,
+  bool regular,
+});
+
+/// Vertretungslehrkräfte an [dates] laut Vertretungsplan [days].
+///
+/// Ursache (Wunsch 14.11.26): Nach der Krankmeldung sollen auch Vertretungen
+/// oben stehen, nicht unter „Weitere“. [regular]: Die Lehrkraft unterrichtet
+/// das Fach laut Plan ohnehin (Raumwechsel, Doppelbesetzung) – dann ohne
+/// Kennzeichnung (Wunsch 14.11.26: „nur wenn nicht auch reguläre Lehrkraft
+/// für das Fach“). Grenzen: Ausfall- und Freisetzungszeilen zählen nicht
+/// (PortalRules.cancelKind/releaseKind: dort nennt die Vertreterspalte
+/// niemanden, der unterrichtet); bei einem Plan mehrerer Klassen nur die
+/// eigene (substitutionForClass, wie Heute).
+List<SubstituteTeacher> substitutesOnDays(
+  KidPlan plan,
+  List<SubstitutionDay> days,
+  Set<DateTime> dates, {
+  String className = '',
+}) {
+  final mixed = mixedClassPlan(days, className);
+  final subjectOf = <String, String>{};
+  final regular = <String, Set<String>>{};
+  for (final d in plan.days) {
+    for (final c in d) {
+      for (final o in c.options) {
+        final short = o.short.toUpperCase();
+        subjectOf[short] = o.subject;
+        (regular[short] ??= {}).addAll(KidPlan.kuerzelOf(o.teacher));
+      }
+    }
+  }
+  final out = <SubstituteTeacher>[];
+  final seen = <String>{};
+  for (final day in days) {
+    final dt = day.dateTime;
+    if (!dates.contains(DateTime(dt.year, dt.month, dt.day))) continue;
+    for (final s in day.substitutions) {
+      if (mixed && !substitutionForClass(s.klasse, className)) continue;
+      // Zellen wie „Heute“ bereinigen (plainCell: HTML, „---“), Ausfall auch
+      // über den Hinweis erkennen (Prüfbefund 14.11.26).
+      final art = (plainCell(s.art) ?? '').toLowerCase();
+      final hint = (plainCell(s.hinweis) ?? '').toLowerCase();
+      if (PortalRules.cancelKind.hasMatch(art) ||
+          PortalRules.releaseKind.hasMatch(art) ||
+          (hint.isNotEmpty && PortalRules.cancelHint.hasMatch(hint))) {
+        continue;
+      }
+      final fach = plainCell(s.fach) ?? plainCell(s.fach_alt) ?? '';
+      final short = fach.toUpperCase();
+      // Nur Fächer aus dem Plan des Kindes: Sonst kämen Vertretungen anderer
+      // Kurse derselben Klasse oder (Oberstufe, substitutionForClass gilt
+      // für „Q1“ immer) des ganzen Jahrgangs nach oben (Prüfbefund 14.11.26).
+      // Grenze: Kürzt der Vertretungsplan ein Fach anders als der
+      // Stundenplan („MA“ statt „M“), fällt die Vertretung hier heraus.
+      final subject = subjectOf[short];
+      if (subject == null) continue;
+      final codes = KidPlan.kuerzelOf(
+        plainCell(s.Vertreterkuerzel),
+      ).where((k) => RegExp(r'\p{L}', unicode: true).hasMatch(k)).toList();
+      // Name nur, wenn genau eine Lehrkraft vertritt – bei „AB, CD“ wüsste
+      // man nicht, wem er gehört.
+      final name = codes.length == 1 ? plainCell(s.vertreter) : null;
+      for (final kz in codes) {
+        if (!seen.add('$kz|$subject')) continue;
+        out.add((
+          kuerzel: kz,
+          name: name,
+          subject: subject,
+          regular: regular[short]?.contains(kz) ?? false,
+        ));
+      }
+    }
+  }
+  return out;
+}
+
+/// [base] um Vertretungen ergänzt: Bekannte Lehrkräfte bekommen
+/// „Vertretung: Fach“ (nur wo sie nicht regulär unterrichten), unbekannte
+/// kommen neu dazu – Name aus der Vertreterspalte, eigenem Namen oder dem
+/// Kürzel. Grenze: Steht im Plan nur das Kürzel, sucht „Neue Nachricht“
+/// im Portal danach; findet es niemanden, bleibt die freie Suche.
+List<RecipientCandidate> withSubstitutes(
+  List<RecipientCandidate> base,
+  List<SubstituteTeacher> subs, {
+  Map<String, String> ownNames = const {},
+}) {
+  final out = [...base];
+  for (final s in subs) {
+    final i = out.indexWhere((c) => c.kuerzel == s.kuerzel);
+    if (s.regular) continue;
+    if (i >= 0) {
+      final c = out[i];
+      if (c.substituteFor.contains(s.subject)) continue;
+      out[i] = RecipientCandidate(
+        kuerzel: c.kuerzel,
+        display: c.display,
+        lastName: c.lastName,
+        subjects: c.subjects,
+        firstName: c.firstName,
+        knownLastName: c.knownLastName,
+        searchNames: c.searchNames,
+        substituteFor: [...c.substituteFor, s.subject],
+      );
+      continue;
+    }
+    final own = ownNames[s.kuerzel]?.trim() ?? '';
+    final raw = s.name ?? '';
+    final portal = raw.contains(',');
+    final words = raw.split(RegExp(r'\s+')).where((w) => w.isNotEmpty);
+    // Ohne Komma: letztes Wort Nachname, davor Vorname – ohne Vorname nähme
+    // isSureReceiver einen einzelnen Nachnamen-Treffer ohne Rückfrage
+    // (Prüfbefund 14.11.26).
+    final last = portal
+        ? raw.split(',').first.trim()
+        : (words.length > 1 ? words.last : raw.trim());
+    final first = portal
+        ? raw.split(',').skip(1).join(',').trim()
+        : (words.length > 1 ? words.take(words.length - 1).join(' ') : null);
+    // Nur Kürzel bekannt, aber ein eigener Name eingetragen: nach dessen
+    // Nachnamen suchen statt nach dem Kürzel.
+    final ownLast = own.isEmpty ? '' : own.split(RegExp(r'\s+')).last;
+    final lastName = last.isNotEmpty
+        ? last
+        : (ownLast.isNotEmpty ? ownLast : s.kuerzel);
+    out.add(
+      RecipientCandidate(
+        kuerzel: s.kuerzel,
+        display: own.isNotEmpty
+            ? own
+            : (raw.isEmpty
+                  ? s.kuerzel
+                  : (portal ? portalNameToDisplay(raw) : raw)),
+        lastName: lastName,
+        firstName: (first ?? '').isEmpty ? null : first,
+        subjects: const [],
+        searchNames: searchQueries(lastName, own: own),
+        substituteFor: [s.subject],
+      ),
+    );
+  }
+  return out;
 }
 
 /// Lehrkräfte aus „Mein Unterricht“, je Kürzel einmal, mit ihren Fächern.
@@ -263,4 +420,43 @@ bool isSureReceiver(ReceiverEntry hit, RecipientCandidate c) {
   final first = c.firstName?.trim() ?? '';
   if (first.isEmpty) return true;
   return _firstOrCodeMatches(hit.name, c, tolerant: false);
+}
+
+/// Kürzel der Lehrkräfte mit Unterricht an [days] laut Stundenplan [plan]
+/// (Montag–Freitag, Gruppenwahl [choice] wie im Kalender, resolveCell).
+///
+/// Ursache (Wunsch 14.11.26): Nach der Krankmeldung bot „Neue Nachricht“
+/// alle Lehrkräfte an; gemeint sind fast immer die der versäumten Stunden.
+/// Grenzen: regulärer Plan ohne Vertretungen; ungeklärte Parallelgruppen
+/// (ResolvedOpen) zählen mit allen Lehrkräften – lieber eine zu viel oben
+/// als die richtige versteckt. Mehrere Kürzel einer Stunde („AB, CD“,
+/// plan_from_lanis) trennt KidPlan.kuerzelOf. Ferien und Feiertage im
+/// Zeitraum zählen mit (der Plan kennt sie nicht).
+Set<String> teachersOnDays(
+  KidPlan plan,
+  GroupChoice choice,
+  Iterable<DateTime> days,
+) {
+  final out = <String>{};
+  void add(PlanLesson l) {
+    // Dieselbe Trennung wie die Prüfung „reguläre Lehrkraft“
+    // (KidPlan.kuerzelOf in substitutesOnDays).
+    out.addAll(KidPlan.kuerzelOf(l.teacher));
+  }
+
+  for (final d in days) {
+    final wd = d.weekday - 1;
+    if (wd < 0 || wd >= plan.days.length) continue;
+    for (final cell in plan.days[wd]) {
+      switch (resolveCell(cell, choice)) {
+        case ResolvedLesson(:final lesson):
+          add(lesson);
+        case ResolvedOpen(:final options):
+          options.forEach(add);
+        case ResolvedNone():
+          break;
+      }
+    }
+  }
+  return out;
 }

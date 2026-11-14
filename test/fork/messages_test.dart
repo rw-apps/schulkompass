@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:lanis/fork/l10n/l10n.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lanis/fork/data/message_templates.dart';
 import 'package:lanis/fork/ui/kit.dart';
 import 'package:lanis/fork/ui/messages/compose_model.dart';
+import 'package:lanis/fork/ui/plan/plan_model.dart';
 import 'package:lanis/fork/ui/messages/compose_page.dart';
 import 'package:lanis/fork/ui/messages/messages_page.dart';
 import 'package:lanis/fork/ui/preview/demo_courses.dart';
@@ -258,6 +260,210 @@ void main() {
     await t.tap(find.text('Speichern'));
     await t.pumpAndSettle();
     expect(find.text('Senden an Frau Lüber'), findsOneWidget);
+  });
+
+  // Wunsch 14.11.26: Krankmeldung → zuerst Lehrkräfte der gemeldeten Tage.
+  test('teachersOnDays: Unterricht an den Tagen, Gruppen und Doppelkürzel', () {
+    PlanLesson l(String s, String kz) =>
+        PlanLesson(subject: s, short: s, teacher: kz);
+    final plan = KidPlan(
+      firstName: 'Kind',
+      colorIndex: 0,
+      slots: const [
+        PlanSlot(label: '1.', start: '08:00', end: '08:45'),
+        PlanSlot(label: '2.', start: '08:45', end: '09:30'),
+      ],
+      days: [
+        [
+          PlanCell([l('M', 'AB')]),
+          PlanCell([l('D', 'CD, EF')]),
+        ],
+        [
+          PlanCell([l('REv', 'GH'), l('ETH', 'IJ')]),
+          const PlanCell([]),
+        ],
+        [
+          PlanCell([l('E', 'KL')]),
+          const PlanCell([]),
+        ],
+      ],
+    );
+    final mon = DateTime(2026, 11, 16);
+    expect(teachersOnDays(plan, const {}, [mon]), {'AB', 'CD', 'EF'});
+    // Di: Parallelgruppen ohne Wahl zählen beide, mit Wahl nur die eigene.
+    final tue = DateTime(2026, 11, 17);
+    expect(teachersOnDays(plan, const {}, [tue]), {'GH', 'IJ'});
+    expect(teachersOnDays(plan, const {'REv': 'GH'}, [tue]), {'GH'});
+    // Wochenende zählt nicht.
+    expect(teachersOnDays(plan, const {}, [DateTime(2026, 11, 21)]), isEmpty);
+  });
+
+  test('Vertretungen: oben, gekennzeichnet nur ohne reguläres Fach', () {
+    PlanLesson l(String s, String kz) => PlanLesson(
+      subject: s == 'M' ? 'Mathe' : 'Deutsch',
+      short: s,
+      teacher: kz,
+    );
+    final plan = KidPlan(
+      firstName: 'Kind',
+      colorIndex: 0,
+      slots: const [PlanSlot(label: '1.', start: '08:00', end: '08:45')],
+      days: [
+        [
+          PlanCell([l('M', 'AA')]),
+        ],
+        [
+          PlanCell([l('D', 'BB')]),
+        ],
+      ],
+    );
+    Substitution sub(String fach, String kz, {String? art, String? name}) =>
+        Substitution(
+          tag: '',
+          tag_en: '',
+          stunde: '1',
+          fach: fach,
+          Vertreterkuerzel: kz,
+          vertreter: name,
+          art: art,
+        );
+    final days = [
+      SubstitutionDay(
+        parsedDate: '16.11.2026',
+        substitutions: [
+          sub('M', 'BB', art: 'Vertretung'), // BB regulär in D, nicht in M
+          sub('D', 'ZZ', art: 'Vertretung', name: 'Zorn, Zoe'), // neu
+          sub('M', 'AA', art: 'Raumvertretung'), // regulär in M
+          sub('D', 'YY', art: 'Entfall'), // Ausfall zählt nicht
+          sub('L', 'QQ', art: 'Vertretung'), // Fach nicht im Plan
+          sub('M', '---', art: 'Vertretung'), // leere Zelle
+          sub('D', 'NN', art: 'Vertretung', name: 'Nina Nord'), // ohne Komma
+        ],
+      ),
+      SubstitutionDay(
+        parsedDate: '20.11.2026',
+        substitutions: [sub('M', 'XX', art: 'Vertretung')],
+      ),
+    ];
+    final subs = substitutesOnDays(plan, days, {DateTime(2026, 11, 16)});
+    expect(subs.map((s) => '${s.kuerzel}:${s.subject}:${s.regular}'), [
+      'BB:Mathe:false',
+      'ZZ:Deutsch:false',
+      'AA:Mathe:true',
+      'NN:Deutsch:false',
+    ]);
+    final base = candidatesFrom([
+      _l('Mathe', [LessonTeacher(teacher: 'Alt, Anna', teacherKuerzel: 'AA')]),
+      _l('Deutsch', [
+        LessonTeacher(teacher: 'Berg, Ben', teacherKuerzel: 'BB'),
+      ]),
+    ]);
+    final all = withSubstitutes(base, subs);
+    String? labelOf(String kz) =>
+        all.firstWhere((c) => c.kuerzel == kz).substituteFor.join(',');
+    expect(labelOf('AA'), ''); // regulär: keine Kennzeichnung
+    expect(labelOf('BB'), 'Mathe');
+    expect(labelOf('ZZ'), 'Deutsch');
+    final z = all.firstWhere((c) => c.kuerzel == 'ZZ');
+    expect(z.display, 'Zoe Zorn');
+    expect(z.searchNames.first, 'Zorn');
+    final nn = all.firstWhere((c) => c.kuerzel == 'NN');
+    expect((nn.lastName, nn.firstName), ('Nord', 'Nina'));
+  });
+
+  testWidgets('Vorlage Krankmeldung: deutsch, mit Kind und Tagen', (t) async {
+    final one = sickNoteTemplate(
+      child: 'Lena',
+      periods: [(from: DateTime(2026, 11, 16), to: DateTime(2026, 11, 16))],
+    );
+    expect(one.subject, 'Krankmeldung Lena – am Mo 16.11.');
+    final more = sickNoteTemplate(
+      child: 'Lena',
+      periods: [(from: DateTime(2026, 11, 16), to: DateTime(2026, 11, 18))],
+    );
+    expect(more.text, contains('Lena ist vom Mo 16.11. bis Mi 18.11. krank'));
+    // Lücke bleibt getrennt, Wochenende verbindet.
+    final gap = sickNoteTemplate(
+      child: 'Lena',
+      periods: [
+        (from: DateTime(2026, 11, 16), to: DateTime(2026, 11, 16)),
+        (from: DateTime(2026, 11, 19), to: DateTime(2026, 11, 19)),
+      ],
+    );
+    expect(gap.subject, 'Krankmeldung Lena – am Mo 16.11. und Do 19.11.');
+    final weekend = sickNoteTemplate(
+      child: 'Lena',
+      periods: [
+        (from: DateTime(2026, 11, 20), to: DateTime(2026, 11, 20)),
+        (from: DateTime(2026, 11, 23), to: DateTime(2026, 11, 23)),
+      ],
+    );
+    expect(weekend.subject, 'Krankmeldung Lena – vom Fr 20.11. bis Mo 23.11.');
+    await pump(
+      t,
+      ComposePage(
+        candidates: const [],
+        backend: _FakeBackend(),
+        extraTemplates: [one],
+      ),
+    );
+    await t.tap(find.text('Krankmeldung'));
+    await t.pumpAndSettle();
+    expect(find.text('Krankmeldung Lena – am Mo 16.11.'), findsOneWidget);
+  });
+
+  testWidgets('Fokus: erst Lehrkräfte der Tage, weitere aufklappbar', (
+    t,
+  ) async {
+    await pump(
+      t,
+      ComposePage(
+        candidates: candidatesFrom([
+          _l('Mathematik', [
+            LessonTeacher(teacher: 'Alt, Anna', teacherKuerzel: 'AA'),
+          ]),
+          _l('Musik', [
+            LessonTeacher(teacher: 'Berg, Ben', teacherKuerzel: 'BB'),
+          ]),
+          _l('Kunst', [
+            LessonTeacher(teacher: 'Cron, Cara', teacherKuerzel: 'CC'),
+          ]),
+        ]),
+        backend: _FakeBackend(),
+        focus: const {'BB'},
+      ),
+    );
+    expect(find.text('Ben Berg'), findsOneWidget);
+    expect(find.text('Anna Alt'), findsNothing);
+    await t.tap(find.text('Weitere Lehrkräfte (2)'));
+    await t.pumpAndSettle();
+    expect(find.text('Anna Alt'), findsOneWidget);
+    expect(find.text('Cara Cron'), findsOneWidget);
+    // Fokus zuerst.
+    expect(
+      t.getTopLeft(find.text('Ben Berg')).dy,
+      lessThan(t.getTopLeft(find.text('Anna Alt')).dy),
+    );
+    await t.tap(find.text('Weniger anzeigen'));
+    await t.pumpAndSettle();
+    expect(find.text('Anna Alt'), findsNothing);
+  });
+
+  testWidgets('Fokus ohne bekannte Lehrkraft: alle wie bisher', (t) async {
+    await pump(
+      t,
+      ComposePage(
+        candidates: candidatesFrom([
+          _l('Mathematik', [
+            LessonTeacher(teacher: 'Alt, Anna', teacherKuerzel: 'AA'),
+          ]),
+        ]),
+        backend: _FakeBackend(),
+        focus: const {'ZZ'},
+      ),
+    );
+    expect(find.text('Anna Alt'), findsOneWidget);
+    expect(find.textContaining('Weitere Lehrkräfte'), findsNothing);
   });
 
   testWidgets('Nur über Platzhalter passender Treffer wird nicht selbst '

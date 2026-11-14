@@ -1,5 +1,12 @@
 ## Schulkompass (rw-apps, bis 9472 „Schulportal“) – Änderungen gegenüber Lanis-Mobile
 
+**4.1.0+9511** – Querformat auch auf dem Tablet, Krankmeldung mit passenden Lehrkräften
+
+- **Querformat überall gleich:** Handy und Tablet folgen quer derselben Regel – Leiste links (auf dem Tablet mittig), Kinder neben der Überschrift. Im Kalender stehen die Kinder auf einer Zeile neben „Kalender“, in „Heute“ steht „Stand“ klein unter dem Datum.
+- **Krankmeldung → „An die Schule schreiben“:** Oben stehen nur die Lehrkräfte mit Unterricht an den gemeldeten Tagen, dazu Vertretungen aus dem Vertretungsplan. „Vertretung: Fach“ steht nur dabei, wo jemand das Fach sonst nicht unterrichtet. Alle übrigen unter „Weitere Lehrkräfte“.
+- **Vorlage „Krankmeldung“:** Füllt Betreff und Text mit Kind und Tagen der laufenden Meldung, immer auf Deutsch.
+- **Große Schrift:** „Alle Termine“ läuft in der schmalen Terminspalte nicht mehr über.
+
 **4.1.0+9510** – Querformat am Handy
 
 - **Leiste links:** Im Querformat steht die Navigationsleiste auf dem Handy als schmale Pille am linken Rand statt unten. So bleibt die ganze Höhe für den Inhalt. Im Hochformat und auf dem Tablet bleibt sie unten.

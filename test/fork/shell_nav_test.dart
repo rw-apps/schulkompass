@@ -57,17 +57,18 @@ void main() {
     expect(t.takeException(), isNull);
   });
 
-  // Entwurf 14.11.26: Telefon quer → Leiste links, Tablet quer → unten.
+  // Entwurf 14.11.26: quer → Leiste links (Telefon und Tablet), hoch unten.
   for (final (size, vertical) in [
     (const Size(2424, 1080), true),
-    (const Size(2560, 1600), false),
+    (const Size(2560, 1600), true),
+    (const Size(1600, 2560), false),
   ]) {
     for (final scale in [1.0, 1.4 * 1.3]) {
       testWidgets('Leiste quer ${size.width}x${size.height} Schrift $scale', (
         t,
       ) async {
         t.view.physicalSize = size;
-        t.view.devicePixelRatio = size.width > 2500 ? 2 : 2.625;
+        t.view.devicePixelRatio = size.shortestSide >= 1600 ? 2 : 2.625;
         t.view.padding = const FakeViewPadding(left: 120, bottom: 63);
         t.platformDispatcher.textScaleFactorTestValue = scale;
         addTearDown(t.view.reset);

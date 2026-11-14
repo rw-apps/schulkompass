@@ -8,8 +8,16 @@ import 'package:lanis/widgets/combined_applet_builder.dart';
 import '../demo/demo_mode.dart' show demoActive;
 import '../ui/live/absence_live.dart' show absenceDetail;
 import '../ui/live/live_data.dart'
-    show LiveData, LiveSnapshot, liveClassName, shortFirstName;
-import '../ui/messages/compose_model.dart' show candidatesFrom;
+    show LiveData, LiveSnapshot, liveClassName, shortFirstName, livePlanOf;
+import '../ui/messages/compose_model.dart'
+    show
+        RecipientCandidate,
+        candidatesFrom,
+        substitutesOnDays,
+        teachersOnDays,
+        withSubstitutes;
+import '../data/message_templates.dart' show MessageTemplate, sickNoteTemplate;
+import '../ui/plan/plan_model.dart' show effectiveChoice;
 import '../ui/messages/compose_page.dart'
     show ComposeBackend, ComposePage, portalBackend;
 import '../ui/nav.dart' show pushFullScreen;
@@ -153,7 +161,7 @@ class _AbsencePageState extends ConsumerState<AbsencePage> {
                 ),
           ui: _ui,
           refresh: refresh,
-          onChange: () => _change(live, backend),
+          onChange: () => _change(live, backend, form.entries),
           onSubmit: demoActive
               ? null
               : (fields) {
@@ -178,7 +186,11 @@ class _AbsencePageState extends ConsumerState<AbsencePage> {
     );
   }
 
-  Future<void> _change(LiveSnapshot? live, ComposeBackend backend) async {
+  Future<void> _change(
+    LiveSnapshot? live,
+    ComposeBackend backend,
+    List<AbsenceEntry> entries,
+  ) async {
     final t = context.t;
     final canWrite = live != null && live.offers('nachrichten.php');
     await showModalBottomSheet<void>(
@@ -205,15 +217,15 @@ class _AbsencePageState extends ConsumerState<AbsencePage> {
                   onPressed: () {
                     Navigator.pop(c);
                     if (!mounted) return;
+                    final r = absenceRecipients(live, entries);
                     pushFullScreen<bool>(
                       context,
                       (_) => ComposePage(
-                        candidates: candidatesFrom(
-                          live.lessons.content ?? const [],
-                          ownNames: live.ownNames,
-                        ),
+                        candidates: r.candidates,
                         onNameTeacher: live.nameTeacher,
                         backend: backend,
+                        focus: r.focus,
+                        extraTemplates: r.templates,
                       ),
                     );
                   },
@@ -1176,4 +1188,99 @@ Map<DateTime, String> absenceFreeDays(LiveSnapshot s, {DateTime? now}) =>
 DateTime? _inRange(DateTime? day, DateRange? range) {
   if (day == null || range == null) return day;
   return range.contains(day) ? day : null;
+}
+
+/// Empfänger für „An die Schule schreiben“ nach der Krankmeldung:
+/// [candidates] (Unterricht plus Vertretungen) und [focus] (Lehrkräfte der
+/// gemeldeten Tage, ComposePage.focus).
+///
+/// Tage: Meldungen ab heute (absencePeriodDays), höchstens 14 Tage je
+/// Meldung. Unterricht laut Stundenplan (teachersOnDays), Vertretungen laut
+/// Vertretungsplan (substitutesOnDays, Wunsch 14.11.26). Grenze: ohne
+/// Stundenplan oder ohne laufende Meldung kein Fokus – dann bietet
+/// „Neue Nachricht“ alle Lehrkräfte an wie bisher.
+({
+  List<RecipientCandidate> candidates,
+  Set<String> focus,
+  List<MessageTemplate> templates,
+})
+absenceRecipients(
+  LiveSnapshot live,
+  List<AbsenceEntry> entries, {
+  DateTime? now,
+}) {
+  final base = candidatesFrom(
+    live.lessons.content ?? const [],
+    ownNames: live.ownNames,
+  );
+  final n = now ?? DateTime.now();
+  final today = DateTime(n.year, n.month, n.day);
+  // Laufende Meldungen (ab heute, nicht „verspätet“ – eine Verspätung
+  // versäumt keinen Tag).
+  final current = [
+    for (final e in entries)
+      if (absencePeriodDays(e.period, now: n) case final p?)
+        if (!p.to.isBefore(today) && !absenceIsLate(e)) (e: e, p: p),
+  ];
+  // Nur das Kind dieses Kontos: Plan, Unterricht und Klasse gehören zu ihm
+  // (livePlanOf). Ursache (Prüfbefund 14.11.26): Mit Geschwistern im
+  // Elternkonto mischten sich sonst Tage und Vorlage zweier Kinder. Ohne
+  // bekannten Vornamen gelten alle Meldungen (absenceIsFor braucht ihn).
+  final first = live.firstName.trim();
+  final mine = first.isEmpty
+      ? current
+      : [
+          for (final c in current)
+            if (absenceIsFor(c.e, first)) c,
+        ];
+  // Vorlage „Krankmeldung“ über alle laufenden Meldungen desselben Kindes
+  // (anschließende zusammengefasst: Mo und „Auch Di melden“ = Mo–Di; Lücken
+  // getrennt, sickNoteTemplate).
+  // Ist nur ein anderes Kind gemeldet, für dieses – dann ohne Fokus.
+  final note = mine.isNotEmpty
+      ? mine
+      : [
+          for (final c in current)
+            if (absenceFirstName(c.e) == absenceFirstName(current.first.e)) c,
+        ];
+  final templates = <MessageTemplate>[
+    if (note.isNotEmpty)
+      sickNoteTemplate(
+        child: absenceFirstName(note.first.e),
+        periods: [for (final c in note) c.p],
+      ),
+  ];
+  final plan = livePlanOf(live);
+  if (plan == null) {
+    return (candidates: base, focus: const {}, templates: templates);
+  }
+  final days = <DateTime>{};
+  for (final c in mine) {
+    var d = c.p.from.isBefore(today) ? today : c.p.from;
+    for (var i = 0; i < 14 && !d.isAfter(c.p.to); i++) {
+      days.add(d);
+      d = DateTime(d.year, d.month, d.day + 1);
+    }
+  }
+  if (days.isEmpty) {
+    return (candidates: base, focus: const {}, templates: templates);
+  }
+  final subs = substitutesOnDays(
+    plan.plan,
+    live.substitutionDaysFromToday(n),
+    days,
+    className: liveClassName(live),
+  );
+  return (
+    candidates: withSubstitutes(base, subs, ownNames: live.ownNames),
+    focus: {
+      ...teachersOnDays(
+        plan.plan,
+        effectiveChoice(plan.auto, live.userChoice),
+        days,
+      ),
+      for (final s in subs) s.kuerzel,
+    },
+    templates: templates,
+  );
 }

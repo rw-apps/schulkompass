@@ -44,7 +44,7 @@ class PinnedPage extends StatefulWidget {
   /// Kopf von oben nach unten (Überschrift zuerst).
   final List<Widget> header;
 
-  /// Zurück-Pfeil: hoch eine eigene Zeile über dem Kopf, quer am Telefon
+  /// Zurück-Pfeil: hoch eine eigene Zeile über dem Kopf, quer (Handy und Tablet)
   /// links neben der ersten Kopfzeile ([compactHeader]).
   final Widget? leading;
 
@@ -65,7 +65,7 @@ class PinnedPage extends StatefulWidget {
 
   /// Rand um den Kopf. Die Statusleiste kommt oben hinzu (nicht unter den
   /// Kind-Pillen, PinnedKidChips entfernt sie dort schon – außer quer, wenn
-  /// die Pillen in der Kopfzeile stehen). Quer am Telefon oben höchstens
+  /// die Pillen in der Kopfzeile stehen). Quer (Handy und Tablet) oben höchstens
   /// [Sp.m] ([compactHeader]).
   final EdgeInsets headerPadding;
 
@@ -115,7 +115,7 @@ class _PinnedPageState extends State<PinnedPage> {
     if (refresh != null) {
       list = RefreshIndicator(onRefresh: refresh, child: list);
     }
-    // Quer am Telefon: Zurück und Pillen in die erste Kopfzeile, weniger
+    // Quer (Handy und Tablet): Zurück und Pillen in die erste Kopfzeile, weniger
     // Abstand oben (Rückmeldung 14.11.26, compactHeader).
     final compact = compactHeader(context);
     final slot = HeaderChips.of(context);
@@ -134,14 +134,21 @@ class _PinnedPageState extends State<PinnedPage> {
             Expanded(child: header.first),
             // Pillen in natürlicher Breite, höchstens 45 % – sonst bekäme die
             // Überschrift neben einem Flexible fest nur die halbe Breite
-            // (Prüfbefund 14.11.26); darüber brechen sie um (Wrap).
+            // (Prüfbefund 14.11.26).
             if (chips) ...[
               const SizedBox(width: Sp.m),
+              // FittedBox: auf EINER Zeile bleiben und notfalls verkleinern
+              // statt untereinander umzubrechen (Bildschirmfoto Kalender
+              // quer, 14.11.26).
               ConstrainedBox(
                 constraints: BoxConstraints(
                   maxWidth: MediaQuery.sizeOf(context).width * 0.45,
                 ),
-                child: const ClaimedChips(),
+                child: const FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerRight,
+                  child: ClaimedChips(),
+                ),
               ),
             ],
           ],
@@ -190,7 +197,7 @@ class _PinnedPageState extends State<PinnedPage> {
 }
 
 /// Pillen für eine Kopfzeile, die sie selbst platziert
-/// (PinnedPage.placesChips): quer am Telefon die Kind-Pillen aus
+/// (PinnedPage.placesChips): quer (Handy und Tablet) die Kind-Pillen aus
 /// [HeaderChips], sonst nichts.
 class TitleChips extends StatelessWidget {
   const TitleChips({super.key});

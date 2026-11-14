@@ -2267,5 +2267,12 @@
     }
   },
   "fixTeacherName": "Name korrigieren",
-  "fixTeacherNameHint": "Das Portal schickt „�“ statt eines Buchstabens. Tipp den richtigen ein."
+  "fixTeacherNameHint": "Das Portal schickt „�“ statt eines Buchstabens. Tipp den richtigen ein.",
+  "moreTeachers": "Weitere Lehrkräfte ({n})",
+  "fewerTeachers": "Weniger anzeigen",
+  "focusTeachersHint": "Lehrkräfte mit Unterricht an den gemeldeten Tagen",
+  "@moreTeachers": {"placeholders": {"n": {"type": "int"}}},
+  "substituteFor": "Vertretung: {subjects}",
+  "@substituteFor": {"placeholders": {"subjects": {"type": "String"}}},
+  "tplSickNote": "Krankmeldung"
 }

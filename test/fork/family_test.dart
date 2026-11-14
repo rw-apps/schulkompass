@@ -85,6 +85,9 @@ void main() {
         ),
       ),
     );
+    // Testfläche 800×600 ist quer: Die Pillenzeile erscheint erst nach dem
+    // ersten Bild, wenn keine Kopfzeile sie übernimmt (PinnedKidChips).
+    await t.pump();
     expect(find.text('Seite von Anna 1'), findsOneWidget);
     expect(find.text('Ben'), findsOneWidget);
     await t.tap(find.text('Ben'));
@@ -242,6 +245,7 @@ void main() {
         ),
       ),
     );
+    await t.pump(); // quer: Pillenzeile nach dem ersten Bild (s. oben)
     expect(find.text('Heute: alle'), findsOneWidget);
     expect(find.text('Unterricht: alle'), findsOneWidget);
     await t.tap(find.text('Ben').first);

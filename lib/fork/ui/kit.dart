@@ -143,15 +143,15 @@ abstract final class Sz {
   static const double navMargin = 16;
   static const double navBottom = 24;
 
-  /// Leiste links im Querformat am Telefon (Entwurf 14.11.26): Breite der
+  /// Leiste links im Querformat (Entwurf 14.11.26): Breite der
   /// Pille. Ursache: Unten fraß die Leiste fast ein Drittel der Höhe
   /// (Pixel 9a quer: rund 120 von 411 dp).
   static const double navRailWidth = 76;
 
-  /// Bis zu dieser kürzeren Seite gilt ein Gerät als Telefon: quer bekommt
-  /// es die Leiste links (PreviewShell). Tablets behalten die untere Leiste,
-  /// dort reicht die Höhe.
-  static const double phoneShortestSide = 600;
+  /// Höchsthöhe der Leiste links: Auf dem Tablet quer stünden die fünf
+  /// Ziele sonst über die ganze Höhe verteilt weit auseinander (wie unten
+  /// Sz.navMaxWidth); am Telefon quer ist weniger Platz, dann füllt sie ihn.
+  static const double navRailMaxHeight = 440;
 
   // ---- Stundenplan ------------------------------------------------------
   /// Mindesthöhe einer Stunde im Wochenraster. Sonst teilt das Raster die
@@ -614,4 +614,14 @@ class Kit {
   List<BoxShadow> get navShadow => [
     BoxShadow(color: p.shadow, blurRadius: 24, offset: const Offset(0, 8)),
   ];
+}
+
+/// Querformat – EINE Regel für Telefon und Tablet (Wunsch 14.11.26:
+/// „Änderungen möglichst nur an einer Stelle“). Daran hängen die Leiste
+/// links (PreviewShell) und der verdichtete Kopf (compactHeader in
+/// kid_chips.dart). Liest nur die Größe (sizeOf), damit die Tastatur keine
+/// Neuaufbauten auslöst.
+bool isLandscape(BuildContext context) {
+  final size = MediaQuery.sizeOf(context);
+  return size.width > size.height;
 }

@@ -457,12 +457,11 @@ class _PreviewShellState extends State<PreviewShell> {
     final theme = Theme.of(context);
     final mq = MediaQuery.of(context);
     final system = mq.textScaler.scale(14) / 14;
-    // Telefon quer: Leiste links statt unten (Entwurf 14.11.26). Ursache:
-    // Unten nahm sie mit Rand rund 120 von 411 dp Höhe (Pixel 9a). Tablets
-    // (kürzere Seite ab Sz.phoneShortestSide) behalten die untere Leiste.
-    final rail =
-        mq.orientation == Orientation.landscape &&
-        mq.size.shortestSide < Sz.phoneShortestSide;
+    // Quer: Leiste links statt unten (Entwurf 14.11.26). Ursache: Unten
+    // nahm sie mit Rand rund 120 von 411 dp Höhe (Pixel 9a). Auch auf dem
+    // Tablet quer (Wunsch 14.11.26: „auf dem Tablet ebenfalls“); hoch bleibt
+    // sie unten.
+    final rail = isLandscape(context);
     final body = _ShellRevision(
       revision: ++_revision,
       child: IndexedStack(
@@ -578,7 +577,7 @@ class _SideInset extends StatelessWidget {
   }
 }
 
-/// Schwebende Leiste (Pille) aus dem Entwurf A + C; quer am Telefon
+/// Schwebende Leiste (Pille) aus dem Entwurf A + C; quer (Handy und Tablet)
 /// senkrecht links ([axis] vertikal, Entwurf 14.11.26).
 class FloatingNavBar extends StatelessWidget {
   const FloatingNavBar({
@@ -666,30 +665,35 @@ extension on FloatingNavBar {
           Sp.s,
           Sp.s + pad.bottom,
         ),
-        child: Container(
-          width: Sz.navRailWidth,
-          padding: const EdgeInsets.symmetric(vertical: Sp.s),
-          decoration: BoxDecoration(
-            color: k.p.navBg,
-            borderRadius: BorderRadius.circular(Rad.nav),
-            boxShadow: k.navShadow,
-          ),
-          child: Column(
-            children: [
-              for (final (i, d) in items.indexed)
-                Expanded(
-                  child: Center(
-                    child: _NavItem(
-                      icon: i == selected ? d.iconSelected : d.icon,
-                      label: d.label,
-                      selected: i == selected,
-                      count: d.count,
-                      alert: d.alert,
-                      onTap: () => onSelect(i),
+        // Mittig und höchstens Sz.navRailMaxHeight hoch (Tablet quer).
+        child: Center(
+          widthFactor: 1,
+          child: Container(
+            width: Sz.navRailWidth,
+            constraints: const BoxConstraints(maxHeight: Sz.navRailMaxHeight),
+            padding: const EdgeInsets.symmetric(vertical: Sp.s),
+            decoration: BoxDecoration(
+              color: k.p.navBg,
+              borderRadius: BorderRadius.circular(Rad.nav),
+              boxShadow: k.navShadow,
+            ),
+            child: Column(
+              children: [
+                for (final (i, d) in items.indexed)
+                  Expanded(
+                    child: Center(
+                      child: _NavItem(
+                        icon: i == selected ? d.iconSelected : d.icon,
+                        label: d.label,
+                        selected: i == selected,
+                        count: d.count,
+                        alert: d.alert,
+                        onTap: () => onSelect(i),
+                      ),
                     ),
                   ),
-                ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

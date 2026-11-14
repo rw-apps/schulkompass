@@ -878,5 +878,10 @@
   "absenceRepeat": "{day} için de bildir",
   "absenceOther": "Başka bildirim (gün, gecikme)",
   "fixTeacherName": "Adı düzelt",
-  "fixTeacherNameHint": "Portal bir harf yerine “�” gönderiyor. Doğru harfi yazın."
+  "fixTeacherNameHint": "Portal bir harf yerine “�” gönderiyor. Doğru harfi yazın.",
+  "moreTeachers": "Diğer öğretmenler ({n})",
+  "fewerTeachers": "Daha az göster",
+  "focusTeachersHint": "Bildirilen günlerde dersi olan öğretmenler",
+  "substituteFor": "Vekil: {subjects}",
+  "tplSickNote": "Hastalık bildirimi"
 }

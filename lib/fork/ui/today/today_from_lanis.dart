@@ -84,6 +84,10 @@ String? periodsLabelFor(
 // ---- Vertretungsplan --------------------------------------------------------
 
 /// HTML-Reste entfernen („<del>R101</del>“), leer = null.
+/// Zelle des Vertretungsplans bereinigt (HTML, &nbsp;, „---“/„-“ = leer).
+/// Öffentlich für die Krankmeldung (substitutesOnDays, compose_model.dart).
+String? plainCell(String? s) => _plain(s);
+
 String? _plain(String? s) {
   if (s == null) return null;
   final t = s

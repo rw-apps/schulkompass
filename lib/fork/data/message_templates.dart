@@ -49,3 +49,57 @@ const messageTemplates = <MessageTemplate>[
       'Bitte entschuldigen Sie das Fehlen.\n\n'
       'Mit freundlichen Grüßen\n',
 );
+
+/// Vorlage „Krankmeldung“ für „An die Schule schreiben“ nach der Meldung
+/// (Wunsch 14.11.26: „Bei ‚Worum geht es‘ fehlt die Krankmeldung“). Nur
+/// dort angeboten, weil erst die Meldung Kind und Tage kennt; die Meldung
+/// selbst geht weiter über das Formular (abwesenheitsmeldung.php) – die
+/// Nachricht ergänzt sie für die Lehrkräfte. Deutsch wie oben, auch die
+/// Tage („am Mo 16.11.“, „vom Mo 16.11. bis Mi 18.11.“) – unabhängig von
+/// der App-Sprache.
+MessageTemplate sickNoteTemplate({
+  required String child,
+  required List<({DateTime from, DateTime to})> periods,
+}) {
+  const wd = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
+  String day(DateTime d) => '${wd[d.weekday - 1]} ${d.day}.${d.month}.';
+  // Aneinander anschließende Meldungen zusammenfassen (ein Wochenende
+  // dazwischen zählt als anschließend); Lücken bleiben getrennt. Ursache
+  // (Prüfbefund 14.11.26): Mit min–max behauptete „vom Mo bis Do“ auch Di
+  // und Mi als Krankheitstage, obwohl nur Mo und Do gemeldet waren.
+  final sorted = [...periods]..sort((a, b) => a.from.compareTo(b.from));
+  final merged = <({DateTime from, DateTime to})>[];
+  for (final p in sorted) {
+    if (merged.isNotEmpty) {
+      final last = merged.last;
+      var next = DateTime(last.to.year, last.to.month, last.to.day + 1);
+      while (next.weekday > 5) {
+        next = DateTime(next.year, next.month, next.day + 1);
+      }
+      if (!p.from.isAfter(next)) {
+        merged[merged.length - 1] = (
+          from: last.from,
+          to: p.to.isAfter(last.to) ? p.to : last.to,
+        );
+        continue;
+      }
+    }
+    merged.add(p);
+  }
+  final parts = [
+    for (final p in merged)
+      p.from == p.to ? day(p.from) : '${day(p.from)} bis ${day(p.to)}',
+  ];
+  final single = merged.length == 1 && merged.single.from != merged.single.to;
+  final when = single
+      ? 'vom ${parts.single}'
+      : 'am ${parts.length == 1 ? parts.single : '${parts.take(parts.length - 1).join(', ')} und ${parts.last}'}';
+  return MessageTemplate(
+    'sickNote',
+    'Krankmeldung $child – $when',
+    'Guten Tag,\n\n'
+        '$child ist $when krank und kann nicht am Unterricht teilnehmen. '
+        'Die Abwesenheit ist im Schulportal gemeldet.\n\n'
+        'Mit freundlichen Grüßen\n',
+  );
+}

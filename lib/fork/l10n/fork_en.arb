@@ -878,5 +878,10 @@
   "absenceRepeat": "Also report {day}",
   "absenceOther": "Other report (day, late arrival)",
   "fixTeacherName": "Fix name",
-  "fixTeacherNameHint": "The portal sends “�” instead of a letter. Type the correct one."
+  "fixTeacherNameHint": "The portal sends “�” instead of a letter. Type the correct one.",
+  "moreTeachers": "More teachers ({n})",
+  "fewerTeachers": "Show fewer",
+  "focusTeachersHint": "Teachers with lessons on the reported days",
+  "substituteFor": "Substitute: {subjects}",
+  "tplSickNote": "Sick note"
 }
