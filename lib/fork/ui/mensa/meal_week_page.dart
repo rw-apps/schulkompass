@@ -191,6 +191,18 @@ class _MealWeekPageState extends ConsumerState<MealWeekPage> {
     }
   }
 
+  /// Testfunktion „In der App bestellen“ hier einschalten – erst nach
+  /// Rückfrage, weil es um Geld geht und die App dafür die Knöpfe der
+  /// Caterer-Seite drückt (mealOrderInAppKey, mensa_store.dart).
+  Future<void> _enableInApp() async {
+    final st = _cache.settings;
+    if (st == null) return;
+    final yes = await confirmMealOrderInApp(context);
+    if (yes != true || !mounted) return;
+    setMealOrderInApp(st, true);
+    setState(() {});
+  }
+
   /// [afterFailure]: aus „Laden fehlgeschlagen“ – nach der Anmeldung zurück
   /// und neu lesen (MensaPage.returnAfterLogin, Rückmeldung 08.11.26).
   Future<void> _order(MealWeek? w, {bool afterFailure = false}) async {
@@ -409,6 +421,17 @@ class _MealWeekPageState extends ConsumerState<MealWeekPage> {
                         onCancel: _job != null || fetch != null || !_inApp
                             ? null
                             : (d) => _change(w, d, null),
+                        // Hinweis nur, solange die Testfunktion aus ist
+                        // (im Demo-Modus gilt sie als an, _inApp) und es
+                        // einen Speicherort gibt (settings). Während eines
+                        // Lesevorgangs (fetch) bleibt er sichtbar – die
+                        // Knöpfe kommen dann nach dem Lesen, weil
+                        // onOrderOption an fetch hängt. _job nur als Schutz:
+                        // Vorgänge entstehen nur mit eingeschalteter Funktion.
+                        onEnableInApp:
+                            _inApp || _cache.settings == null || _job != null
+                            ? null
+                            : _enableInApp,
                       );
                     }
                     return ListView(
@@ -485,7 +508,16 @@ class MealWeekView extends StatelessWidget {
     this.onOrder,
     this.onOrderOption,
     this.onCancel,
+    this.onEnableInApp,
   });
+
+  /// Hinweis „In der App bestellen einschalten“ unter „Bestellen oder
+  /// ändern“; null = kein Hinweis. Ursache (Rückmeldung 14.11.26): Der
+  /// Schalter (mealOrderInApp) stand nur unter Mehr → Essen und Caterer –
+  /// mit „aus“ ließ sich hier kein Gericht wählen, ohne dass die App sagte,
+  /// warum. null, wenn die Funktion an ist, im Demo-Modus oder ohne
+  /// Einstellungen (Bedingung in MealWeekPage, onEnableInApp).
+  final VoidCallback? onEnableInApp;
 
   /// Gericht bestellen bzw. Tag abbestellen in der App (Entwurf 27.10.26);
   /// null = keine Knöpfe, nur „Bestellen oder ändern“.
@@ -594,10 +626,25 @@ class MealWeekView extends StatelessWidget {
                         icon: const Icon(Icons.open_in_new),
                         label: Text(t.mealOpenCaterer),
                       )
-                    : FilledButton.icon(
-                        onPressed: onOrder,
-                        icon: const Icon(Icons.open_in_new),
-                        label: Text(t.mealChange),
+                    : Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          FilledButton.icon(
+                            onPressed: onOrder,
+                            icon: const Icon(Icons.open_in_new),
+                            label: Text(t.mealChange),
+                          ),
+                          if (onEnableInApp != null)
+                            TextButton.icon(
+                              onPressed: onEnableInApp,
+                              icon: Icon(
+                                Icons.science_outlined,
+                                color: k.link.color,
+                              ),
+                              label: Text(t.mealInAppEnable, style: k.link),
+                            ),
+                        ],
                       ),
               ),
             ),
@@ -973,3 +1020,55 @@ Future<bool> confirmMealChange(
 /// 27.10.26): Bei langen Menülinien („VEGETARISCHER BRATLING · 3,00 €“)
 /// stand das „€“ allein in der nächsten Zeile.
 String? _nbsp(String? price) => price?.replaceAll(' ', '\u00A0');
+
+/// Rückfrage vor dem Einschalten von „In der App bestellen“ (Hinweis im
+/// Wochenplan, Rückmeldung 14.11.26). true = einschalten.
+Future<bool> confirmMealOrderInApp(BuildContext context) async {
+  final r = await showModalBottomSheet<bool>(
+    context: context,
+    useRootNavigator: true,
+    showDragHandle: true,
+    backgroundColor: Kit.of(context).p.card,
+    builder: (sheet) {
+      final k = Kit.of(sheet);
+      final t = sheet.t;
+      return SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(Sp.xl, 0, Sp.xl, Sp.l),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(t.mealInAppTitle, style: k.sheetTitle),
+              const SizedBox(height: Sp.m),
+              // Haftung vorn und hervorgehoben (Rückmeldung 14.11.26 zum
+              // Entwurf: kürzer, stärker auf „ohne Haftung“ hinweisen).
+              Text(t.mealInAppWarn, style: k.planSubject(k.p.ink)),
+              const SizedBox(height: Sp.s),
+              Text(t.mealInAppBody, style: k.meta),
+              const SizedBox(height: Sp.l),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.of(sheet).pop(false),
+                      child: Text(t.cancel),
+                    ),
+                  ),
+                  const SizedBox(width: Sp.m),
+                  Expanded(
+                    child: FilledButton(
+                      onPressed: () => Navigator.of(sheet).pop(true),
+                      child: Text(t.mealInAppOn),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      );
+    },
+  );
+  return r == true;
+}

@@ -887,5 +887,10 @@
   "schoolOffers": "School services",
   "portalAppFailed": "This service could not be opened right now. The error has been noted in the error report.",
   "otherFolder": "Other",
-  "tplAbsenceNote": "Absence"
+  "tplAbsenceNote": "Absence",
+  "mealInAppEnable": "Turn on ordering in the app",
+  "mealInAppTitle": "Order in the app?",
+  "mealInAppBody": "The app clicks on the caterer's page for you. Turn off under More → Meals and caterer.",
+  "mealInAppWarn": "Test feature without warranty or liability. Check your orders on the caterer's page.",
+  "mealInAppOn": "Turn on"
 }

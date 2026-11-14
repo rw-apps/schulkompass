@@ -887,5 +887,10 @@
   "schoolOffers": "Okulun sundukları",
   "portalAppFailed": "Bu hizmet şu anda açılamadı. Hata, hata raporuna kaydedildi.",
   "otherFolder": "Diğer",
-  "tplAbsenceNote": "Devamsızlık"
+  "tplAbsenceNote": "Devamsızlık",
+  "mealInAppEnable": "Uygulamada sipariş vermeyi aç",
+  "mealInAppTitle": "Uygulamada sipariş verilsin mi?",
+  "mealInAppBody": "Uygulama bunun için yemek firmasının sayfasında tıklar. Kapatmak için: Diğer → Yemek ve yemek firması.",
+  "mealInAppWarn": "Garanti ve sorumluluk kabul edilmeyen test özelliği. Siparişlerini yemek firmasının sayfasında kontrol et.",
+  "mealInAppOn": "Aç"
 }

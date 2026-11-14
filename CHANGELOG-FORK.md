@@ -1,5 +1,9 @@
 ## Schulkompass (rw-apps, bis 9472 „Schulportal“) – Änderungen gegenüber Lanis-Mobile
 
+**4.1.0+9515** – Essen: In der App bestellen leichter finden
+
+- **Hinweis im Wochenplan:** Ist „In der App bestellen“ aus, steht unter „Bestellen oder ändern“ der Link „In der App bestellen einschalten“. Eine kurze Rückfrage weist auf die Testfunktion ohne Gewähr und ohne Haftung hin; danach erscheinen die Knöpfe an den Gerichten sofort. Ausschalten weiter unter Mehr → Essen und Caterer.
+
 **4.1.0+9514** – Querformat und Angebote verfeinert
 
 - **Querformat, Platz neben der Leiste:** Heute, Kalender und Kopfzeilen richten sich nach dem Platz neben der Leiste statt nach der Bildschirmbreite. Auf kleinen Handys standen quer zwei Kinderkarten gequetscht nebeneinander und Text wurde abgeschnitten; jetzt untereinander. Pixel 9a und Tablet unverändert.

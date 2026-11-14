@@ -558,4 +558,52 @@ void main() {
       expect(mealModalJs, contains('.modal-footer .btn-confirm'));
     });
   });
+
+  // Rückmeldung 14.11.26: Mit „In der App bestellen“ aus fehlte jeder
+  // Hinweis, warum sich kein Gericht wählen ließ.
+  testWidgets('Hinweis „In der App bestellen einschalten“ nur ohne Knöpfe', (
+    t,
+  ) async {
+    final w = load('meal_daylist.html');
+    var asked = 0;
+    Widget view({bool inApp = false}) => MaterialApp(
+      localizationsDelegates: ForkL10n.localizationsDelegates,
+      supportedLocales: ForkL10n.supportedLocales,
+      locale: const Locale('de'),
+      home: Scaffold(
+        body: Builder(
+          builder: (c) => MealWeekView(
+            week: w,
+            now: DateTime(2026, 10, 26, 10),
+            colorIndex: 0,
+            onOrder: () {},
+            onOrderOption: inApp ? (_, _) {} : null,
+            onEnableInApp: inApp
+                ? null
+                : () async {
+                    asked++;
+                    if (await confirmMealOrderInApp(c)) asked += 10;
+                  },
+          ),
+        ),
+      ),
+    );
+    await t.pumpWidget(view());
+    // Abbrechen: nichts eingeschaltet.
+    await t.tap(find.text('In der App bestellen einschalten'));
+    await t.pumpAndSettle();
+    await t.tap(find.text('Abbrechen'));
+    await t.pumpAndSettle();
+    expect(asked, 1);
+    asked = 0;
+    await t.tap(find.text('In der App bestellen einschalten'));
+    await t.pumpAndSettle();
+    expect(find.text('In der App bestellen?'), findsOneWidget);
+    await t.tap(find.text('Einschalten'));
+    await t.pumpAndSettle();
+    expect(asked, 11);
+    await t.pumpWidget(view(inApp: true));
+    await t.pumpAndSettle();
+    expect(find.text('In der App bestellen einschalten'), findsNothing);
+  });
 }

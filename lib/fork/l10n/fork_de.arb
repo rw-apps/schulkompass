@@ -2278,5 +2278,10 @@
   "schoolOffers": "Angebote der Schule",
   "portalAppFailed": "Das Angebot ließ sich gerade nicht öffnen. Der Fehler ist im Fehlerbericht notiert.",
   "otherFolder": "Sonstiges",
-  "tplAbsenceNote": "Abwesenheit"
+  "tplAbsenceNote": "Abwesenheit",
+  "mealInAppEnable": "In der App bestellen einschalten",
+  "mealInAppTitle": "In der App bestellen?",
+  "mealInAppBody": "Die App klickt dafür auf der Seite des Caterers. Ausschalten unter Mehr → Essen und Caterer.",
+  "mealInAppWarn": "Testfunktion ohne Gewähr und ohne Haftung. Prüfe deine Bestellungen auf der Seite des Caterers.",
+  "mealInAppOn": "Einschalten"
 }
