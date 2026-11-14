@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../l10n/l10n.dart';
 import '../kit.dart';
+import '../nav.dart' show pushInTab;
+import '../kid_chips.dart' show BackInChips;
 import '../pinned_page.dart';
 
 /// Ein Eintrag unter „Mehr“: Dienste und Aktionen, die keinen eigenen
@@ -28,7 +30,8 @@ class MoreEntry {
   /// Öffnen mit dem Kontext der Zeile (statt [onTap]). Ursache (Prüfbefund
   /// 14.11.26): Auf der Rubrik-Unterseite hing [onTap] am Kontext von
   /// „Mehr“, den FamilySwitch beim Kindwechsel neu aufbaut – der Tipp lief
-  /// dann ins Leere.
+  /// dann ins Leere. Der Kontext der Zeile liegt im Rahmen des Kindes
+  /// (pushInTab), pushInTab von dort bindet die nächste Seite an dasselbe.
   final void Function(BuildContext context)? open;
 }
 
@@ -86,10 +89,15 @@ class MorePage extends StatelessWidget {
                   // Vorschau der Namen, damit man ohne Öffnen sieht, wo ein
                   // Angebot steckt.
                   detail: sec.entries.map((e) => e.label).join(', '),
-                  onTap: () => Navigator.of(context).push(
-                    MaterialPageRoute<void>(
-                      builder: (_) => MoreSectionPage(section: sec),
-                    ),
+                  // Über pushInTab mit Kind-Pillen: Die Rubrik gehört einem
+                  // Kind (Angebote seiner Schule) und zeigt, welchem; ein
+                  // anderes Kind führt zurück zu „Mehr“ (SubpageKidChips).
+                  // Ursache (Nachprüfung 14.11.26): Mit einfachem push fehlte
+                  // jede Kindbindung.
+                  onTap: () => pushInTab<void>(
+                    context,
+                    (_) => MoreSectionPage(section: sec),
+                    kidChips: true,
                   ),
                 ),
               ),
@@ -161,11 +169,14 @@ class MoreSectionPage extends StatelessWidget {
     return Scaffold(
       backgroundColor: k.p.bg,
       body: PinnedPage(
-        leading: IconButton(
-          onPressed: () => Navigator.of(context).maybePop(),
-          icon: Icon(Icons.arrow_back, color: k.p.ink),
-          tooltip: context.t.back,
-        ),
+        // Mit Kind-Pillen steht Zurück dort (BackInChips).
+        leading: BackInChips.of(context)
+            ? null
+            : IconButton(
+                onPressed: () => Navigator.of(context).maybePop(),
+                icon: Icon(Icons.arrow_back, color: k.p.ink),
+                tooltip: context.t.back,
+              ),
         header: [Text(section.title, style: k.pageTitle)],
         bodyPadding: const EdgeInsets.fromLTRB(Sp.page, Sp.xs, Sp.page, Sp.xl),
         children: [

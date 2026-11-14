@@ -97,4 +97,15 @@ void main() {
     expect(r.templates.single.subject, 'Krankmeldung Jonas – am Mi 18.11.');
     expect(r.focus, isEmpty);
   });
+
+  test('gemischte Arten: neutrale Vorlage, nie „krank“', () {
+    final r = absenceRecipients(_parent(), [
+      _e('Jonas Beispiel', '16.11.2026'),
+      _e('Jonas Beispiel', '18.11.2026', kind: 'beurlaubt'),
+    ], now: now);
+    final tpl = r.templates.single;
+    expect(tpl.subject, 'Abwesenheit Jonas – am Mo 16.11. und Mi 18.11.');
+    expect(tpl.text, contains('Jonas fehlt am Mo 16.11. und Mi 18.11. Die'));
+    expect(tpl.text, isNot(contains('krank')));
+  });
 }

@@ -886,5 +886,6 @@
   "tplSickNote": "Hastalık bildirimi",
   "schoolOffers": "Okulun sundukları",
   "portalAppFailed": "Bu hizmet şu anda açılamadı. Hata, hata raporuna kaydedildi.",
-  "otherFolder": "Diğer"
+  "otherFolder": "Diğer",
+  "tplAbsenceNote": "Devamsızlık"
 }

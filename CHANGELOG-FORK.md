@@ -1,5 +1,14 @@
 ## Schulkompass (rw-apps, bis 9472 „Schulportal“) – Änderungen gegenüber Lanis-Mobile
 
+**4.1.0+9513** – Nachbesserungen aus der Nachprüfung
+
+- **Angebote der Schule gehören sichtbar einem Kind:** Die Rubrik-Seite zeigt oben die Kind-Pillen; ein anderes Kind führt zurück zu „Mehr“. Vorher fehlte jede Zuordnung.
+- **Alle Angebote:** Auch direkte Links der Schule auf fremde Seiten erscheinen; sie öffnen im Browser.
+- **Fremde Angebote:** Die Seite schließt sich, sobald das Portal zum fremden Angebot weiterleitet – auch bei Weiterleitung per Formular (am Gerät noch zu prüfen).
+- **Vorlage bei anderen Arten:** Meldet die Schule z. B. „beurlaubt“, heißt die Vorlage „Abwesenheit“ und behauptet keine Krankheit; bei gemischten oder leeren Arten ebenso, ohne Klammer.
+- **Portal-Links:** Ein absoluter Link der Schule ins Portal öffnet angemeldet in der App und doppelt keine App-Funktion. Ein direkter Bestell-Link des Caterers kann zusätzlich zu „Essen und Caterer“ erscheinen (gewollt: alles anzeigen).
+- **Datenschutz:** Unbekannte Portal-Module werden nicht mehr als Begriff gemeldet (wie vor 9512 entschieden).
+
 **4.1.0+9512** – Angebote der Schule unter „Mehr“
 
 - **Angebote der Schule:** „Mehr“ zeigt alle weiteren Angebote aus dem App-Menü des Portals – je Rubrik wie im Portal (z. B. Organisation, Unterricht) eine Zeile, die Angebote auf einer Unterseite. Die Liste kommt automatisch aus dem Portal, je Kind; was die App selbst zeigt (Kalender, Stundenplan …), steht nicht doppelt da.

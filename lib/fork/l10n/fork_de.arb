@@ -2277,5 +2277,6 @@
   "tplSickNote": "Krankmeldung",
   "schoolOffers": "Angebote der Schule",
   "portalAppFailed": "Das Angebot ließ sich gerade nicht öffnen. Der Fehler ist im Fehlerbericht notiert.",
-  "otherFolder": "Sonstiges"
+  "otherFolder": "Sonstiges",
+  "tplAbsenceNote": "Abwesenheit"
 }

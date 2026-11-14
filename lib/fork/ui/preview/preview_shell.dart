@@ -2,6 +2,8 @@ import '../../data_storage.dart' show offersStorage;
 import '../storage/storage_page.dart';
 import '../nav.dart' show pushInTab;
 import 'package:flutter/material.dart';
+import 'package:lanis/utils/safe_launch.dart';
+import 'package:url_launcher/url_launcher.dart' show LaunchMode;
 import 'package:flutter/services.dart' show SystemNavigator;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -320,12 +322,26 @@ class _PreviewShellState extends State<PreviewShell> {
               label: a.name,
               external: a.external,
               onTap: () {},
-              // Mit dem Kontext der Unterseite öffnen (MoreEntry.open).
-              open: (ctx) => Navigator.of(ctx).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => PortalAppPage(app: a, session: s.session),
-                ),
-              ),
+              // Mit dem Kontext der Unterseite öffnen (MoreEntry.open), über
+              // pushInTab im Rahmen desselben Kindes.
+              open: (ctx) {
+                final u = a.uri;
+                // Absoluter Link der Schule: direkt in den Browser.
+                if (a.absolute) {
+                  if (u != null) {
+                    safeLaunchUrl(
+                      u,
+                      context: ctx,
+                      mode: LaunchMode.externalApplication,
+                    );
+                  }
+                  return;
+                }
+                pushInTab<void>(
+                  ctx,
+                  (_) => PortalAppPage(app: a, session: s.session),
+                );
+              },
             ),
         ]),
     ];

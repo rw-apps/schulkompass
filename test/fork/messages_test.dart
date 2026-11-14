@@ -399,6 +399,22 @@ void main() {
       ],
     );
     expect(weekend.subject, 'Krankmeldung Lena – vom Fr 20.11. bis Mo 23.11.');
+    // Andere Art der Schule: Abwesenheit statt Krankheit; ohne Vorname.
+    final leave = sickNoteTemplate(
+      child: '',
+      kind: 'beurlaubt',
+      periods: [(from: DateTime(2026, 11, 16), to: DateTime(2026, 11, 16))],
+    );
+    expect(leave.subject, 'Abwesenheit – am Mo 16.11.');
+    expect(leave.text, contains('Unser Kind fehlt am Mo 16.11. (beurlaubt).'));
+    // Leere Art: ohne Klammer, nicht „krank“.
+    final blank = sickNoteTemplate(
+      child: 'Lena',
+      kind: ' ',
+      periods: [(from: DateTime(2026, 11, 16), to: DateTime(2026, 11, 16))],
+    );
+    expect(blank.subject, 'Abwesenheit Lena – am Mo 16.11.');
+    expect(blank.text, contains('Lena fehlt am Mo 16.11. Die'));
     await pump(
       t,
       ComposePage(

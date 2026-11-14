@@ -1248,6 +1248,11 @@ absenceRecipients(
       sickNoteTemplate(
         child: absenceFirstName(note.first.e),
         periods: [for (final c in note) c.p],
+        // Eine Art nur, wenn alle Meldungen sie teilen; sonst neutral
+        // (Prüfbefund 14.11.26: Mo „krank“ + Mi „beurlaubt“ hieß „krank“).
+        kind: {for (final c in note) c.e.kind.trim()}.length == 1
+            ? note.first.e.kind
+            : '',
       ),
   ];
   final plan = livePlanOf(live);

@@ -26,13 +26,44 @@ void main() {
       _e('Radeln', 'schulradeln.php', ['Sonstiges']),
       _e('Lernplattform', 'index.php?a=f&e=moodle', ['Unterricht']),
       _e('Ohne Ordner', 'usesheets.php', []),
+      _e('Schulseite', 'https://schule.example/', ['Allgemein']),
+      _e('Doppelt', 'HTTPS://start.schulportal.hessen.de/kalender.php', [
+        'Allgemein',
+      ]),
+      _e('Kurswahl', 'https://start.schulportal.hessen.de/kurswahl.php', [
+        'Organisation',
+      ]),
       'kaputt',
     ], otherFolder: 'Sonstiges');
-    expect(apps.keys, ['Organisation', 'Schule', 'Unterricht', 'Sonstiges']);
+    expect(apps.keys, [
+      'Organisation',
+      'Schule',
+      'Unterricht',
+      'Sonstiges',
+      'Allgemein',
+    ]);
+    final site = apps['Allgemein']!.single;
+    expect((site.absolute, site.external), (true, true));
+    expect(site.uri.toString(), 'https://schule.example/');
     expect(apps['Organisation']!.map((a) => a.name), [
       'Wahltool',
       'Mailprogramm',
+      'Kurswahl',
     ]);
+    // Portal-Link absolut: relativ, also angemeldet in der App.
+    final pick = apps['Organisation']!.last;
+    expect(
+      (pick.link, pick.absolute, pick.external),
+      ('kurswahl.php', false, false),
+    );
+    expect(
+      const SchoolApp(
+        name: 'X',
+        link: 'HTTPS://a.example/',
+        folder: 'Y',
+      ).absolute,
+      isTrue,
+    );
     expect(apps['Schule']!.map((a) => a.name), ['Notfall', 'Radeln']);
     expect(apps['Unterricht']!.map((a) => a.name), ['Rechentrainer']);
     expect(apps['Sonstiges']!.single.name, 'Ohne Ordner');
@@ -57,6 +88,7 @@ void main() {
       label: l,
       external: ext,
       onTap: () => opened = l,
+      open: ext ? (ctx) => opened = '$l über open' : null,
     );
     await t.pumpWidget(
       MaterialApp(
@@ -84,5 +116,8 @@ void main() {
     expect(find.byIcon(Icons.open_in_new), findsOneWidget);
     await t.tap(find.text('Wahltool'));
     expect(opened, 'Wahltool');
+    // Weg der App: MoreEntry.open mit dem Kontext der Unterseite.
+    await t.tap(find.text('Mailprogramm'));
+    expect(opened, 'Mailprogramm über open');
   });
 }

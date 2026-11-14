@@ -420,6 +420,7 @@ class _ComposePageState extends State<ComposePage> {
     'callback' => t.tplCallback,
     'appointment' => t.tplAppointment,
     'sickNote' => t.tplSickNote,
+    'absenceNote' => t.tplAbsenceNote,
     _ => m.subject,
   };
 

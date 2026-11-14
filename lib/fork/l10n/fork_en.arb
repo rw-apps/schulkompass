@@ -886,5 +886,6 @@
   "tplSickNote": "Sick note",
   "schoolOffers": "School services",
   "portalAppFailed": "This service could not be opened right now. The error has been noted in the error report.",
-  "otherFolder": "Other"
+  "otherFolder": "Other",
+  "tplAbsenceNote": "Absence"
 }

@@ -15,10 +15,7 @@ import 'error_log.dart';
 ///
 /// Was erfasst wird: Bereich, Spalte und das eine Wort, das die App nicht
 /// kennt – aus der Spalte „Art“ des Vertretungsplans, den Spaltenköpfen der
-/// Anwesenheit einer Kursmappe, den Kategorien des Kalenders und – seit
-/// 14.11.26 – den Dateinamen unbekannter Module der App-Liste
-/// („startseite.php“/„App“, schoolApps: nur der Dateiname, nie der Name des
-/// Angebots). Diese
+/// Anwesenheit einer Kursmappe und den Kategorien des Kalenders. Diese
 /// Spalten füllt die Schule mit ihren Wörtern; „Art“ ist dabei Freitext der
 /// Schule (classifySubstitution), aber kein Text über ein Kind.
 ///

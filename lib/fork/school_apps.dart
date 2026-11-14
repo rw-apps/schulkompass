@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import 'report_terms.dart';
 import 'school_links.dart' show offersMoodle;
 
 /// Ein Angebot aus der App-Liste des Portals (Session.travelMenu,
@@ -24,14 +23,26 @@ class SchoolApp {
   /// Weiterleitung des Portals zu einem fremden Angebot
   /// (index.php?a=f&e=…, z. B. Office365, bettermarks).
   bool get external =>
-      RegExp(r'^index\.php\?(?:.*&)?a=f(?:&|$)').hasMatch(link);
+      absolute || RegExp(r'^index\.php\?(?:.*&)?a=f(?:&|$)').hasMatch(link);
 
   /// Technische Kennung ohne Namen („wahl.php“, „Weiterleitung“) – nur sie
   /// geht in Berichte, der Name könnte die Schule verraten.
   String get module => external ? 'Weiterleitung' : link.split('?').first;
 
-  /// Zieladresse; null bei kaputtem Link (z. B. „%“ ohne Hexzahl).
-  Uri? get uri => Uri.tryParse('https://start.schulportal.hessen.de/$link');
+  /// Zieladresse; absolute Links der Schule (https://…) unverändert.
+  /// null nur, wenn Uri.tryParse scheitert (selten; „%zz“ etwa wird zu
+  /// „%25zz“ und gilt als gültig).
+  Uri? get uri => absolute
+      ? Uri.tryParse(link)
+      : Uri.tryParse('https://start.schulportal.hessen.de/$link');
+
+  /// Link auf eine fremde Seite direkt in der App-Liste (ohne Portal).
+  /// Schema ohne Rücksicht auf Groß-/Kleinschreibung („HTTPS://“ zählt
+  /// mit; Prüfbefund 14.11.26).
+  bool get absolute {
+    final l = link.toLowerCase();
+    return l.startsWith('http://') || l.startsWith('https://');
+  }
 }
 
 /// Module, die die App selbst zeigt (Kalender, Unterricht, Nachrichten,
@@ -48,9 +59,11 @@ const nativeModules = {
 };
 
 /// Module, die in Exporten schon vorkamen (Exporte 16.–28.10.26, beide
-/// Schulen der Familie). Andere meldet [schoolApps] als Begriff
-/// (TermLog, nur mit erweiterter Zustimmung), damit neue Angebote anderer
-/// Schulen auffallen – etwa ein Klausurenplaner.
+/// Schulen der Familie). Nur sie gehen mit ihrem Dateinamen ins
+/// Fehlerprotokoll (PortalAppPage), andere als „App“. Neue Module anderer
+/// Schulen zeigt der Berichtskontext (noteLoadTerms, report_terms.dart);
+/// als Begriff meldet sie die App bewusst nicht (Prüfung 08.11.26, dort
+/// begründet; Nachprüfung 14.11.26).
 const knownModules = {
   ...nativeModules,
   'wahl.php',
@@ -81,8 +94,21 @@ Map<String, List<SchoolApp>> schoolApps(
   for (final e in travelMenu) {
     if (e is! Map) continue;
     final name = '${e['Name'] ?? ''}'.trim();
-    final link = '${e['link'] ?? ''}'.trim();
-    if (name.isEmpty || link.isEmpty || link.startsWith('http')) continue;
+    // Absoluter Link ins Portal selbst wird relativ: so greift der Filter
+    // der App-Module, und das Angebot öffnet angemeldet in der App statt
+    // ohne Anmeldung im Browser. Ursache (Prüfbefund 14.11.26); ob das
+    // Portal solche Links liefert, ist offen – die Exporte (16.–28.10.26)
+    // enthalten keine absoluten Links.
+    final raw = '${e['link'] ?? ''}'.trim();
+    final portal = RegExp(
+      r'^https?://start\.schulportal\.hessen\.de/',
+      caseSensitive: false,
+    );
+    final link = raw.replaceFirst(portal, '');
+    // Absolute Links (https://…) zählen mit (Wunsch „immer alles anzeigen“,
+    // Nachprüfung 14.11.26); sie öffnen direkt im Browser (more/
+    // portal_app_page.dart ist nur fürs Portal).
+    if (name.isEmpty || link.isEmpty) continue;
     if (offersMoodle([e])) continue;
     final folders = [
       for (final f in (e['Ordner'] is List ? e['Ordner'] as List : const []))
@@ -94,9 +120,6 @@ Map<String, List<SchoolApp>> schoolApps(
       folder: folders.isEmpty ? otherFolder : folders.first,
     );
     if (nativeModules.contains(app.module) || !seen.add(link)) continue;
-    if (!knownModules.contains(app.module)) {
-      TermLog.instance.note('startseite.php', 'App', app.module);
-    }
     (out[app.folder] ??= []).add(app);
   }
   return out;

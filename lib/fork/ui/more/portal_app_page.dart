@@ -58,10 +58,6 @@ class _PortalAppPageState extends ConsumerState<PortalAppPage> {
   /// Hauptadresse des Portals erreicht (sonst hing die Anmeldung).
   bool _inPortal = false;
 
-  /// Zielseite fertig geladen: danach schließt ein fremder Link die Seite
-  /// nicht mehr, er öffnet nur den Browser.
-  bool _arrived = false;
-
   /// Seite schließt sich schon (Weiterleitung zum fremden Angebot): kein
   /// zweites Öffnen, kein zweites Schließen.
   bool _leaving = false;
@@ -131,10 +127,16 @@ class _PortalAppPageState extends ConsumerState<PortalAppPage> {
                 context: context,
                 mode: LaunchMode.externalApplication,
               );
-              // Nur die Weiterleitung beim Öffnen eines fremden Angebots
-              // schließt die Seite; ein fremder Link im Wahltool o. Ä. öffnet
-              // bloß den Browser (Prüfbefund 14.11.26).
-              if (widget.app.external && !_arrived && mounted) {
+              // Ein fremdes Angebot schließt die Seite, sobald es das Portal
+              // verlässt; ein fremder Link im Wahltool o. Ä. öffnet bloß den
+              // Browser (Prüfbefund 14.11.26). Ursache, dass hier kein
+              // „angekommen“ mehr zählt (Nachprüfung 14.11.26): Android
+              // meldet abgebrochene Seiten als fertig, und bei Weiterleitung
+              // per Formular oder JavaScript meldet die WebView erst die
+              // Zielseite des Portals als fertig und navigiert danach fort –
+              // beides ließ die Portalseite offen. Grenze: Wie das Portal
+              // weiterleitet, ist am Gerät noch zu prüfen.
+              if (widget.app.external && mounted) {
                 _leaving = true;
                 Navigator.of(context).pop();
               }
@@ -151,7 +153,6 @@ class _PortalAppPageState extends ConsumerState<PortalAppPage> {
       _failed = false;
       _sent = false;
       _inPortal = false;
-      _arrived = false;
     });
     try {
       // Sitzung eines anderen Kindes im WebView-Speicher leeren (nur das
@@ -189,12 +190,9 @@ class _PortalAppPageState extends ConsumerState<PortalAppPage> {
       if (mounted) setState(() => _failed = true);
       return;
     }
-    if (u.host == 'start.schulportal.hessen.de') {
-      if (_sent) _arrived = true;
-      _inPortal = true;
-    }
+    if (u.host == 'start.schulportal.hessen.de') _inPortal = true;
+    final target = widget.app.uri;
     if (_inPortal && !_sent) {
-      final target = widget.app.uri;
       if (target == null) {
         _report('PortalAppLink');
         if (mounted) setState(() => _failed = true);

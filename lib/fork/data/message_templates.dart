@@ -60,6 +60,7 @@ const messageTemplates = <MessageTemplate>[
 MessageTemplate sickNoteTemplate({
   required String child,
   required List<({DateTime from, DateTime to})> periods,
+  String kind = 'krank',
 }) {
   const wd = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
   String day(DateTime d) => '${wd[d.weekday - 1]} ${d.day}.${d.month}.';
@@ -94,12 +95,28 @@ MessageTemplate sickNoteTemplate({
   final when = single
       ? 'vom ${parts.single}'
       : 'am ${parts.length == 1 ? parts.single : '${parts.take(parts.length - 1).join(', ')} und ${parts.last}'}';
+  // „krank“ nur, wenn die Meldung das sagt; andere Arten der Schule
+  // („beurlaubt“ …) als Abwesenheit mit der Art in Klammern (Nachprüfung
+  // 14.11.26: die Arten kommen frei aus dem Portal, absence_form.dart).
+  // Leere Art (Spalte leer, oder gemischte Arten – absenceRecipients gibt
+  // dann '' weiter): neutral „Abwesenheit“ ohne Klammer, nie „krank“
+  // (Prüfbefund 14.11.26: sonst „fehlt … ().“ bzw. Krankheit an einem
+  // Urlaubstag).
+  // Ohne Art endet der Satz mit dem Punkt des Datums („16.11.“), sonst
+  // stünde „16.11..“ da.
+  final art = kind.trim();
+  final sick = art.toLowerCase().contains('krank');
+  final who = child.trim().isEmpty ? 'Unser Kind' : child.trim();
+  final head = sick ? 'Krankmeldung' : 'Abwesenheit';
+  final subject = child.trim().isEmpty
+      ? '$head – $when'
+      : '$head ${child.trim()} – $when';
   return MessageTemplate(
-    'sickNote',
-    'Krankmeldung $child – $when',
+    sick ? 'sickNote' : 'absenceNote',
+    subject,
     'Guten Tag,\n\n'
-        '$child ist $when krank und kann nicht am Unterricht teilnehmen. '
-        'Die Abwesenheit ist im Schulportal gemeldet.\n\n'
-        'Mit freundlichen Grüßen\n',
+    '${sick ? '$who ist $when krank und kann nicht am Unterricht teilnehmen.' : '$who fehlt $when${art.isEmpty ? '' : ' ($art).'}'} '
+    'Die Abwesenheit ist im Schulportal gemeldet.\n\n'
+    'Mit freundlichen Grüßen\n',
   );
 }
