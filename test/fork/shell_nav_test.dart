@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lanis/fork/l10n/l10n.dart';
 import 'package:lanis/fork/ui/courses/course_detail_page.dart';
+import 'package:lanis/fork/ui/kid_chips.dart';
+import 'package:lanis/fork/ui/kit.dart';
+import 'package:lanis/fork/ui/pinned_page.dart';
 import 'package:lanis/fork/ui/preview/preview_shell.dart';
 
 Widget _app() => MaterialApp(
@@ -95,4 +98,35 @@ void main() {
       });
     }
   }
+
+  // Nachprüfung 14.11.26: Quer sehen die Seiten als Breite nur ihren Platz
+  // neben der Leiste (kleines Handy 740 × 360 dp: zwei Karten waren
+  // gequetscht); die Lage richtet sich weiter nach dem Fenster.
+  testWidgets('quer: Seite sieht die Breite neben der Leiste', (t) async {
+    t.view.physicalSize = const Size(2220, 1080);
+    t.view.devicePixelRatio = 3;
+    t.view.padding = const FakeViewPadding(left: 120);
+    addTearDown(t.view.reset);
+    await t.pumpWidget(_app());
+    await t.pumpAndSettle();
+    final page = t.element(find.byType(PinnedPage).first);
+    final mq = MediaQuery.of(page);
+    // Leiste = Abstand + Kamerarand (120 px / 3) + Pille + Abstand.
+    expect(
+      mq.size.width,
+      moreOrLessEquals(740 - (Sz.navMargin + 40 + Sz.navRailWidth + Sp.s)),
+    );
+    expect(isLandscape(page), isTrue);
+    expect(compactHeader(page), isTrue);
+    // Drehen: volle Breite, Zustand der Reiter bleibt (gleicher Aufbau).
+    final nav = t.state(find.byType(Navigator).at(1));
+    t.view.physicalSize = const Size(1080, 2220);
+    t.view.padding = const FakeViewPadding(top: 120);
+    await t.pumpAndSettle();
+    expect(
+      MediaQuery.sizeOf(t.element(find.byType(PinnedPage).first)).width,
+      360,
+    );
+    expect(identical(t.state(find.byType(Navigator).at(1)), nav), isTrue);
+  });
 }

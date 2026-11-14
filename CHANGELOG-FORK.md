@@ -1,5 +1,12 @@
 ## Schulkompass (rw-apps, bis 9472 „Schulportal“) – Änderungen gegenüber Lanis-Mobile
 
+**4.1.0+9514** – Querformat und Angebote verfeinert
+
+- **Querformat, Platz neben der Leiste:** Heute, Kalender und Kopfzeilen richten sich nach dem Platz neben der Leiste statt nach der Bildschirmbreite. Auf kleinen Handys standen quer zwei Kinderkarten gequetscht nebeneinander und Text wurde abgeschnitten; jetzt untereinander. Pixel 9a und Tablet unverändert.
+- **Kind-Pillen quer:** Sie dürfen mehr Breite nutzen und bleiben auch mit drei Kindern in normaler Größe; erst auf sehr schmalen Bildschirmen verkleinert.
+- **Angebot in der App:** Kopf wie die übrigen Unterseiten (große Überschrift, Kind-Pillen oben, quer in einer Zeile); Ladebalken und Knöpfe in den Farben der App. E-Mail- und Telefon-Links öffnen die passende App; andere App-Links bleiben gesperrt.
+- **Navigationsleiste:** Die Beschriftung wächst mit der Systemschrift, so weit Platz ist (vorher fest höchstens ×1,3).
+
 **4.1.0+9513** – Nachbesserungen aus der Nachprüfung
 
 - **Angebote der Schule gehören sichtbar einem Kind:** Die Rubrik-Seite zeigt oben die Kind-Pillen; ein anderes Kind führt zurück zu „Mehr“. Vorher fehlte jede Zuordnung.

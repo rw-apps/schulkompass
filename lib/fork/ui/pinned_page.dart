@@ -39,6 +39,7 @@ class PinnedPage extends StatefulWidget {
     ),
     this.leading,
     this.placesChips = false,
+    this.body,
   });
 
   /// Kopf von oben nach unten (Überschrift zuerst).
@@ -62,6 +63,13 @@ class PinnedPage extends StatefulWidget {
 
   /// Ziehen zum Aktualisieren; null = ohne.
   final Future<void> Function()? onRefresh;
+
+  /// Statt einer Liste ein Inhalt, der den Rest der Seite füllt und selbst
+  /// scrollt (Webseite eines Angebots, more/portal_app_page.dart); dann
+  /// gelten [children], [slivers], [onRefresh] und [bodyPadding] nicht.
+  /// Ursache (Nachprüfung 14.11.26): Die Seite hatte einen eigenen Kopf
+  /// (AppBar) – ohne Kind-Pillen, quer ohne verdichtete Kopfzeile.
+  final Widget? body;
 
   /// Rand um den Kopf. Die Statusleiste kommt oben hinzu (nicht unter den
   /// Kind-Pillen, PinnedKidChips entfernt sie dort schon – außer quer, wenn
@@ -132,9 +140,14 @@ class _PinnedPageState extends State<PinnedPage> {
             ?lead,
             if (lead != null) const SizedBox(width: Sp.xs),
             Expanded(child: header.first),
-            // Pillen in natürlicher Breite, höchstens 45 % – sonst bekäme die
-            // Überschrift neben einem Flexible fest nur die halbe Breite
-            // (Prüfbefund 14.11.26).
+            // Pillen in natürlicher Breite, höchstens 60 % der Seite (quer
+            // ohne Leiste, PreviewShell); erst darüber verkleinert. Ursache
+            // (Nachprüfung 14.11.26): Mit 45 % schrumpften drei Kinder am
+            // Pixel 9a quer auf rund drei Viertel (Probebild), obwohl neben
+            // der Überschrift Platz war. Die Überschrift bekommt den Rest
+            // (40 % abzüglich Zurück, Abständen und Aktionen der Seite – bei
+            // 640 dp gut ein Viertel; sie verkleinert sich dann). Kein Flexible für die Pillen: neben einem Flexible bekam
+            // die Überschrift fest nur die halbe Breite (Prüfbefund 14.11.26).
             if (chips) ...[
               const SizedBox(width: Sp.m),
               // FittedBox: auf EINER Zeile bleiben und notfalls verkleinern
@@ -142,7 +155,7 @@ class _PinnedPageState extends State<PinnedPage> {
               // quer, 14.11.26).
               ConstrainedBox(
                 constraints: BoxConstraints(
-                  maxWidth: MediaQuery.sizeOf(context).width * 0.45,
+                  maxWidth: MediaQuery.sizeOf(context).width * 0.6,
                 ),
                 child: const FittedBox(
                   fit: BoxFit.scaleDown,
@@ -182,14 +195,20 @@ class _PinnedPageState extends State<PinnedPage> {
           child: const SizedBox(height: 1),
         ),
         Expanded(
-          child: MediaQuery.removePadding(
-            context: context,
-            removeTop: true,
-            child: NotificationListener<ScrollNotification>(
-              onNotification: _onScroll,
-              child: list,
-            ),
-          ),
+          child: widget.body != null
+              ? MediaQuery.removePadding(
+                  context: context,
+                  removeTop: true,
+                  child: widget.body!,
+                )
+              : MediaQuery.removePadding(
+                  context: context,
+                  removeTop: true,
+                  child: NotificationListener<ScrollNotification>(
+                    onNotification: _onScroll,
+                    child: list,
+                  ),
+                ),
         ),
       ],
     );

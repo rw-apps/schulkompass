@@ -81,7 +81,7 @@ abstract final class Sz {
   /// Punkt mit Anfangsbuchstabe im Kopf der Kinderkarte (kompakt, 18.10.26).
   static const double avatarSmall = 32;
 
-  /// Ab dieser Breite Tablet-Aufbau auf Heute: ein Kind links, Termine
+  /// Ab dieser Seitenbreite (ohne Leiste) Tablet-Aufbau auf Heute: ein Kind links, Termine
   /// rechts; ab zwei Kindern je zwei nebeneinander (TodayPage).
   static const double wideLayout = 700;
 
@@ -619,9 +619,15 @@ class Kit {
 /// Querformat – EINE Regel für Telefon und Tablet (Wunsch 14.11.26:
 /// „Änderungen möglichst nur an einer Stelle“). Daran hängen die Leiste
 /// links (PreviewShell) und der verdichtete Kopf (compactHeader in
-/// kid_chips.dart). Liest nur die Größe (sizeOf), damit die Tastatur keine
-/// Neuaufbauten auslöst.
+/// kid_chips.dart). Liest die Größe des Fensters (View), nicht
+/// MediaQuery: Neben der Leiste sehen die Seiten als MediaQuery.size nur
+/// ihren Platz (PreviewShell, Nachprüfung 14.11.26) – fast quadratische
+/// Bildschirme wären dort sonst „hochkant“, während die Leiste quer steht.
+/// Die Tastatur ändert die Fenstergröße nicht (nur viewInsets).
 bool isLandscape(BuildContext context) {
-  final size = MediaQuery.sizeOf(context);
+  // Abhängigkeit von MediaQuery.size: View.of meldet Drehungen nicht neu
+  // (nur einen anderen View), die Größe in MediaQuery ändert sich mit.
+  MediaQuery.sizeOf(context);
+  final size = View.of(context).physicalSize;
   return size.width > size.height;
 }

@@ -397,8 +397,11 @@ class _PlanPageState extends State<PlanPage> {
             // um („Stundenpla/n“, Bildschirmfoto 16.10.26) – lieber kleiner.
             // Quer (Handy und Tablet) die Kind-Pillen direkt hinter der Überschrift
             // (TitleChips, Wunsch 14.11.26), sonst stehen sie darüber. Die
-            // Pillen in natürlicher Breite auf EINER Zeile (höchstens 65 %,
-            // sonst verkleinert): Mit zwei lockeren Flexibles bekamen sie
+            // Pillen in natürlicher Breite auf EINER Zeile (höchstens 75 %
+            // neben dem Umschalter, sonst verkleinert; vorher 65 % – drei
+            // Kinder schrumpften am Pixel 9a quer auf rund zwei Drittel,
+            // Nachprüfung 14.11.26; „Kalender“ verkleinert sich zuerst per
+            // FittedBox): Mit zwei lockeren Flexibles bekamen sie
             // nur die halbe Breite und brachen untereinander um
             // (Bildschirmfoto Pixel 9a quer, 14.11.26).
             Expanded(
@@ -423,7 +426,7 @@ class _PlanPageState extends State<PlanPage> {
                       builder: (c2) => TitleChips.shows(c2)
                           ? ConstrainedBox(
                               constraints: BoxConstraints(
-                                maxWidth: box.maxWidth * 0.65,
+                                maxWidth: box.maxWidth * 0.75,
                               ),
                               child: const FittedBox(
                                 fit: BoxFit.scaleDown,

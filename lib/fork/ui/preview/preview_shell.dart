@@ -340,6 +340,9 @@ class _PreviewShellState extends State<PreviewShell> {
                 pushInTab<void>(
                   ctx,
                   (_) => PortalAppPage(app: a, session: s.session),
+                  // Pillen oben: zeigt, welches Kind angemeldet ist; ein
+                  // anderes Kind führt zurück (Nachprüfung 14.11.26).
+                  kidChips: true,
                 );
               },
             ),
@@ -558,7 +561,37 @@ class _PreviewShellState extends State<PreviewShell> {
           Material(color: k.p.bg, child: nav(Axis.vertical))
         else
           const SizedBox.shrink(),
-        Expanded(child: scaffold),
+        Expanded(
+          // Die Seiten sehen als Bildschirmbreite nur ihren Platz neben der
+          // Leiste (MediaQuery.size). Ursache (Nachprüfung 14.11.26,
+          // Probebild 740 × 360 dp quer): Heute, Kalender und Kopfzeile
+          // rechneten mit der vollen Breite – auf kleinen Handys standen
+          // zwei Karten in ~290 dp, Text wurde abgeschnitten. EINE Stelle
+          // statt LayoutBuilder in jeder Seite (ein LayoutBuilder um die
+          // Kind-Pillen kam nicht zur Ruhe: ClaimedChips meldet sich nach
+          // dem Bild an). Grenze: isLandscape liest deshalb die Größe des
+          // Fensters (View), nicht MediaQuery.
+          // Builder: die MediaQuery darunter (Schriftstufe der Vorschau),
+          // nicht [mq] von oben – sonst ginge die Schriftstufe verloren.
+          // Immer eingehängt, hoch nur ohne Abzug: Wechselte der Aufbau beim
+          // Drehen, entstanden Scaffold, IndexedStack und die Navigatoren
+          // der Reiter neu (Prüfbefund 14.11.26).
+          child: Builder(
+            builder: (c) {
+              final m = MediaQuery.of(c);
+              final w = rail
+                  ? (m.size.width - FloatingNavBar.railExtent(m)).clamp(
+                      0.0,
+                      m.size.width,
+                    )
+                  : m.size.width;
+              return MediaQuery(
+                data: m.copyWith(size: Size(w, m.size.height)),
+                child: scaffold,
+              );
+            },
+          ),
+        ),
       ],
     );
     return MediaQuery(
@@ -641,6 +674,11 @@ class FloatingNavBar extends StatelessWidget {
   final List<NavDest> items;
   final ValueChanged<int> onSelect;
   final Axis axis;
+
+  /// Breite der senkrechten Leiste samt Rändern (wie [_rail]: Abstand +
+  /// linker Systemrand + Pille + Abstand rechts).
+  static double railExtent(MediaQueryData mq) =>
+      Sz.navMargin + mq.padding.left + Sz.navRailWidth + Sp.s;
 
   @override
   Widget build(BuildContext context) {
@@ -805,12 +843,18 @@ class _NavItem extends StatelessWidget {
               ),
               const SizedBox(height: Sp.xxs),
               // Zu lange Beschriftung wird verkleinert, nie abgeschnitten
-              // oder umgebrochen („Stundenpla-n“ im Lanis-Original). Höhe:
-              // Systemschrift höchstens ×1,3, sonst lief die feste Pille
-              // (Sz.navHeight) unten 1 px über (Test shell_nav_test, Tablet
-              // quer, Schrift ×1,82); FittedBox regelt nur die Breite.
-              MediaQuery.withClampedTextScaling(
-                maxScaleFactor: 1.3,
+              // oder umgebrochen („Stundenpla-n“ im Lanis-Original) – in der
+              // Breite UND in der Höhe: Flexible gibt der FittedBox die
+              // Resthöhe der festen Pille (Sz.navHeight bzw. ein Fünftel der
+              // Leiste). Ursache (Nachprüfung 14.11.26): Vorher galt überall
+              // fest höchstens ×1,3 der Systemschrift, obwohl unten rund
+              // 28 dp für die Zeile frei sind (64 − 12 Rand − 22 Symbol − 2)
+              // und die Leiste quer mehr hat; nötig war eine Grenze nur bei
+              // ×1,82 (1 px Überlauf, Test shell_nav_test). Jetzt wächst die
+              // Schrift, so weit Platz ist. Grenze: Quer unter rund 200 dp
+              // Fensterhöhe passen schon Symbol und Abstand nicht mehr
+              // (Prüfbefund 14.11.26: 7 px Überlauf, vorher bis 23 px).
+              Flexible(
                 child: FittedBox(
                   fit: BoxFit.scaleDown,
                   child: Text(label, maxLines: 1, style: k.navLabel(selected)),
