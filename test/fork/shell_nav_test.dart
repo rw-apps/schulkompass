@@ -56,4 +56,42 @@ void main() {
     expect(find.byType(FloatingNavBar), findsOneWidget);
     expect(t.takeException(), isNull);
   });
+
+  // Entwurf 14.11.26: Telefon quer → Leiste links, Tablet quer → unten.
+  for (final (size, vertical) in [
+    (const Size(2424, 1080), true),
+    (const Size(2560, 1600), false),
+  ]) {
+    for (final scale in [1.0, 1.4 * 1.3]) {
+      testWidgets('Leiste quer ${size.width}x${size.height} Schrift $scale', (
+        t,
+      ) async {
+        t.view.physicalSize = size;
+        t.view.devicePixelRatio = size.width > 2500 ? 2 : 2.625;
+        t.view.padding = const FakeViewPadding(left: 120, bottom: 63);
+        t.platformDispatcher.textScaleFactorTestValue = scale;
+        addTearDown(t.view.reset);
+        addTearDown(t.platformDispatcher.clearTextScaleFactorTestValue);
+        await t.pumpWidget(_app());
+        await t.pumpAndSettle();
+        final bar = t.widget<FloatingNavBar>(find.byType(FloatingNavBar));
+        expect(bar.axis, vertical ? Axis.vertical : Axis.horizontal);
+        await t.tap(_nav('Kalender'));
+        await t.pumpAndSettle();
+        expect(t.takeException(), isNull);
+        // Tastatur quer: Die Leiste liegt außerhalb des Scaffold und wird
+        // überdeckt statt gestaucht (Prüfbefund 14.11.26: bis 31 px Überlauf).
+        t.view.viewInsets = const FakeViewPadding(bottom: 230 * 2.625);
+        await t.pumpAndSettle();
+        expect(t.takeException(), isNull);
+        t.view.resetViewInsets();
+        await t.pumpAndSettle();
+        if (vertical) {
+          // Inhalt rechts neben der Leiste, nicht unter der Kamera.
+          final left = t.getTopLeft(find.text('Kalender').last).dx;
+          expect(left, greaterThan(120 / 2.625 + 76));
+        }
+      });
+    }
+  }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'kid_chips.dart';
 import 'kit.dart';
 
 /// Seite mit feststehendem Kopf – EIN Baustein für alle Seiten mit eigener
@@ -36,10 +37,21 @@ class PinnedPage extends StatefulWidget {
       Sp.page,
       Sp.xl,
     ),
+    this.leading,
+    this.placesChips = false,
   });
 
   /// Kopf von oben nach unten (Überschrift zuerst).
   final List<Widget> header;
+
+  /// Zurück-Pfeil: hoch eine eigene Zeile über dem Kopf, quer am Telefon
+  /// links neben der ersten Kopfzeile ([compactHeader]).
+  final Widget? leading;
+
+  /// Die Seite setzt die Pillen selbst in ihre Kopfzeile ([TitleChips]),
+  /// z. B. der Kalender direkt hinter die Überschrift statt hinter den
+  /// Umschalter. Sonst stehen sie quer rechts in der ersten Kopfzeile.
+  final bool placesChips;
 
   /// Inhalt als Liste …
   final List<Widget> children;
@@ -52,7 +64,9 @@ class PinnedPage extends StatefulWidget {
   final Future<void> Function()? onRefresh;
 
   /// Rand um den Kopf. Die Statusleiste kommt oben hinzu (nicht unter den
-  /// Kind-Pillen, PinnedKidChips entfernt sie dort schon).
+  /// Kind-Pillen, PinnedKidChips entfernt sie dort schon – außer quer, wenn
+  /// die Pillen in der Kopfzeile stehen). Quer am Telefon oben höchstens
+  /// [Sp.m] ([compactHeader]).
   final EdgeInsets headerPadding;
 
   /// Rand um den Inhalt. Unten kommt die Höhe der schwebenden Leiste hinzu
@@ -101,17 +115,58 @@ class _PinnedPageState extends State<PinnedPage> {
     if (refresh != null) {
       list = RefreshIndicator(onRefresh: refresh, child: list);
     }
+    // Quer am Telefon: Zurück und Pillen in die erste Kopfzeile, weniger
+    // Abstand oben (Rückmeldung 14.11.26, compactHeader).
+    final compact = compactHeader(context);
+    final slot = HeaderChips.of(context);
+    var header = widget.header;
+    final chips =
+        slot != null && slot.active && !widget.placesChips && header.isNotEmpty;
+    // Zurück aus der Pillenzeile nur zusammen mit den Pillen (beide fallen
+    // dort weg, sobald ClaimedChips sich anmeldet).
+    final lead = widget.leading ?? (chips ? slot.leading : null);
+    if (compact && header.isNotEmpty && (lead != null || chips)) {
+      header = [
+        Row(
+          children: [
+            ?lead,
+            if (lead != null) const SizedBox(width: Sp.xs),
+            Expanded(child: header.first),
+            // Pillen in natürlicher Breite, höchstens 45 % – sonst bekäme die
+            // Überschrift neben einem Flexible fest nur die halbe Breite
+            // (Prüfbefund 14.11.26); darüber brechen sie um (Wrap).
+            if (chips) ...[
+              const SizedBox(width: Sp.m),
+              ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxWidth: MediaQuery.sizeOf(context).width * 0.45,
+                ),
+                child: const ClaimedChips(),
+              ),
+            ],
+          ],
+        ),
+        ...header.skip(1),
+      ];
+    } else if (!compact && widget.leading != null) {
+      header = [
+        Row(children: [widget.leading!]),
+        const SizedBox(height: Sp.xs),
+        ...header,
+      ];
+    }
+    final top = compact && widget.headerPadding.top > Sp.m
+        ? Sp.m
+        : widget.headerPadding.top;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
-          padding: widget.headerPadding.copyWith(
-            top: widget.headerPadding.top + pad.top,
-          ),
+          padding: widget.headerPadding.copyWith(top: top + pad.top),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             mainAxisSize: MainAxisSize.min,
-            children: widget.header,
+            children: header,
           ),
         ),
         // Immer 1 dp hoch, damit der Inhalt beim Erscheinen nicht springt.
@@ -132,4 +187,22 @@ class _PinnedPageState extends State<PinnedPage> {
       ],
     );
   }
+}
+
+/// Pillen für eine Kopfzeile, die sie selbst platziert
+/// (PinnedPage.placesChips): quer am Telefon die Kind-Pillen aus
+/// [HeaderChips], sonst nichts.
+class TitleChips extends StatelessWidget {
+  const TitleChips({super.key});
+
+  /// Ob [TitleChips] hier etwas zeigt – der Aufrufer hängt es nur dann ein,
+  /// damit hoch die Überschrift die ganze Breite behält.
+  static bool shows(BuildContext context) =>
+      HeaderChips.of(context)?.active ?? false;
+
+  @override
+  Widget build(BuildContext context) => const Padding(
+    padding: EdgeInsets.only(left: Sp.m),
+    child: ClaimedChips(),
+  );
 }

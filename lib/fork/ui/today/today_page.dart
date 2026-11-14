@@ -1253,19 +1253,36 @@ class _DayBar extends StatelessWidget {
           ),
         ),
         const SizedBox(height: Sp.xs + Sp.xxs),
-        Row(
-          children: [
-            Text(timed ? l[first].start : '', style: k.barLabel),
-            Expanded(
-              child: Text(
-                center,
-                style: k.barLabel,
-                textAlign: TextAlign.center,
-                overflow: TextOverflow.ellipsis,
+        // Anfang und Ende in natürlicher Breite, höchstens je 30 %, dann
+        // verkleinert (FittedBox). Ursache (Test shell_nav_test, Querformat,
+        // Schrift ×1,82): In der schmalen Spalte neben dem zweiten Kind
+        // passten beide Uhrzeiten allein nicht mehr – 2 px Überlauf. Hoch
+        // bei normaler Schrift unverändert; ein erster Ansatz mit lockeren
+        // Flexibles begrenzte sie fest auf 1/6 (Prüfbefund 14.11.26).
+        LayoutBuilder(
+          builder: (context, box) {
+            Widget side(String text) => ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: box.maxWidth * 0.3),
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(text, style: k.barLabel),
               ),
-            ),
-            Text(timed ? t.barUntil(l[last].end) : '', style: k.barLabel),
-          ],
+            );
+            return Row(
+              children: [
+                side(timed ? l[first].start : ''),
+                Expanded(
+                  child: Text(
+                    center,
+                    style: k.barLabel,
+                    textAlign: TextAlign.center,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                side(timed ? t.barUntil(l[last].end) : ''),
+              ],
+            );
+          },
         ),
       ],
     );

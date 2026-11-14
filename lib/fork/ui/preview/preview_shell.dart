@@ -457,34 +457,61 @@ class _PreviewShellState extends State<PreviewShell> {
     final theme = Theme.of(context);
     final mq = MediaQuery.of(context);
     final system = mq.textScaler.scale(14) / 14;
+    // Telefon quer: Leiste links statt unten (Entwurf 14.11.26). Ursache:
+    // Unten nahm sie mit Rand rund 120 von 411 dp Höhe (Pixel 9a). Tablets
+    // (kürzere Seite ab Sz.phoneShortestSide) behalten die untere Leiste.
+    final rail =
+        mq.orientation == Orientation.landscape &&
+        mq.size.shortestSide < Sz.phoneShortestSide;
+    final body = _ShellRevision(
+      revision: ++_revision,
+      child: IndexedStack(
+        index: _tab.index,
+        children: [
+          for (final t in ShellTab.values)
+            _visited.contains(t) ? _tabNavigator(t) : const SizedBox.shrink(),
+        ],
+      ),
+    );
+    Widget nav(Axis axis) => Builder(
+      builder: (c) => FloatingNavBar(
+        axis: axis,
+        selected: _tab.index,
+        items: _dest(
+          c.t,
+          widget.liveData ? familyBadges(c) : const NavBadges(),
+        ),
+        onSelect: (i) => _select(ShellTab.values[i]),
+      ),
+    );
     final scaffold = Scaffold(
       backgroundColor: k.p.bg,
       // Inhalt endet ÜBER der Leiste (kein extendBody). Ursache: Lief er
       // darunter weiter, schnitt die Pille beim Scrollen Stunden an
       // (Rückmeldung 16.10.26 zur Tagesansicht).
       extendBody: false,
-      body: _ShellRevision(
-        revision: ++_revision,
-        child: IndexedStack(
-          index: _tab.index,
-          children: [
-            for (final t in ShellTab.values)
-              _visited.contains(t) ? _tabNavigator(t) : const SizedBox.shrink(),
-          ],
-        ),
-      ),
+      // _SideInset hält die Kameraaussparung frei (quer links oder
+      // rechts); die Seiten selbst kennen keinen seitlichen Rand. Quer liegt
+      // links die Leiste über dem Kamerarand.
+      body: _SideInset(left: !rail, child: body),
       // Builder: liegt unter LiveDataScope (siehe unten), damit die Marken
       // die geladenen Daten lesen können.
-      bottomNavigationBar: Builder(
-        builder: (c) => FloatingNavBar(
-          selected: _tab.index,
-          items: _dest(
-            c.t,
-            widget.liveData ? familyBadges(c) : const NavBadges(),
-          ),
-          onSelect: (i) => _select(ShellTab.values[i]),
-        ),
-      ),
+      bottomNavigationBar: rail ? null : nav(Axis.horizontal),
+    );
+    // Quer: Leiste links AUSSERHALB des Scaffold. Ursache (Prüfbefund
+    // 14.11.26): Im body schrumpfte sie mit der Tastatur
+    // (resizeToAvoidBottomInset) und lief bis 31 px über; so überdeckt die
+    // Tastatur sie wie unten die Pille. Immer dieselbe Row (Platzhalter
+    // statt Leiste), damit beim Drehen nichts zwischen IndexedStack und
+    // Navigator neu entsteht.
+    final shell = Row(
+      children: [
+        if (rail)
+          Material(color: k.p.bg, child: nav(Axis.vertical))
+        else
+          const SizedBox.shrink(),
+        Expanded(child: scaffold),
+      ],
     );
     return MediaQuery(
       data: widget.liveData
@@ -510,35 +537,67 @@ class _PreviewShellState extends State<PreviewShell> {
                       child: HomeWidgetSync(
                         child: WidgetLaunchHandler(
                           onTarget: _onWidgetTarget,
-                          child: scaffold,
+                          child: shell,
                         ),
                       ),
                     ),
                   ),
                 )
-              : scaffold,
+              : shell,
         ),
       ),
     );
   }
 }
 
-/// Schwebende Leiste (Pille) aus dem Entwurf A + C.
+/// Seitlicher Systemrand (Kameraaussparung im Querformat) für den Inhalt.
+///
+/// Ursache (Prüfung Querformat 14.11.26): Die Seiten setzen Titel und Karten
+/// bis an den Rand; quer liegt die Kameralinse des Telefons aber links oder
+/// rechts. Hier einmal für alle Reiter statt in jeder Seite. Der Rand wird
+/// danach aus MediaQuery entfernt, damit innere SafeAreas ihn nicht doppelt
+/// nehmen. [left] = false: links liegt schon die Leiste (Querformat).
+class _SideInset extends StatelessWidget {
+  const _SideInset({required this.left, required this.child});
+
+  final bool left;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final pad = MediaQuery.paddingOf(context);
+    return Padding(
+      padding: EdgeInsets.only(left: left ? pad.left : 0, right: pad.right),
+      child: MediaQuery.removePadding(
+        context: context,
+        removeLeft: true,
+        removeRight: true,
+        child: child,
+      ),
+    );
+  }
+}
+
+/// Schwebende Leiste (Pille) aus dem Entwurf A + C; quer am Telefon
+/// senkrecht links ([axis] vertikal, Entwurf 14.11.26).
 class FloatingNavBar extends StatelessWidget {
   const FloatingNavBar({
     super.key,
     required this.selected,
     required this.items,
     required this.onSelect,
+    this.axis = Axis.horizontal,
   });
 
   final int selected;
   final List<NavDest> items;
   final ValueChanged<int> onSelect;
+  final Axis axis;
 
   @override
   Widget build(BuildContext context) {
     final k = Kit.of(context);
+    if (axis == Axis.vertical) return _rail(context, k);
     final inset = MediaQuery.paddingOf(context).bottom;
     // Fläche um die Pille in Seitenfarbe, damit nichts durchscheint.
     return ColoredBox(
@@ -584,6 +643,53 @@ class FloatingNavBar extends StatelessWidget {
                 ],
               ),
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+extension on FloatingNavBar {
+  /// Senkrechte Pille links. Der linke Systemrand (Kamera) kommt zum Abstand
+  /// hinzu; oben und unten die Systemleisten. Jedes Ziel bekommt ein Fünftel
+  /// der Höhe – wie unten ein Fünftel der Breite, damit große Systemschrift
+  /// nicht überläuft (Beschriftung schrumpft per FittedBox in _NavItem).
+  Widget _rail(BuildContext context, Kit k) {
+    final pad = MediaQuery.paddingOf(context);
+    return ColoredBox(
+      color: k.p.bg,
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(
+          Sz.navMargin + pad.left,
+          Sp.s + pad.top,
+          Sp.s,
+          Sp.s + pad.bottom,
+        ),
+        child: Container(
+          width: Sz.navRailWidth,
+          padding: const EdgeInsets.symmetric(vertical: Sp.s),
+          decoration: BoxDecoration(
+            color: k.p.navBg,
+            borderRadius: BorderRadius.circular(Rad.nav),
+            boxShadow: k.navShadow,
+          ),
+          child: Column(
+            children: [
+              for (final (i, d) in items.indexed)
+                Expanded(
+                  child: Center(
+                    child: _NavItem(
+                      icon: i == selected ? d.iconSelected : d.icon,
+                      label: d.label,
+                      selected: i == selected,
+                      count: d.count,
+                      alert: d.alert,
+                      onTap: () => onSelect(i),
+                    ),
+                  ),
+                ),
+            ],
           ),
         ),
       ),
@@ -646,10 +752,16 @@ class _NavItem extends StatelessWidget {
               ),
               const SizedBox(height: Sp.xxs),
               // Zu lange Beschriftung wird verkleinert, nie abgeschnitten
-              // oder umgebrochen („Stundenpla-n“ im Lanis-Original).
-              FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Text(label, maxLines: 1, style: k.navLabel(selected)),
+              // oder umgebrochen („Stundenpla-n“ im Lanis-Original). Höhe:
+              // Systemschrift höchstens ×1,3, sonst lief die feste Pille
+              // (Sz.navHeight) unten 1 px über (Test shell_nav_test, Tablet
+              // quer, Schrift ×1,82); FittedBox regelt nur die Breite.
+              MediaQuery.withClampedTextScaling(
+                maxScaleFactor: 1.3,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(label, maxLines: 1, style: k.navLabel(selected)),
+                ),
               ),
             ],
           ),

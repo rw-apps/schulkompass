@@ -1,5 +1,12 @@
 ## Schulkompass (rw-apps, bis 9472 „Schulportal“) – Änderungen gegenüber Lanis-Mobile
 
+**4.1.0+9510** – Querformat am Handy
+
+- **Leiste links:** Im Querformat steht die Navigationsleiste auf dem Handy als schmale Pille am linken Rand statt unten. So bleibt die ganze Höhe für den Inhalt. Im Hochformat und auf dem Tablet bleibt sie unten.
+- **Kopf in einer Zeile:** Quer stehen die Kinder direkt neben der Überschrift (z. B. neben „Kalender“), der Zurück-Pfeil neben dem Titel, und oben ist weniger Rand. Lädt eine Seite oder zeigt sie einen Fehler, bleibt die Kinderwahl darüber. Ab sehr großer Systemschrift bleibt der gewohnte Aufbau.
+- **Kamera-Rand:** Die Inhalte halten im Querformat Abstand zur Kameraaussparung, auf beiden Seiten.
+- **Große Schrift:** Die Uhrzeiten unter der Zeitleiste in „Heute“ und die Beschriftung der unteren Leiste auf dem Tablet laufen bei sehr großer Systemschrift nicht mehr über.
+
 **4.1.0+9509** – Stundenplan nach Sitzungsende, Diagnose Anmeldung
 
 - **Leerer Stundenplan nach Sitzungsende:** Lieferte das Portal nach abgelaufener Anmeldung eine leere Seite, meldete die App einen leeren Stundenplan als Fehler. Sie erkennt solche Seiten jetzt als Sitzungsende, meldet sich neu an und lädt den Plan noch einmal.

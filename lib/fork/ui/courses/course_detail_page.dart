@@ -165,20 +165,16 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
     final d = _data;
 
     // Zurück, Fach und Halbjahr fest (PinnedPage, Rückmeldung 21.10.26).
+    // Ohne Pillen eigener Pfeil (PinnedPage.leading: hoch darüber, quer
+    // links neben dem Fach); mit Pillen steht er dort (BackInChips).
+    final back = BackInChips.of(context)
+        ? null
+        : IconButton(
+            onPressed: () => Navigator.of(context).maybePop(),
+            icon: Icon(Icons.arrow_back, color: k.p.ink),
+            tooltip: t.back,
+          );
     final header = <Widget>[
-      // Ohne Pillen eigener Pfeil; mit Pillen steht er dort (BackInChips).
-      if (!BackInChips.of(context)) ...[
-        Row(
-          children: [
-            IconButton(
-              onPressed: () => Navigator.of(context).maybePop(),
-              icon: Icon(Icons.arrow_back, color: k.p.ink),
-              tooltip: t.back,
-            ),
-          ],
-        ),
-        const SizedBox(height: Sp.xs),
-      ],
       _Header(course: c, tone: f),
       if (_hasFirstHalf) ...[
         const SizedBox(height: Sp.m),
@@ -220,6 +216,7 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
         headerPadding: const EdgeInsets.fromLTRB(Sp.page, Sp.s, Sp.page, Sp.xs),
         bodyPadding: const EdgeInsets.fromLTRB(Sp.page, 0, Sp.page, Sp.xl),
         onRefresh: _fetch,
+        leading: back,
         header: header,
         children: children,
       ),

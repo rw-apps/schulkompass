@@ -383,20 +383,47 @@ class _PlanPageState extends State<PlanPage> {
 
     final head = <Widget>[
       Padding(
-        padding: const EdgeInsets.fromLTRB(Sp.page + Sp.xs, Sp.xl, Sp.page, 0),
+        // Quer am Telefon oben Sp.m wie die übrigen Seiten (PinnedPage kürzt
+        // nur ihren eigenen Rand, dieser liegt innen; Prüfbefund 14.11.26).
+        padding: EdgeInsets.fromLTRB(
+          Sp.page + Sp.xs,
+          compactHeader(context) ? Sp.m : Sp.xl,
+          Sp.page,
+          0,
+        ),
         child: Row(
           children: [
             // Ab „Groß“ brach der Titel neben dem Umschalter mitten im Wort
             // um („Stundenpla/n“, Bildschirmfoto 16.10.26) – lieber kleiner.
+            // Quer am Telefon die Kind-Pillen direkt hinter der Überschrift
+            // (TitleChips, Wunsch 14.11.26), sonst stehen sie darüber.
             Expanded(
-              child: FittedBox(
-                fit: BoxFit.scaleDown,
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  context.t.navCalendar,
-                  style: k.pageTitle,
-                  maxLines: 1,
-                ),
+              child: Row(
+                children: [
+                  Flexible(
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        context.t.navCalendar,
+                        style: k.pageTitle,
+                        maxLines: 1,
+                      ),
+                    ),
+                  ),
+                  // Nur quer eingehängt: Hoch teilte ein leeres Flexible die
+                  // Breite 1:1 und halbierte den Titel (Prüfbefund 14.11.26).
+                  // Flexible: Die Pillen brechen notfalls um, statt über den
+                  // Umschalter zu laufen.
+                  // Builder: Dieser Kopf entsteht im Zustand der Seite, also
+                  // ÜBER PinnedKidChips; erst der Builder liegt darunter und
+                  // sieht HeaderChips.
+                  Builder(
+                    builder: (c) => TitleChips.shows(c)
+                        ? const Flexible(child: TitleChips())
+                        : const SizedBox.shrink(),
+                  ),
+                ],
               ),
             ),
             const SizedBox(width: Sp.m),
@@ -503,6 +530,7 @@ class _PlanPageState extends State<PlanPage> {
         headerPadding: const EdgeInsets.only(bottom: Sp.s),
         bodyPadding: const EdgeInsets.fromLTRB(Sp.page, Sp.ml, Sp.page, Sp.xl),
         onRefresh: widget.onRefresh,
+        placesChips: true,
         header: [head.first],
         children: [
           for (final n in widget.notices)
@@ -532,6 +560,7 @@ class _PlanPageState extends State<PlanPage> {
       headerPadding: const EdgeInsets.only(bottom: Sp.s),
       bodyPadding: const EdgeInsets.only(bottom: Sp.xl),
       onRefresh: widget.onRefresh,
+      placesChips: true,
       header: [head.first],
       children: [
         for (final n in widget.notices)

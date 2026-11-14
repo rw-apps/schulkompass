@@ -143,6 +143,16 @@ abstract final class Sz {
   static const double navMargin = 16;
   static const double navBottom = 24;
 
+  /// Leiste links im Querformat am Telefon (Entwurf 14.11.26): Breite der
+  /// Pille. Ursache: Unten fraß die Leiste fast ein Drittel der Höhe
+  /// (Pixel 9a quer: rund 120 von 411 dp).
+  static const double navRailWidth = 76;
+
+  /// Bis zu dieser kürzeren Seite gilt ein Gerät als Telefon: quer bekommt
+  /// es die Leiste links (PreviewShell). Tablets behalten die untere Leiste,
+  /// dort reicht die Höhe.
+  static const double phoneShortestSide = 600;
+
   // ---- Stundenplan ------------------------------------------------------
   /// Mindesthöhe einer Stunde im Wochenraster. Sonst teilt das Raster die
   /// freie Höhe auf alle Stunden auf, damit die Woche ohne Scrollen auf
