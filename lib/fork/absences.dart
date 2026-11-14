@@ -102,7 +102,8 @@ int lessonCount(String? hours) {
 /// Seite scheidet aus (loadCoursePages: eine Seite je Kurs-ID; #history hat
 /// in allen Exporten eine Tabelle). Bleibt: zwei Einträge der Lehrkraft für
 /// dieselbe Stunde, oder dieselbe Kurs-ID zweimal in der Kursliste – das
-/// unterscheidet die Meldung DuplicateAbsence in [absencesFrom].
+/// unterscheidet [absencesFrom]; gemeldet wird nur noch der zweite Fall
+/// (DuplicateAbsence sameEntry).
 ///
 /// Grenze: Stunde „0.“ oder leer ist bei manchen Schulen ein Platzhalter
 /// (Schule A: alle Einträge „0. Stunde“); dann zählt [entryId] mit, damit
@@ -140,7 +141,7 @@ List<AbsenceItem> absencesFrom(
 ) {
   final out = <AbsenceItem>[];
   final at = <String, int>{};
-  var sameEntry = 0, otherEntry = 0;
+  var sameEntry = 0;
   for (final c in courses) {
     final d = pages[c.id];
     if (d == null) continue;
@@ -155,7 +156,7 @@ List<AbsenceItem> absencesFrom(
         if (first.entry == e.entryID) {
           sameEntry++; // Kurs-ID zweimal in der Kursliste
         } else {
-          otherEntry++; // zwei Einträge der Lehrkraft
+          // Zwei Einträge der Lehrkraft: zusammengefasst, nicht gemeldet.
           out[i] = first._withAlso('${c.id}|${e.entryID}');
         }
         continue;
@@ -175,12 +176,16 @@ List<AbsenceItem> absencesFrom(
       );
     }
   }
-  // Nur Zählwerte, keine Inhalte (wie SkippedRows, lessons_student.dart):
-  // zeigt in einem Fehlerbericht, welche Ursache vorliegt.
-  if (sameEntry + otherEntry > 0) {
+  // Nur Zählwerte, keine Inhalte (wie SkippedRows, lessons_student.dart).
+  // Gemeldet wird nur noch derselbe Eintrag doppelt (sameEntry: Kurs-ID
+  // zweimal gelesen, deutet auf einen Lesefehler). Zwei Einträge der
+  // Lehrkraft für dieselbe Stunde (otherEntry) sind geklärt und harmlos –
+  // die Anzeige fasst sie zusammen. Ursache (Fehlerberichte 9506–9510,
+  // 14.11.26): otherEntry=1 kam bei jedem Laden erneut, bis 15× je Sitzung,
+  // ohne neue Erkenntnis.
+  if (sameEntry > 0) {
     ErrorLog.instance.notice('meinunterricht.php', 'DuplicateAbsence', {
       'sameEntry': sameEntry,
-      'otherEntry': otherEntry,
     });
   }
   out.sort(
