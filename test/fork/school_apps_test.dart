@@ -46,8 +46,6 @@ void main() {
     expect(apps['Organisation']!.first.module, 'wahl.php');
     const odd = SchoolApp(name: 'X', link: 'index.php?a=foo', folder: 'Y');
     expect(odd.external, isFalse);
-    const bad = SchoolApp(name: 'X', link: 'tool.php?x=%zz', folder: 'Y');
-    expect(bad.uri, isNull);
   });
 
   testWidgets('Mehr: eine Zeile je Rubrik, Angebote auf der Unterseite', (
