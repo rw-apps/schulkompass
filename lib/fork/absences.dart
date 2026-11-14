@@ -179,10 +179,10 @@ List<AbsenceItem> absencesFrom(
   // Nur Zählwerte, keine Inhalte (wie SkippedRows, lessons_student.dart).
   // Gemeldet wird nur noch derselbe Eintrag doppelt (sameEntry: Kurs-ID
   // zweimal gelesen, deutet auf einen Lesefehler). Zwei Einträge der
-  // Lehrkraft für dieselbe Stunde (otherEntry) sind geklärt und harmlos –
-  // die Anzeige fasst sie zusammen. Ursache (Fehlerberichte 9506–9510,
-  // 14.11.26): otherEntry=1 kam bei jedem Laden erneut, bis 15× je Sitzung,
-  // ohne neue Erkenntnis.
+  // Lehrkraft für dieselbe Stunde sind geklärt und harmlos – die Anzeige
+  // fasst sie zusammen. Ursache (Fehlerberichte 9506–9510, 14.11.26): Sie
+  // kamen als otherEntry=1 bei jedem Laden erneut, bis 15× je Sitzung, ohne
+  // neue Erkenntnis.
   if (sameEntry > 0) {
     ErrorLog.instance.notice('meinunterricht.php', 'DuplicateAbsence', {
       'sameEntry': sameEntry,

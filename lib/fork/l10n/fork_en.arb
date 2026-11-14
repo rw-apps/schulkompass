@@ -883,5 +883,8 @@
   "fewerTeachers": "Show fewer",
   "focusTeachersHint": "Teachers with lessons on the reported days",
   "substituteFor": "Substitute: {subjects}",
-  "tplSickNote": "Sick note"
+  "tplSickNote": "Sick note",
+  "schoolOffers": "School services",
+  "portalAppFailed": "This service could not be opened right now. The error has been noted in the error report.",
+  "otherFolder": "Other"
 }

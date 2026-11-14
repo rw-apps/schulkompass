@@ -12,19 +12,50 @@ class MoreEntry {
     required this.label,
     required this.onTap,
     this.detail,
+    this.external = false,
+    this.open,
   });
 
   final IconData icon;
   final String label;
   final String? detail;
   final VoidCallback onTap;
+
+  /// Fremdes Angebot (Weiterleitung des Portals): Symbol „öffnet extern“
+  /// statt des Pfeils.
+  final bool external;
+
+  /// Öffnen mit dem Kontext der Zeile (statt [onTap]). Ursache (Prüfbefund
+  /// 14.11.26): Auf der Rubrik-Unterseite hing [onTap] am Kontext von
+  /// „Mehr“, den FamilySwitch beim Kindwechsel neu aufbaut – der Tipp lief
+  /// dann ins Leere.
+  final void Function(BuildContext context)? open;
+}
+
+/// Rubrik der Angebote der Schule (Ordner des Portals, school_apps.dart).
+class MoreSection {
+  const MoreSection(this.title, this.icon, this.entries);
+
+  final String title;
+  final IconData icon;
+  final List<MoreEntry> entries;
 }
 
 /// Bereich „Mehr“: Dienste und Aktionen; Einstellungen als eigener Eintrag.
 class MorePage extends StatelessWidget {
-  const MorePage({super.key, this.entries = const []});
+  const MorePage({
+    super.key,
+    this.entries = const [],
+    this.sections = const [],
+  });
 
   final List<MoreEntry> entries;
+
+  /// Angebote der Schule je Rubrik: eine Zeile je Rubrik, die Angebote auf
+  /// einer Unterseite. Ursache (Rückmeldung 14.11.26 zum Entwurf als Liste
+  /// und als Kacheln: „möglichst wenig scrollen“, „Unterseite je Rubrik“):
+  /// Alle Angebote untereinander füllten fast drei Bildschirme.
+  final List<MoreSection> sections;
 
   @override
   Widget build(BuildContext context) {
@@ -39,6 +70,30 @@ class MorePage extends StatelessWidget {
             padding: const EdgeInsets.only(bottom: Sp.s),
             child: _EntryTile(entry: e),
           ),
+        if (sections.any((s) => s.entries.isNotEmpty))
+          Padding(
+            padding: const EdgeInsets.fromLTRB(Sp.xs, Sp.l, Sp.xs, Sp.s),
+            child: Text(context.t.schoolOffers, style: k.section),
+          ),
+        for (final sec in sections)
+          if (sec.entries.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(bottom: Sp.s),
+              child: _EntryTile(
+                entry: MoreEntry(
+                  icon: sec.icon,
+                  label: sec.title,
+                  // Vorschau der Namen, damit man ohne Öffnen sieht, wo ein
+                  // Angebot steckt.
+                  detail: sec.entries.map((e) => e.label).join(', '),
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => MoreSectionPage(section: sec),
+                    ),
+                  ),
+                ),
+              ),
+            ),
       ],
     );
   }
@@ -57,7 +112,7 @@ class _EntryTile extends StatelessWidget {
       borderRadius: BorderRadius.circular(Rad.signal),
       child: InkWell(
         borderRadius: BorderRadius.circular(Rad.signal),
-        onTap: entry.onTap,
+        onTap: entry.open == null ? entry.onTap : () => entry.open!(context),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: Sp.l, vertical: Sp.m),
           child: Row(
@@ -70,14 +125,56 @@ class _EntryTile extends StatelessWidget {
                   children: [
                     Text(entry.label, style: k.planSubject(k.p.ink)),
                     if (entry.detail != null)
-                      Text(entry.detail!, style: k.planMeta(k.p.muted)),
+                      Text(
+                        entry.detail!,
+                        style: k.planMeta(k.p.muted),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                   ],
                 ),
               ),
-              Icon(Icons.chevron_right, size: Sz.icon, color: k.p.muted),
+              Icon(
+                entry.external ? Icons.open_in_new : Icons.chevron_right,
+                size: Sz.icon,
+                color: k.p.muted,
+              ),
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Unterseite einer Rubrik: die Angebote der Schule als Liste. Fremde
+/// Angebote (Weiterleitung des Portals) zeigen statt des Pfeils das Symbol
+/// „öffnet extern“.
+class MoreSectionPage extends StatelessWidget {
+  const MoreSectionPage({super.key, required this.section});
+
+  final MoreSection section;
+
+  @override
+  Widget build(BuildContext context) {
+    final k = Kit.of(context);
+    return Scaffold(
+      backgroundColor: k.p.bg,
+      body: PinnedPage(
+        leading: IconButton(
+          onPressed: () => Navigator.of(context).maybePop(),
+          icon: Icon(Icons.arrow_back, color: k.p.ink),
+          tooltip: context.t.back,
+        ),
+        header: [Text(section.title, style: k.pageTitle)],
+        bodyPadding: const EdgeInsets.fromLTRB(Sp.page, Sp.xs, Sp.page, Sp.xl),
+        children: [
+          for (final e in section.entries)
+            Padding(
+              padding: const EdgeInsets.only(bottom: Sp.s),
+              child: _EntryTile(entry: e),
+            ),
+        ],
       ),
     );
   }

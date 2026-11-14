@@ -2274,5 +2274,8 @@
   "@moreTeachers": {"placeholders": {"n": {"type": "int"}}},
   "substituteFor": "Vertretung: {subjects}",
   "@substituteFor": {"placeholders": {"subjects": {"type": "String"}}},
-  "tplSickNote": "Krankmeldung"
+  "tplSickNote": "Krankmeldung",
+  "schoolOffers": "Angebote der Schule",
+  "portalAppFailed": "Das Angebot ließ sich gerade nicht öffnen. Der Fehler ist im Fehlerbericht notiert.",
+  "otherFolder": "Sonstiges"
 }

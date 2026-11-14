@@ -883,5 +883,8 @@
   "fewerTeachers": "Daha az göster",
   "focusTeachersHint": "Bildirilen günlerde dersi olan öğretmenler",
   "substituteFor": "Vekil: {subjects}",
-  "tplSickNote": "Hastalık bildirimi"
+  "tplSickNote": "Hastalık bildirimi",
+  "schoolOffers": "Okulun sundukları",
+  "portalAppFailed": "Bu hizmet şu anda açılamadı. Hata, hata raporuna kaydedildi.",
+  "otherFolder": "Diğer"
 }

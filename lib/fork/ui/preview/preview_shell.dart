@@ -15,6 +15,7 @@ import 'package:lanis/utils/deep_link.dart';
 import '../../l10n/l10n.dart';
 import '../../report_relay.dart';
 import '../today/auto_report_prompt.dart' show reportOs;
+import '../../school_apps.dart';
 import '../../school_links.dart';
 import '../courses/grades_request.dart';
 import '../courses/course_detail_page.dart';
@@ -30,6 +31,7 @@ import '../messages/live_messages_page.dart';
 import '../messages/messages_page.dart';
 import '../mensa/meal_hub_page.dart';
 import '../more/more_page.dart';
+import '../more/portal_app_page.dart';
 import '../plan/live_plan_page.dart';
 import '../settings/settings_page.dart';
 import '../plan/plan_model.dart' show GroupChoice, effectiveChoice;
@@ -301,6 +303,34 @@ class _PreviewShellState extends State<PreviewShell> {
         : [FamilyMember(accountId: -1, snapshot: s, colorIndex: 0)];
   }
 
+  /// Angebote der Schule je Rubrik aus der App-Liste des Portals
+  /// (school_apps.dart), geöffnet angemeldet mit dem Konto des gewählten
+  /// Kindes (PortalAppPage, Wunsch 14.11.26).
+  List<MoreSection> _schoolSections(BuildContext context, LiveSnapshot? s) {
+    if (s == null) return const [];
+    return [
+      for (final MapEntry(key: folder, value: apps) in schoolApps(
+        s.session.travelMenu,
+        otherFolder: context.t.otherFolder,
+      ).entries)
+        MoreSection(folder, schoolFolderIcon(folder), [
+          for (final a in apps)
+            MoreEntry(
+              icon: schoolAppIcon(a),
+              label: a.name,
+              external: a.external,
+              onTap: () {},
+              // Mit dem Kontext der Unterseite öffnen (MoreEntry.open).
+              open: (ctx) => Navigator.of(ctx).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => PortalAppPage(app: a, session: s.session),
+                ),
+              ),
+            ),
+        ]),
+    ];
+  }
+
   List<MoreEntry> _liveEntries(BuildContext context, LiveSnapshot? s) {
     if (s == null) return const [];
     final t = context.t;
@@ -399,7 +429,10 @@ class _PreviewShellState extends State<PreviewShell> {
       ),
       ShellTab.more => FamilySwitch(
         child: Builder(
-          builder: (c) => MorePage(entries: _liveEntries(c, LiveData.of(c))),
+          builder: (c) => MorePage(
+            entries: _liveEntries(c, LiveData.of(c)),
+            sections: _schoolSections(c, LiveData.of(c)),
+          ),
         ),
       ),
     };

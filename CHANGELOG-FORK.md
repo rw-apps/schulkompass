@@ -1,5 +1,12 @@
 ## Schulkompass (rw-apps, bis 9472 „Schulportal“) – Änderungen gegenüber Lanis-Mobile
 
+**4.1.0+9512** – Angebote der Schule unter „Mehr“
+
+- **Angebote der Schule:** „Mehr“ zeigt alle weiteren Angebote aus dem App-Menü des Portals – je Rubrik wie im Portal (z. B. Organisation, Unterricht) eine Zeile, die Angebote auf einer Unterseite. Die Liste kommt automatisch aus dem Portal, je Kind; was die App selbst zeigt (Kalender, Stundenplan …), steht nicht doppelt da.
+- **Öffnen in der App:** Ein Tipp öffnet das Angebot angemeldet mit dem Konto des Kindes, direkt auf seiner Seite (z. B. Wahltool, Videokonferenz). Fremde Angebote (z. B. Lernprogramme, Office) leitet das Portal weiter; sie öffnen im Browser.
+- **Fehler automatisch im Bericht:** Scheitert das Öffnen, steht es im Fehlerbericht – ohne den Namen des Angebots, nur mit der technischen Kennung. Neue, der App unbekannte Portal-Module werden mit erweiterter Zustimmung als Begriff gemeldet.
+- **Weniger Rauschen:** Doppelt eingetragene Fehlstunden der Lehrkraft werden nicht mehr gemeldet.
+
 **4.1.0+9511** – Querformat auch auf dem Tablet, Krankmeldung mit passenden Lehrkräften
 
 - **Querformat überall gleich:** Handy und Tablet folgen quer derselben Regel – Leiste links (auf dem Tablet mittig), Kinder neben der Überschrift. Im Kalender stehen die Kinder auf einer Zeile neben „Kalender“, in „Heute“ steht „Stand“ klein unter dem Datum.
