@@ -157,4 +157,46 @@ void main() {
     expect(body().maxLines, isNull);
     expect(find.text('weniger'), findsOneWidget);
   });
+
+  // Wunsch 15.11.26: offene Abgabe oben, gelb, mit „Abgeben“ statt
+  // „Erledigt“; ohne onSubmit (Elternkonto) nur Anzeige.
+  testWidgets('Abgabe: Karte über den Hausaufgaben, „Abgeben“', (t) async {
+    var submitted = 0;
+    Future<void> show({bool canSubmit = true, int files = 0}) => t.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: ForkL10n.localizationsDelegates,
+        supportedLocales: ForkL10n.supportedLocales,
+        locale: const Locale('de'),
+        home: Scaffold(
+          body: SingleChildScrollView(
+            child: HomeworkSection(
+              now: DateTime(2026, 11, 15, 16),
+              submissions: [
+                SubEntry(
+                  subject: 'Beispielfach',
+                  name: 'Poster',
+                  until: DateTime(2026, 11, 16, 10, 15),
+                  files: files,
+                  onSubmit: canSubmit ? () => submitted++ : null,
+                ),
+              ],
+              open: const [],
+              done: const [],
+              emptyText: 'leer',
+            ),
+          ),
+        ),
+      ),
+    );
+    await show();
+    expect(find.text('leer'), findsNothing);
+    expect(find.text('bis morgen 10:15'), findsOneWidget);
+    expect(find.text('Abgabe „Poster“'), findsOneWidget);
+    expect(find.text('noch nicht abgegeben'), findsOneWidget);
+    await t.tap(find.text('Abgeben'));
+    expect(submitted, 1);
+    await show(canSubmit: false, files: 2);
+    expect(find.text('Abgeben'), findsNothing);
+    expect(find.text('2 Dateien abgegeben'), findsOneWidget);
+  });
 }

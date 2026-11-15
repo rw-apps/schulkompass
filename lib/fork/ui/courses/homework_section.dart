@@ -28,6 +28,34 @@ class HwEntry {
   String get key => '${kid?.name ?? ''}|${item.key}';
 }
 
+/// Eine offene Abgabe über den Hausaufgaben (submissions.dart, Wunsch
+/// 15.11.26); [kid] nur in „Alle“.
+class SubEntry {
+  const SubEntry({
+    required this.subject,
+    required this.name,
+    required this.files,
+    this.until,
+    this.kid,
+    this.onSubmit,
+    this.onOpen,
+  });
+
+  final String subject;
+  final String name;
+  final DateTime? until;
+
+  /// Schon abgegebene Dateien.
+  final int files;
+  final KidTag? kid;
+
+  /// Abgabeseite öffnen; null = nur Anzeige (Elternkonto, Vorschau).
+  final VoidCallback? onSubmit;
+
+  /// Kurs öffnen (Antippen der Karte).
+  final VoidCallback? onOpen;
+}
+
 /// Offene Hausaufgaben mit sichtbarem Übergang beim Abhaken, darunter
 /// „Erledigt (n)“ zum Aufklappen – gemeinsam für Unterricht eines Kindes
 /// und „Alle“ (Entwurf abgenommen 20.10.26).
@@ -56,7 +84,14 @@ class HomeworkSection extends StatefulWidget {
     this.readOnly = false,
     this.now,
     this.expiredCount = 0,
+    this.submissions = const [],
   });
+
+  /// Offene Abgaben, oben vor den Hausaufgaben (früheste Frist zuerst).
+  /// Ohne „Erledigt“-Knopf: Erledigt ist eine Abgabe erst, wenn das Portal
+  /// die Datei zählt – dann fällt sie beim nächsten Abruf aus der Liste
+  /// (Abgabe nicht mehr möglich) oder zeigt „N Dateien abgegeben“.
+  final List<SubEntry> submissions;
 
   /// Abgelaufene, nicht abgehakte (homeworkLists.expired): eigener Link
   /// zum Archiv, auch ohne erledigte. Ursache (Prüfung 27.10.26): Der Weg
@@ -206,7 +241,12 @@ class _HomeworkSectionState extends State<HomeworkSection> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (open.isEmpty)
+        for (final e in widget.submissions)
+          Padding(
+            padding: const EdgeInsets.only(bottom: Sp.s),
+            child: _SubmissionCard(entry: e, now: widget.now),
+          ),
+        if (open.isEmpty && widget.submissions.isEmpty)
           Padding(
             padding: const EdgeInsets.only(left: Sp.xs, bottom: Sp.s),
             child: Text(widget.emptyText, style: k.meta),
@@ -463,6 +503,130 @@ class _OpenCardState extends State<_OpenCard> {
         child: ch,
       ),
       child: card,
+    );
+  }
+}
+
+/// Offene Abgabe als Karte wie eine Hausaufgabe (Entwurf 15.11.26): Kopf
+/// Fach · Kind | „bis Fr 06.11. 10:15“ (kräftig ab dem Vortag), darunter
+/// „Abgabe ‚Name‘“, Fuß „noch nicht abgegeben“ bzw. „N Dateien abgegeben“ |
+/// „Abgeben“. Ursache (Rückmeldung 15.11.26): Die Abgabe stand nur auf der
+/// Kursseite; in der Liste der offenen Aufgaben fehlte sie. Grenze: Ohne
+/// [SubEntry.onSubmit] (Elternkonto) nur Anzeige.
+class _SubmissionCard extends StatelessWidget {
+  const _SubmissionCard({required this.entry, this.now});
+
+  final SubEntry entry;
+  final DateTime? now;
+
+  @override
+  Widget build(BuildContext context) {
+    final k = Kit.of(context);
+    final t = context.t;
+    final e = entry;
+    final until = e.until;
+    final today = now ?? DateTime.now();
+    final diff = until == null ? null : dayDiff(today, until);
+    final soon = diff != null && diff <= 1;
+    final when = until == null
+        ? null
+        : switch (diff) {
+            0 => t.subUntilToday(formatTime(until)),
+            1 => t.subUntilTomorrow(formatTime(until)),
+            _ => t.subUntilOn(
+              formatDate(t, t.dateShort, until),
+              formatTime(until),
+            ),
+          };
+    return Material(
+      color: k.p.card,
+      borderRadius: BorderRadius.circular(Rad.signal),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(Rad.signal),
+        onTap: e.onOpen,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(Sp.l, Sp.m, Sp.m, Sp.m),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            e.subject,
+                            style: k.tileTitle,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        if (e.kid != null) ...[
+                          const SizedBox(width: Sp.s),
+                          KidLine(kid: e.kid!),
+                        ],
+                      ],
+                    ),
+                  ),
+                  if (when != null) ...[
+                    const SizedBox(width: Sp.s),
+                    Text(
+                      when,
+                      style: soon
+                          ? k.planTeacher(k.p.ink)
+                          : k.planMeta(k.p.muted),
+                    ),
+                  ],
+                ],
+              ),
+              const SizedBox(height: Sp.xs),
+              // Gelb wie der Hinweis auf Heute (k.hintKind, Farbregel: Gelb =
+              // etwas zu tun) – Rückmeldung 15.11.26: Die Abgabe sollte sich
+              // in der Liste klarer von den Hausaufgaben abheben.
+              Row(
+                children: [
+                  Icon(
+                    Icons.upload_file_outlined,
+                    size: Sz.iconSmall,
+                    color: k.p.change.strong,
+                  ),
+                  const SizedBox(width: Sp.xs),
+                  Expanded(
+                    child: Text(
+                      t.subTitle(e.name),
+                      style: k.hintKind(k.p.change),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: Sp.s),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      e.files == 0 ? t.uploadNotYet : t.subFiles(e.files),
+                      style: k.meta,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  if (e.onSubmit != null)
+                    _CardAction(
+                      icon: Icons.upload,
+                      label: t.subSubmit,
+                      color: k.p.ink,
+                      side: k.p.faint,
+                      fill: k.p.card,
+                      active: false,
+                      onPressed: e.onSubmit,
+                    ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

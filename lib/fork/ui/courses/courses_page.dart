@@ -13,6 +13,7 @@ import 'grades_request.dart';
 import 'grades_view.dart';
 
 export 'exam_card.dart' show AllExam, ExamCard, KidLine, KidTag;
+export 'homework_section.dart' show SubEntry;
 
 /// Höchstens drei Namen, sonst zwei und „+n“. Ursache: Das Ganztagsangebot
 /// von Schule A nennt sechs Lehrkräfte; die Zeile lief über vier Zeilen.
@@ -77,7 +78,11 @@ class CoursesPage extends StatefulWidget {
     this.homework,
     this.onOpenAbsences,
     this.notices = const [],
+    this.submissions = const [],
   });
+
+  /// Offene Abgaben über den Hausaufgaben (HomeworkSection.submissions).
+  final List<SubEntry> submissions;
 
   /// „Abwesenheiten“ öffnen; [course] = nur dieses Fach, null = alle.
   final void Function(String? course)? onOpenAbsences;
@@ -243,6 +248,7 @@ class _CoursesPageState extends State<CoursesPage> {
     return [
       _Section(title: t.openHomeworkTitle),
       HomeworkSection(
+        submissions: widget.submissions,
         // Ohne HomeworkBoard (Vorschau): nur Anzeige, kein Abhaken.
         readOnly: hw == null,
         open: [
@@ -604,10 +610,14 @@ class AllCoursesView extends StatelessWidget {
     this.loading = false,
     this.onRefresh,
     this.notices = const [],
+    this.submissions = const [],
   });
 
   /// Wie [CoursesPage.notices].
   final List<Widget> notices;
+
+  /// Offene Abgaben aller Kinder, mit Kind (HomeworkSection.submissions).
+  final List<SubEntry> submissions;
 
   final List<AllHomework> homework;
 
@@ -654,6 +664,7 @@ class AllCoursesView extends StatelessWidget {
           ),
         _Section(title: t.openHomeworkTitle),
         HomeworkSection(
+          submissions: submissions,
           open: [
             for (final h in homework)
               HwEntry(

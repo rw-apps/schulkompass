@@ -439,6 +439,9 @@ class KidCard extends StatelessWidget {
         ? (onOrderMeal == null ? null : () => onOrderMeal!(kid))
         : h.kind == HintKind.exam && onOpenExams != null
         ? () => onOpenExams!(kid)
+        // Abgabe: zur Liste „Offene Hausaufgaben“, dort steht „Abgeben“.
+        : h.kind == HintKind.submission
+        ? (onOpenHomework == null ? null : () => onOpenHomework!(kid))
         : (onOpenDay == null ? null : () => onOpenDay!(kid, day));
 
     return Container(
@@ -662,10 +665,12 @@ class KidCard extends StatelessWidget {
   /// der nächste Schultag) – „Gemeldet“ statt „Krank melden“.
   List<Widget> _actions(ForkL10n t, ({String kind, String detail})? report) {
     final items = <Widget>[
-      if (kid.openHomework > 0)
+      // Abgaben zählen mit (Wunsch 15.11.26); der Knopf führt zur Liste,
+      // in der sie oben stehen.
+      if (kid.openTasks > 0)
         _ActionButton(
           icon: Icons.menu_book_outlined,
-          label: t.homeworkShort(kid.openHomework),
+          label: t.homeworkShort(kid.openTasks),
           onTap: onOpenHomework == null ? null : () => onOpenHomework!(kid),
         ),
       if (kid.unreadMessages > 0)
@@ -1036,6 +1041,7 @@ class _HintLine extends StatelessWidget {
       HintKind.meal => Icons.restaurant,
       HintKind.exam => weekIcon(WeekKind.exam),
       HintKind.balance => Icons.account_balance_wallet_outlined,
+      HintKind.submission => Icons.upload_file_outlined,
     };
     final slot = h.slot;
     final detail = h.detail;

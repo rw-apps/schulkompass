@@ -892,5 +892,12 @@
   "mealInAppBody": "Uygulama bunun için yemek firmasının sayfasında tıklar. Kapatmak için: Diğer → Yemek ve yemek firması.",
   "mealInAppWarn": "Garanti ve sorumluluk kabul edilmeyen test özelliği. Siparişlerini yemek firmasının sayfasında kontrol et.",
   "mealInAppOn": "Aç",
-  "mealOrderAtCaterer": "Yemek firmasında sipariş ver"
+  "mealOrderAtCaterer": "Yemek firmasında sipariş ver",
+  "subUntilToday": "bugün {time} saatine kadar",
+  "subUntilTomorrow": "yarın {time} saatine kadar",
+  "subUntilOn": "{date} {time} saatine kadar",
+  "subTitle": "Teslim “{name}”",
+  "subFiles": "{n, plural, =1{1 dosya teslim edildi} other{{n} dosya teslim edildi}}",
+  "subSubmit": "Teslim et",
+  "hintSubmissionUntil": "Teslim {time} saatine kadar"
 }

@@ -71,6 +71,8 @@ List<Override> forkProviderOverrides({bool keepAlive = true}) => [
     final parser = LessonsParentAwareParser(
       ctx,
       isConnected: () => ref.read(connectionCheckerProvider).connected,
+      // Abgaben nur in der App, nicht im Hintergrundlauf (keepAlive aus).
+      withSubmissions: keepAlive,
     );
     ref.onDispose(parser.dispose);
     return parser;

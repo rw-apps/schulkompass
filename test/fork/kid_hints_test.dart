@@ -276,4 +276,42 @@ void main() {
       expect(hintDayCaption(forkL10nFor('en'), mon, now), 'MONDAY, NOV 2');
     });
   });
+
+  // Wunsch 15.11.26: Abgabe am Tag der Frist und am Vortag als Hinweis.
+  test('Abgabe: heute bis Fristende und am nächsten Schultag', () {
+    ChildToday withSub(DateTime until) => ChildToday(
+      firstName: 'Lena',
+      school: 'Beispielschule',
+      className: '9X',
+      colorIndex: 0,
+      openHomework: 2,
+      submissions: [(subject: 'Beispielfach', name: 'Poster', until: until)],
+    );
+    final sunday = DateTime(2026, 11, 15, 16);
+    final monday = DateTime(2026, 11, 16, 10, 15);
+    final h = kidHints(
+      withSub(monday),
+      sunday,
+      de,
+      next: DateTime(2026, 11, 16),
+    );
+    expect(h.single.kind, HintKind.submission);
+    expect(h.single.what, 'Abgabe bis 10:15');
+    expect(h.single.day, DateTime(2026, 11, 16));
+    expect(withSub(monday).openTasks, 3);
+    // Am Montag nach 10:15 vorbei, mittwochs zu weit weg.
+    expect(
+      kidHints(withSub(monday), DateTime(2026, 11, 16, 10, 30), de),
+      isEmpty,
+    );
+    expect(
+      kidHints(
+        withSub(DateTime(2026, 11, 18, 8)),
+        sunday,
+        de,
+        next: DateTime(2026, 11, 16),
+      ),
+      isEmpty,
+    );
+  });
 }

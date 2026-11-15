@@ -1,8 +1,11 @@
+import 'package:dio/dio.dart' show Options;
 import 'package:html/dom.dart';
 import 'package:html/parser.dart' show parse;
 import 'package:liblanis/liblanis.dart';
 
+import 'error_log.dart';
 import 'lessons_student.dart';
+import 'submissions.dart';
 
 /// Kurse eines Kindes aus der Eltern-Ansicht von meinunterricht.php.
 class ChildLessons {
@@ -249,7 +252,21 @@ String? shownPlanKid(List<ChildLessons> kids) =>
 /// 0 bzw. 5 Einträge, Anwesenheit erkannt). Aktionen wie setHomework oder
 /// Uploads blendet die Oberfläche für Eltern aus.
 class LessonsParentAwareParser extends LessonsStudentParser {
-  LessonsParentAwareParser(super.ctx, {super.isConnected});
+  LessonsParentAwareParser(
+    super.ctx, {
+    super.isConnected,
+    this.withSubmissions = false,
+  });
+
+  /// Offene Abgaben mitladen (submissions.dart) – nur in der App
+  /// (forkProviderOverrides keepAlive). Ursache (Prüfbefund 15.11.26): Die
+  /// Benachrichtigungs-Aufgabe ruft getHome nur für die Kursnamen auf; der
+  /// Zusatzabruf wäre dort eine verworfene Portal-Anfrage je Lauf.
+  final bool withSubmissions;
+
+  /// Letzte gelesene Abgaben – bleiben stehen, wenn die Seite einmal nicht
+  /// lesbar ist (statt still zu verschwinden, Prüfbefund 15.11.26).
+  List<OpenSubmission> _lastSubmissions = const [];
 
   /// Zuletzt gelesene Kinder (Elternkonto), z. B. für den Vornamen im
   /// Stundenplan der neuen Oberfläche; leer bei Schülerkonten.
@@ -269,7 +286,11 @@ class LessonsParentAwareParser extends LessonsStudentParser {
         'https://start.schulportal.hessen.de/meinunterricht.php'
         '?cacheBreaker=${DateTime.now().millisecondsSinceEpoch}',
       );
-      return parseStudentLessons(parse(response.data.toString())).lessons;
+      final lessons = parseStudentLessons(
+        parse(response.data.toString()),
+      ).lessons;
+      if (withSubmissions) await _loadSubmissions(lessons);
+      return lessons;
     }
     final response = await ctx.session.dio.get(
       'https://start.schulportal.hessen.de/meinunterricht.php'
@@ -283,5 +304,49 @@ class LessonsParentAwareParser extends LessonsStudentParser {
     }
     lastKids = kids;
     return flattenChildLessons(kids);
+  }
+
+  /// Offene Abgaben (Schülerkonto) an die Kurse hängen – submissions.dart.
+  ///
+  /// Ein zusätzlicher Abruf je Aktualisierung, mit eigenem kurzem Zeitlimit
+  /// (8 s statt 30 s), damit Unterricht und die nachfolgenden Quellen nicht
+  /// warten. Adresse: der Menüpunkt „Abgaben“ (`?a=sus_abgaben`, auf jeder
+  /// gespeicherten Seite vom 15.11.26 belegt; zeigt auch beendete – die
+  /// fallen über „Abgabe aktuell möglich“ und die Frist heraus). Ursache:
+  /// Die Übersicht nennt Abgaben nur als Zähler.
+  ///
+  /// Nur eine Seite mit Status 200 und Überschrift zählt (die Sitzung lässt
+  /// 302/503 als Erfolg durch, session.dart); sonst bleibt der letzte Stand
+  /// stehen und ein Eintrag ohne Inhalte geht ins Fehlerprotokoll. Fehler
+  /// kosten nie die Kursliste.
+  Future<void> _loadSubmissions(List<Lesson> lessons) async {
+    try {
+      final r = await ctx.session.dio.get(
+        'https://start.schulportal.hessen.de/meinunterricht.php'
+        '?a=sus_abgaben'
+        '&cacheBreaker=${DateTime.now().millisecondsSinceEpoch}',
+        options: Options(receiveTimeout: const Duration(seconds: 8)),
+      );
+      final doc = parse(r.data.toString());
+      if (r.statusCode != 200 || doc.querySelector('#content h1') == null) {
+        attachSubmissions(lessons, _lastSubmissions);
+        ErrorLog.instance.notice('meinunterricht.php', 'SubmissionsPage', {
+          'status': r.statusCode ?? 0,
+        });
+        return;
+      }
+      final page = parseSubmissions(doc);
+      _lastSubmissions = page.items;
+      final orphans = attachSubmissions(lessons, page.items);
+      if (page.skipped > 0 || orphans > 0) {
+        ErrorLog.instance.notice('meinunterricht.php', 'SubmissionRows', {
+          'skipped': page.skipped,
+          'orphans': orphans,
+        });
+      }
+    } catch (_) {
+      attachSubmissions(lessons, _lastSubmissions);
+      ErrorLog.instance.notice('meinunterricht.php', 'SubmissionsFailed', {});
+    }
   }
 }

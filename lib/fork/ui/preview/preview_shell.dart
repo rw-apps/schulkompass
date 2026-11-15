@@ -22,7 +22,8 @@ import '../../school_links.dart';
 import '../courses/grades_request.dart';
 import '../courses/course_detail_page.dart';
 import '../courses/courses_page.dart';
-import '../courses/homework_due.dart' show liveOpenHomework;
+import '../courses/homework_due.dart'
+    show liveOpenHomework, liveOpenSubmissions;
 import '../courses/live_courses_page.dart';
 import '../kit.dart';
 import '../live/family.dart';
@@ -951,7 +952,8 @@ NavBadges navBadgesOf(LiveSnapshot? s, ForkL10n t) {
         );
   }
   return NavBadges(
-    homework: liveOpenHomework(s),
+    // Abgaben zählen wie auf Heute mit (Wunsch 15.11.26).
+    homework: liveOpenHomework(s) + liveOpenSubmissions(s).length,
     unread: liveUnreadMessages(s),
     todayAlert: alert,
   );

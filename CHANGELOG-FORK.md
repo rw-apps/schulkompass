@@ -1,5 +1,11 @@
 ## Schulkompass (rw-apps, bis 9472 „Schulportal“) – Änderungen gegenüber Lanis-Mobile
 
+**4.1.0+9517** – Offene Abgaben in Unterricht und auf Heute
+
+- **Abgaben sichtbar:** Die App liest zusätzlich die Seite „Abgaben“ aus „mein Unterricht“ (nur Schülerkonten, nicht im Hintergrund). Offene Abgaben stehen in „Unterricht“ ganz oben unter „Offene Hausaufgaben“ – gelb hervorgehoben, mit Frist, Stand („noch nicht abgegeben“ / „N Dateien abgegeben“) und Knopf „Abgeben“, der direkt die Abgabeseite öffnet; danach liest die App neu. Auch in „Alle“, mit Kind.
+- **Heute:** Am Tag der Frist und am Vortag steht die Abgabe unter den Hinweisen („Abgabe bis 09:50“); sie zählt bei „Aufgaben“ und an der Marke des Reiters Unterricht mit.
+- **Grenzen:** Elternkonten sehen keine Abgaben; offline (gespeicherter Stand) erscheinen sie nicht.
+
 **4.1.0+9516** – Kompakter Kopf auf Heute, klarer Caterer-Knopf
 
 - **Heute:** Der Kopf der Kinderkarte ist kompakter – kleineres Bild, Name und „Schule · Klasse“ in einer Zeile, solange beides passt; bei langen Namen oder großer Schrift rutscht „Schule · Klasse“ ganz in die zweite Zeile statt abgeschnitten zu werden.

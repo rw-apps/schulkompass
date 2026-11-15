@@ -33,7 +33,8 @@ import '../../mensa_store.dart';
 import '../../demo/demo_mode.dart' show demoActive;
 import '../../notify/summary.dart';
 import '../mensa/meal_refresh.dart';
-import '../courses/homework_due.dart' show liveOpenHomework;
+import '../courses/homework_due.dart'
+    show liveOpenHomework, liveOpenSubmissions;
 import '../mensa/meal_hub_page.dart' show editMensa;
 import '../mensa/meal_week_page.dart';
 import 'kid_hints.dart'
@@ -238,6 +239,7 @@ class _LiveTodayPageState extends State<LiveTodayPage> {
       mealHint: mealHintFor(events, at, t: context.t, className: className),
       mensaUrl: s.mensaUrl,
       openHomework: liveOpenHomework(s),
+      submissions: liveOpenSubmissions(s),
       unreadMessages: liveUnreadMessages(s),
       photo: s.photo,
       free: freeDaysFrom(

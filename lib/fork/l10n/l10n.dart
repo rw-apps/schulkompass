@@ -53,6 +53,10 @@ ForkL10n forkL10nFor(String? languageCode) => lookupForkL10n(
 String formatDate(ForkL10n t, String pattern, DateTime d) =>
     DateFormat(pattern, t.localeName).format(d);
 
+/// Uhrzeit „09:50“ (24 Stunden, alle drei Sprachen gleich).
+String formatTime(DateTime d) =>
+    '${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}';
+
 /// Großschreibung je Sprache. Ursache: `toUpperCase` kennt kein Türkisch und
 /// macht aus „Ekim“ „EKIM“ statt „EKİM“ (i mit Punkt → İ, ı → I). Grenze:
 /// Nur Türkisch braucht die Sonderregel; Deutsch/Englisch wie bisher.

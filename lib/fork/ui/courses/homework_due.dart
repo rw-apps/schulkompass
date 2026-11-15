@@ -1,6 +1,7 @@
 import 'package:liblanis/liblanis.dart';
 
 import '../../homework_ledger.dart';
+import '../../submissions.dart';
 import '../live/live_data.dart';
 import '../plan/plan_model.dart' show effectiveChoice;
 import '../today/today_from_lanis.dart' show freeDaysFrom;
@@ -83,3 +84,17 @@ List<HomeworkItem> liveOpenHomeworkItems(LiveSnapshot s) => homeworkLists(
   subjectOf: (l) => l.name,
   dueOf: liveHomeworkDue(s),
 ).open;
+
+/// Offene Abgaben des Kontos für Heute (Hinweis, Knopf „n Aufgaben“) –
+/// dieselbe Regel wie die Liste in Unterricht (openSubmissionsOf); Fach wie
+/// dort (courseTitle). Wunsch 15.11.26.
+List<({String subject, String name, DateTime? until})> liveOpenSubmissions(
+  LiveSnapshot s,
+) => [
+  for (final o in openSubmissionsOf(
+    s.lessons.content ?? const <Lesson>[],
+    subjectOf: (l) => courseTitle(l.name),
+    now: DateTime.now(),
+  ))
+    (subject: o.subject, name: o.submission.name, until: o.submission.until),
+];

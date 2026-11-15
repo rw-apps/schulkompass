@@ -24,6 +24,7 @@ enum HintKind {
   meal,
   exam,
   balance,
+  submission,
 }
 
 class KidHint {
@@ -437,6 +438,26 @@ List<KidHint> kidHints(
             ? null
             : _keep(e.time!),
         when: isToday ? null : relativeDay(t, e.day, now),
+      ),
+    );
+  }
+  // Abgaben am Tag ihrer Frist (Wunsch 15.11.26): heute, solange sie läuft,
+  // und am nächsten Schultag – wie Arbeiten. Grenze: Endet eine Abgabe an
+  // einem Tag dazwischen (Wochenende), steht sie nur unter „Aufgaben“.
+  for (final s in kid.submissions) {
+    final until = s.until;
+    if (until == null) continue;
+    final isToday = dayDiff(now, until) == 0 && until.isAfter(now);
+    if (!isToday && dayDiff(nextDay, until) != 0) continue;
+    out.add(
+      KidHint(
+        kind: HintKind.submission,
+        title: '${s.subject} ${t.subTitle(s.name)}',
+        subject: s.subject,
+        what: t.hintSubmissionUntil(formatTime(until)),
+        day: DateTime(until.year, until.month, until.day),
+        detail: t.subTitle(s.name),
+        when: isToday ? null : relativeDay(t, until, now),
       ),
     );
   }

@@ -2283,5 +2283,18 @@
   "mealInAppBody": "Die App klickt dafür auf der Seite des Caterers. Ausschalten unter Mehr → Essen und Caterer.",
   "mealInAppWarn": "Testfunktion ohne Gewähr und ohne Haftung. Prüfe deine Bestellungen auf der Seite des Caterers.",
   "mealInAppOn": "Einschalten",
-  "mealOrderAtCaterer": "Beim Caterer bestellen"
+  "mealOrderAtCaterer": "Beim Caterer bestellen",
+  "subUntilToday": "bis heute {time}",
+  "@subUntilToday": {"placeholders": {"time": {"type": "String"}}},
+  "subUntilTomorrow": "bis morgen {time}",
+  "@subUntilTomorrow": {"placeholders": {"time": {"type": "String"}}},
+  "subUntilOn": "bis {date} {time}",
+  "@subUntilOn": {"placeholders": {"date": {"type": "String"}, "time": {"type": "String"}}},
+  "subTitle": "Abgabe „{name}“",
+  "@subTitle": {"placeholders": {"name": {"type": "String"}}},
+  "subFiles": "{n, plural, =1{1 Datei abgegeben} other{{n} Dateien abgegeben}}",
+  "@subFiles": {"placeholders": {"n": {"type": "int"}}},
+  "subSubmit": "Abgeben",
+  "hintSubmissionUntil": "Abgabe bis {time}",
+  "@hintSubmissionUntil": {"placeholders": {"time": {"type": "String"}}}
 }

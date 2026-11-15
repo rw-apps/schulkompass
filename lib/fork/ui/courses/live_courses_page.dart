@@ -10,6 +10,7 @@ import 'package:lanis/utils/file_operations.dart' as fo;
 import '../../courses_scan.dart';
 import '../../homework_ledger.dart';
 import '../../lessons_student.dart' show fixedLessonFileUrl;
+import '../../submissions.dart';
 import '../../l10n/l10n.dart';
 import '../login_errors.dart';
 import '../live/page_report.dart';
@@ -156,6 +157,21 @@ class LiveCoursesPage extends ConsumerWidget {
               onRetry: s.refresh,
             ),
           ],
+          submissions: liveSubmissionEntries(
+            context,
+            s,
+            titles: titles,
+            colorIndex: FamilyMember.around(context)?.colorIndex ?? 0,
+            onOpenCourse: (id) {
+              final i = items.where((c) => c.id == id).firstOrNull;
+              if (i == null) return null;
+              return () => pushInTab<void>(
+                context,
+                (_) => liveCourseDetail(context, ref, s, i, live, items),
+                kidChips: true,
+              );
+            },
+          ),
           onOpen: (i) => pushInTab<void>(
             context,
             (_) => liveCourseDetail(context, ref, s, i, live, items),
@@ -170,6 +186,57 @@ class LiveCoursesPage extends ConsumerWidget {
       },
     );
   }
+}
+
+/// Offene Abgaben des Kontos [s] als Karten (submissions.dart).
+///
+/// „Abgeben“ nur im Schülerkonto und nur für Adressen aus „Mein Unterricht“
+/// (isLessonsUploadUrl, Sicherheitsprüfung 17.10.26) – wie die Kursseite.
+/// Danach liest die App neu (s.refresh), damit „N Dateien abgegeben“ bzw.
+/// das Verschwinden der Karte stimmt. [kid] und [member] nur in „Alle“.
+List<SubEntry> liveSubmissionEntries(
+  BuildContext context,
+  LiveSnapshot s, {
+  required Map<String, String> titles,
+  required int colorIndex,
+  required VoidCallback? Function(String courseId) onOpenCourse,
+  KidTag? kid,
+  FamilyMember? member,
+}) {
+  final student = s.session.account.accountType == AccountType.student;
+  return [
+    for (final o in openSubmissionsOf(
+      s.lessons.content ?? const <Lesson>[],
+      subjectOf: (l) => titles[l.courseID] ?? courseTitle(l.name),
+      now: DateTime.now(),
+    ))
+      SubEntry(
+        subject: o.subject,
+        name: o.submission.name,
+        until: o.submission.until,
+        files: o.submission.files,
+        kid: kid,
+        onOpen: onOpenCourse(o.courseId),
+        onSubmit: !student || !isLessonsUploadUrl(o.submission.url.toString())
+            ? null
+            : () async {
+                await pushFullScreen<void>(
+                  context,
+                  (_) => UploadScreen(
+                    url: o.submission.url.toString(),
+                    name: o.submission.name,
+                    status: 'open',
+                    subject: o.subject,
+                    colorIndex: colorIndex,
+                  ),
+                  // „Alle“: im Rahmen DIESES Kindes, sonst läse die Seite die
+                  // Sitzung des gerade gewählten Kontos.
+                  member: member,
+                );
+                await s.refresh();
+              },
+      ),
+  ];
 }
 
 /// Kursseite eines Kurses mit Lehrkräften, Nachrichten und Terminen des
@@ -331,6 +398,7 @@ class LiveAllCoursesPage extends ConsumerWidget {
     final t = context.t;
     final now = DateTime.now();
     final homework = <(DateTime, AllHomework)>[];
+    final submissions = <SubEntry>[];
     final doneHomework = <(DateTime, AllHomework)>[];
     final exams = <AllExam>[];
     final missing = <AllMissing>[];
@@ -399,6 +467,29 @@ class LiveAllCoursesPage extends ConsumerWidget {
       for (final h in hw.open) {
         homework.add((h.given ?? DateTime(2000), entry(h)));
       }
+      submissions.addAll(
+        liveSubmissionEntries(
+          context,
+          s,
+          titles: {for (final i in raw) i.id: i.title},
+          colorIndex: m.colorIndex,
+          kid: kid,
+          member: m,
+          onOpenCourse: (id) {
+            final course = byId[id];
+            if (course == null) return null;
+            return () => pushInTab<void>(
+              context,
+              (_) => Consumer(
+                builder: (c, r, _) =>
+                    liveCourseDetail(c, r, s, course, live, raw),
+              ),
+              kidChips: true,
+              member: m,
+            );
+          },
+        ),
+      );
       for (final h in hw.done) {
         doneHomework.add((h.done ?? h.given ?? DateTime(2000), entry(h)));
       }
@@ -439,8 +530,14 @@ class LiveAllCoursesPage extends ConsumerWidget {
       }
     }
 
+    // Früheste Frist zuerst über alle Kinder.
+    submissions.sort(
+      (a, b) =>
+          (a.until ?? DateTime(9999)).compareTo(b.until ?? DateTime(9999)),
+    );
     return AllCoursesView(
       now: now,
+      submissions: submissions,
       homework: [for (final h in homework) h.$2],
       doneHomework: [for (final h in doneHomework) h.$2],
       exams: exams,

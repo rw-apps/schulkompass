@@ -87,6 +87,7 @@ class ChildToday {
     this.periodsLabel,
     this.changes = const [],
     this.openHomework = 0,
+    this.submissions = const [],
     this.unreadMessages = 0,
     this.canReportAbsence = false,
     this.mealHint,
@@ -136,6 +137,13 @@ class ChildToday {
   final String? periodsLabel;
   final List<ChangeItem> changes;
   final int openHomework;
+
+  /// Offene Abgaben (submissions.dart, Wunsch 15.11.26): Hinweis am Tag der
+  /// Frist (heute bzw. nächster Schultag) und mitgezählt bei „Aufgaben“.
+  final List<({String subject, String name, DateTime? until})> submissions;
+
+  /// Hausaufgaben und offene Abgaben zusammen (Knopf „n Aufgaben“).
+  int get openTasks => openHomework + submissions.length;
   final int unreadMessages;
 
   /// Schule bietet die Krankmeldung im Portal an (Modul in der App-Liste).

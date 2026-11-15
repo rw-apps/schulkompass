@@ -36,11 +36,17 @@ Future<T?> pushInTab<T>(
 /// angefangenen Text im Hintergrund liegen. Grenze: Auch hier gilt
 /// Android-Zurück bzw. „Schließen“ oben – ein Reiterwechsel ist von dort
 /// bewusst nicht möglich.
-Future<T?> pushFullScreen<T>(BuildContext context, WidgetBuilder builder) {
-  return Navigator.of(
-    context,
-    rootNavigator: true,
-  ).push(MaterialPageRoute<T>(builder: _once(context, builder)));
+///
+/// [member]: Rahmen eines bestimmten Kindes, wenn der öffnende Bereich
+/// keinem gehört („Alle“ – Abgabe aus der gemeinsamen Liste, 15.11.26).
+Future<T?> pushFullScreen<T>(
+  BuildContext context,
+  WidgetBuilder builder, {
+  FamilyMember? member,
+}) {
+  return Navigator.of(context, rootNavigator: true).push(
+    MaterialPageRoute<T>(builder: _once(context, builder, member: member)),
+  );
 }
 
 /// Baut die Seite genau einmal und im Rahmen des öffnenden Kontos.

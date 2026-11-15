@@ -892,5 +892,12 @@
   "mealInAppBody": "The app clicks on the caterer's page for you. Turn off under More → Meals and caterer.",
   "mealInAppWarn": "Test feature without warranty or liability. Check your orders on the caterer's page.",
   "mealInAppOn": "Turn on",
-  "mealOrderAtCaterer": "Order at the caterer"
+  "mealOrderAtCaterer": "Order at the caterer",
+  "subUntilToday": "by today {time}",
+  "subUntilTomorrow": "by tomorrow {time}",
+  "subUntilOn": "by {date} {time}",
+  "subTitle": "Submission “{name}”",
+  "subFiles": "{n, plural, =1{1 file submitted} other{{n} files submitted}}",
+  "subSubmit": "Submit",
+  "hintSubmissionUntil": "Submission by {time}"
 }
