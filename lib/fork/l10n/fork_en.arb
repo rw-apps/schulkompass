@@ -611,7 +611,6 @@
   "mealStillOpen": "can still be ordered",
   "mealMissed": "Order deadline passed",
   "mealSides": "With: {list}",
-  "mealChange": "Order or change",
   "mealLoadFailed": "Couldn't read the menu. The order page shows it.",
   "mealLunch": "Lunch: {dish}",
   "mealClosed": "No meals served",
@@ -819,7 +818,7 @@
   "onbDisclaimer": "Unofficial app, not from the State of Hesse. No guarantee – the school portal is authoritative.",
   "mealHubLoginRejected": "rejected – enter again",
   "mealOrderInApp": "Order in the app (beta)",
-  "mealOrderInAppDetail": "Order and cancel directly in the weekly menu. Off: “Caterer's page” opens the ordering page.",
+  "mealOrderInAppDetail": "Order and cancel directly in the weekly menu. Off: “Order at the caterer” opens the ordering page.",
   "setupAlready": "Set up before?",
   "setupWithFile": "Set up from a backup file",
   "loginOr": "or",
@@ -865,7 +864,7 @@
   "absenceRemindMealCancel": "Cancel {day}",
   "mealCancelNotOrdered": "No meal is ordered for this day (anymore).",
   "mealCancelGone": "This day can no longer be cancelled.",
-  "mealCancelNotInApp": "Cancelling in the app is turned off – please use “Caterer’s page”.",
+  "mealCancelNotInApp": "Cancelling in the app is turned off – please use the caterer’s page (button “Order at the caterer”).",
   "absenceRemindExam": "{day}: {subject}",
   "absenceRemindExamDetail": "The school may ask for a doctor’s note for a missed test.",
   "absenceReportsTitle": "Absence reports",
@@ -892,5 +891,6 @@
   "mealInAppTitle": "Order in the app?",
   "mealInAppBody": "The app clicks on the caterer's page for you. Turn off under More → Meals and caterer.",
   "mealInAppWarn": "Test feature without warranty or liability. Check your orders on the caterer's page.",
-  "mealInAppOn": "Turn on"
+  "mealInAppOn": "Turn on",
+  "mealOrderAtCaterer": "Order at the caterer"
 }

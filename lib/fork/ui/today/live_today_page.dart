@@ -49,7 +49,7 @@ import '../nav.dart';
 /// Abrufverlauf (MealTrace, „Details zum Abruf“) nicht erreichbar und ein
 /// einmal gescheiterter Abruf wurde nie wieder versucht (Bildschirmfoto
 /// 27.10.26). Grenze: Für einen unbekannten Caterer ein Tipp mehr
-/// („Bestellen oder ändern“).
+/// („Beim Caterer bestellen“).
 Future<void> openMensa(
   BuildContext context,
   LiveSnapshot s,

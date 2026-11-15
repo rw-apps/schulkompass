@@ -1574,7 +1574,6 @@
       }
     }
   },
-  "mealChange": "Bestellen oder ändern",
   "mealLoadFailed": "Der Speiseplan ließ sich nicht lesen. Die Bestellseite zeigt ihn.",
   "mealLunch": "Essen: {dish}",
   "@mealLunch": {
@@ -2088,7 +2087,7 @@
   "onbDisclaimer": "Inoffizielle App, nicht vom Land Hessen. Angaben ohne Gewähr – verbindlich ist das Schulportal.",
   "mealHubLoginRejected": "abgelehnt – neu eingeben",
   "mealOrderInApp": "In der App bestellen (Test)",
-  "mealOrderInAppDetail": "Bestellen und Abbestellen direkt im Wochenplan. Aus: „Seite des Caterers“ öffnet die Bestellseite.",
+  "mealOrderInAppDetail": "Bestellen und Abbestellen direkt im Wochenplan. Aus: „Beim Caterer bestellen“ öffnet die Bestellseite.",
   "setupAlready": "Schon einmal eingerichtet?",
   "setupWithFile": "Mit Sicherungsdatei einrichten",
   "loginOr": "oder",
@@ -2230,7 +2229,7 @@
   },
   "mealCancelNotOrdered": "Für diesen Tag ist kein Essen (mehr) bestellt.",
   "mealCancelGone": "Dieser Tag ist nicht mehr abbestellbar.",
-  "mealCancelNotInApp": "Abbestellen in der App ist ausgeschaltet – bitte über „Seite des Caterers“.",
+  "mealCancelNotInApp": "Abbestellen in der App ist ausgeschaltet – bitte auf der Seite des Caterers (Knopf „Beim Caterer bestellen“).",
   "absenceRemindExam": "{day}: {subject}",
   "@absenceRemindExam": {
     "placeholders": {
@@ -2283,5 +2282,6 @@
   "mealInAppTitle": "In der App bestellen?",
   "mealInAppBody": "Die App klickt dafür auf der Seite des Caterers. Ausschalten unter Mehr → Essen und Caterer.",
   "mealInAppWarn": "Testfunktion ohne Gewähr und ohne Haftung. Prüfe deine Bestellungen auf der Seite des Caterers.",
-  "mealInAppOn": "Einschalten"
+  "mealInAppOn": "Einschalten",
+  "mealOrderAtCaterer": "Beim Caterer bestellen"
 }

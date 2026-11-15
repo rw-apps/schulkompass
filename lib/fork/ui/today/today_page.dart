@@ -451,15 +451,20 @@ class KidCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Kopf: Bild bzw. Anfangsbuchstabe, daneben Name und darunter
-          // Schule · Klasse. Ursache (Bildschirmfoto 20.10.26): In einer
-          // Zeile wurde die Schule bei großer Schrift abgeschnitten.
+          // Kopf: kleines Bild bzw. Anfangsbuchstabe, daneben Name und
+          // Schule · Klasse in EINER Zeile, solange sie passen; sonst bricht
+          // Schule · Klasse ganz in die zweite Zeile um (Wrap), statt
+          // abgeschnitten zu werden. Ursache (Rückmeldung 15.11.26): Bild
+          // 44 dp und zwei feste Zeilen nahmen viel Höhe. Grenze aus dem
+          // Bildschirmfoto 20.10.26: Bei großer Schrift wurde die Schule in
+          // einer festen Zeile abgeschnitten – deshalb Wrap, und nur ein
+          // einzelner überlanger Teil wird noch gekürzt (maxLines 1).
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Container(
-                width: Sz.avatar,
-                height: Sz.avatar,
+                width: Sz.avatarSmall,
+                height: Sz.avatarSmall,
                 alignment: Alignment.center,
                 clipBehavior: Clip.antiAlias,
                 decoration: BoxDecoration(
@@ -470,8 +475,8 @@ class KidCard extends StatelessWidget {
                 child: kid.photo != null
                     ? Image.memory(
                         kid.photo!,
-                        width: Sz.avatar,
-                        height: Sz.avatar,
+                        width: Sz.avatarSmall,
+                        height: Sz.avatarSmall,
                         fit: BoxFit.cover,
                         gaplessPlayback: true,
                         errorBuilder: (_, _, _) => const SizedBox.shrink(),
@@ -481,13 +486,14 @@ class KidCard extends StatelessWidget {
                         kid.firstName.isEmpty
                             ? '?'
                             : kid.firstName.characters.first,
-                        style: k.avatarLetter.copyWith(color: k.p.card),
+                        style: k.avatarLetterSmall.copyWith(color: k.p.card),
                       ),
               ),
               const SizedBox(width: Sp.m),
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                child: Wrap(
+                  spacing: Sp.s,
+                  crossAxisAlignment: WrapCrossAlignment.end,
                   children: [
                     Text(
                       kid.firstName,
@@ -496,11 +502,15 @@ class KidCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                     if (meta.isNotEmpty)
-                      Text(
-                        meta,
-                        style: k.cardMeta,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                      Padding(
+                        // Grundlinie ungefähr auf die des Namens (19 vs. 13).
+                        padding: const EdgeInsets.only(bottom: 2),
+                        child: Text(
+                          meta,
+                          style: k.cardMeta,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
                   ],
                 ),

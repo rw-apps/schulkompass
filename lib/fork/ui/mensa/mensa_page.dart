@@ -37,7 +37,7 @@ class MensaPage extends ConsumerStatefulWidget {
 
   /// Nach der Anmeldung zurück in die App-Ansicht, sobald eine Woche lesbar
   /// ist. Ursache (Rückmeldung 08.11.26): Ohne gemerkten Zugang konnte
-  /// „Essen“ den Plan nicht lesen; nach „Bestellen oder ändern“ und der
+  /// „Essen“ den Plan nicht lesen; nach „Beim Caterer bestellen“ und der
   /// Anmeldung blieb man auf der Seite des Caterers statt in der Ansicht der
   /// App. MealWeekPage._order setzt das nur im Zustand „Laden
   /// fehlgeschlagen“ und liest nach der Rückkehr neu (_refresh). Grenze:

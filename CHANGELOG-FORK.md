@@ -1,5 +1,10 @@
 ## Schulkompass (rw-apps, bis 9472 „Schulportal“) – Änderungen gegenüber Lanis-Mobile
 
+**4.1.0+9516** – Kompakter Kopf auf Heute, klarer Caterer-Knopf
+
+- **Heute:** Der Kopf der Kinderkarte ist kompakter – kleineres Bild, Name und „Schule · Klasse“ in einer Zeile, solange beides passt; bei langen Namen oder großer Schrift rutscht „Schule · Klasse“ ganz in die zweite Zeile statt abgeschnitten zu werden.
+- **Essen:** „Bestellen oder ändern“ heißt jetzt „Beim Caterer bestellen“, damit klar ist, dass der Knopf die Seite des Caterers öffnet; verweisende Texte angepasst.
+
 **4.1.0+9515** – Essen: In der App bestellen leichter finden
 
 - **Hinweis im Wochenplan:** Ist „In der App bestellen“ aus, steht unter „Bestellen oder ändern“ der Link „In der App bestellen einschalten“. Eine kurze Rückfrage weist auf die Testfunktion ohne Gewähr und ohne Haftung hin; danach erscheinen die Knöpfe an den Gerichten sofort. Ausschalten weiter unter Mehr → Essen und Caterer.

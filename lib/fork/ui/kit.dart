@@ -517,6 +517,9 @@ class Kit {
   TextStyle get cardMeta => _s(13, FontWeight.w500, p.muted);
   TextStyle get avatarLetter => _s(18, FontWeight.w800, p.onStrong);
 
+  /// Buchstabe im kleinen Bild (Sz.avatarSmall, Kinderkarte auf Heute).
+  TextStyle get avatarLetterSmall => _s(13, FontWeight.w800, p.onStrong);
+
   TextStyle get barLabel => _s(11, FontWeight.w600, p.muted);
 
   // Kinderkarte ab 21.10.26: „Hinweise“ farbig gefüllt, „Stundenplan“

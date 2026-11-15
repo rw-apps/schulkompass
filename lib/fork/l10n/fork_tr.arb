@@ -611,7 +611,6 @@
   "mealStillOpen": "hâlâ sipariş verilebilir",
   "mealMissed": "Sipariş süresi geçti",
   "mealSides": "Yanında: {list}",
-  "mealChange": "Sipariş ver veya değiştir",
   "mealLoadFailed": "Yemek listesi okunamadı. Sipariş sayfası gösteriyor.",
   "mealLunch": "Yemek: {dish}",
   "mealClosed": "Yemek verilmiyor",
@@ -819,7 +818,7 @@
   "onbDisclaimer": "Resmî olmayan uygulama, Hessen eyaletine ait değil. Garanti yoktur – geçerli olan okul portalıdır.",
   "mealHubLoginRejected": "reddedildi – yeniden gir",
   "mealOrderInApp": "Uygulamada sipariş (test)",
-  "mealOrderInAppDetail": "Haftalık menüde doğrudan sipariş ve iptal. Kapalı: „Yemek firmasının sayfası“ sipariş sayfasını açar.",
+  "mealOrderInAppDetail": "Haftalık menüde doğrudan sipariş ve iptal. Kapalı: „Yemek firmasında sipariş ver“ sipariş sayfasını açar.",
   "setupAlready": "Daha önce kuruldu mu?",
   "setupWithFile": "Yedek dosyasıyla kur",
   "loginOr": "veya",
@@ -865,7 +864,7 @@
   "absenceRemindMealCancel": "{day} iptal et",
   "mealCancelNotOrdered": "Bu gün için (artık) yemek sipariş edilmemiş.",
   "mealCancelGone": "Bu gün artık iptal edilemez.",
-  "mealCancelNotInApp": "Uygulamada iptal kapalı – lütfen \"Firma sayfası\" üzerinden.",
+  "mealCancelNotInApp": "Uygulamada iptal kapalı – lütfen yemek firmasının sayfasından („Yemek firmasında sipariş ver“ düğmesi).",
   "absenceRemindExam": "{day}: {subject}",
   "absenceRemindExamDetail": "Kaçırılan bir sınav için okul doktor raporu isteyebilir.",
   "absenceReportsTitle": "Devamsızlık bildirimleri",
@@ -892,5 +891,6 @@
   "mealInAppTitle": "Uygulamada sipariş verilsin mi?",
   "mealInAppBody": "Uygulama bunun için yemek firmasının sayfasında tıklar. Kapatmak için: Diğer → Yemek ve yemek firması.",
   "mealInAppWarn": "Garanti ve sorumluluk kabul edilmeyen test özelliği. Siparişlerini yemek firmasının sayfasında kontrol et.",
-  "mealInAppOn": "Aç"
+  "mealInAppOn": "Aç",
+  "mealOrderAtCaterer": "Yemek firmasında sipariş ver"
 }

@@ -41,7 +41,7 @@ String mealWeekPageUrl(MealWeek w, DateTime day, String base) {
 
 /// Seite „Essen · Kind“: gespeicherte Wochen sofort, im Hintergrund neu
 /// gelesen (MealFetcher). Lässt sich die Seite des Caterers nicht lesen und
-/// ist nichts gespeichert, bleibt der Hinweis mit „Bestellen oder ändern“
+/// ist nichts gespeichert, bleibt der Hinweis mit „Beim Caterer bestellen“
 /// (öffnet MensaPage) und „Details zum Abruf“ stehen (seit 9420).
 class MealWeekPage extends ConsumerStatefulWidget {
   const MealWeekPage({
@@ -289,7 +289,7 @@ class _MealWeekPageState extends ConsumerState<MealWeekPage> {
   }
 
   /// Seite nicht lesbar: merken; ohne gespeicherte Wochen bleibt der
-  /// Hinweis mit „Bestellen oder ändern“ und „Details“ stehen.
+  /// Hinweis mit „Beim Caterer bestellen“ und „Details“ stehen.
   ///
   /// Bis 9419 ersetzte sich die Ansicht dann gleich durch MensaPage. Grenze
   /// der Änderung (27.10.26): Für einen unbekannten Caterer ist das jedes
@@ -414,7 +414,7 @@ class _MealWeekPageState extends ConsumerState<MealWeekPage> {
                         onOrder: () => _order(w),
                         // Während eines Vorgangs keine weiteren Knöpfe;
                         // ohne „In der App bestellen“ (mealOrderInApp)
-                        // gar keine – dann „Seite des Caterers“.
+                        // gar keine – dann „Beim Caterer bestellen“.
                         onOrderOption: _job != null || fetch != null || !_inApp
                             ? null
                             : (d, o) => _change(w, d, o),
@@ -449,7 +449,7 @@ class _MealWeekPageState extends ConsumerState<MealWeekPage> {
                           FilledButton.icon(
                             onPressed: () => _order(null, afterFailure: true),
                             icon: const Icon(Icons.open_in_new),
-                            label: Text(t.mealChange),
+                            label: Text(t.mealOrderAtCaterer),
                           ),
                         if (fetch == null &&
                             MealTrace.of(widget.owner).isNotEmpty) ...[
@@ -486,7 +486,7 @@ class _MealWeekPageState extends ConsumerState<MealWeekPage> {
 /// Frist vorbei) oder keine Essensausgabe.
 ///
 /// Aufbau (Rückmeldung 27.10.26, „Kopf- und Fußzeile fixieren“): Woche und
-/// Guthaben stehen fest oben, „Bestellen oder ändern“ fest unten über der
+/// Guthaben stehen fest oben, „Beim Caterer bestellen“ fest unten über der
 /// Systemleiste (SafeArea); nur die Tage scrollen. Vorher lief beides mit
 /// und der Knopf lag halb unter der Gestenleiste.
 ///
@@ -495,7 +495,7 @@ class _MealWeekPageState extends ConsumerState<MealWeekPage> {
 /// Farbregel Gelb), Grau = vorbei bzw. geschlossen.
 ///
 /// Bestellen und Abbestellen je Tag über [onOrderOption]/[onCancel]
-/// (MealOrderRunner); „Seite des Caterers“ bzw. „Bestellen oder ändern“
+/// (MealOrderRunner); „Seite des Caterers“ bzw. „Beim Caterer bestellen“
 /// öffnet die Seite für diese Woche ([onOrder]).
 class MealWeekView extends StatelessWidget {
   const MealWeekView({
@@ -520,7 +520,7 @@ class MealWeekView extends StatelessWidget {
   final VoidCallback? onEnableInApp;
 
   /// Gericht bestellen bzw. Tag abbestellen in der App (Entwurf 27.10.26);
-  /// null = keine Knöpfe, nur „Bestellen oder ändern“.
+  /// null = keine Knöpfe, nur „Beim Caterer bestellen“.
   final void Function(MealDay day, MealOption option)? onOrderOption;
   final void Function(MealDay day)? onCancel;
 
@@ -630,10 +630,14 @@ class MealWeekView extends StatelessWidget {
                         mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
+                          // „Beim Caterer“ statt „Bestellen oder ändern“:
+                          // Sonst las sich der Knopf wie Bestellen in der App
+                          // und der Hinweis darunter blieb unklar
+                          // (Rückmeldung 15.11.26).
                           FilledButton.icon(
                             onPressed: onOrder,
                             icon: const Icon(Icons.open_in_new),
-                            label: Text(t.mealChange),
+                            label: Text(t.mealOrderAtCaterer),
                           ),
                           if (onEnableInApp != null)
                             TextButton.icon(

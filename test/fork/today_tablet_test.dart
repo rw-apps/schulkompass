@@ -62,4 +62,52 @@ void main() {
     expect(up.dx, greaterThan(jonas.dx));
     expect(up.dy, lessThan(jonas.dy + 60));
   });
+
+  // Rückmeldung 15.11.26: Name und „Schule · Klasse“ in einer Zeile, bei
+  // langem Namen und großer Schrift „Schule · Klasse“ ganz darunter, ohne
+  // Überlauf.
+  testWidgets('Kopf der Kinderkarte: eine Zeile oder sauber umgebrochen', (
+    t,
+  ) async {
+    // 600 dp: Die Testschrift (jedes Zeichen so breit wie hoch) ist
+    // breiter als Manrope; schmaler bräche schon „Lena“ um.
+    t.view.physicalSize = const Size(600, 900);
+    t.view.devicePixelRatio = 1;
+    addTearDown(t.view.reset);
+    Future<void> show(String name, double scale) async {
+      await t.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: ForkL10n.localizationsDelegates,
+          supportedLocales: ForkL10n.supportedLocales,
+          locale: const Locale('de'),
+          builder: (c, child) => MediaQuery(
+            data: MediaQuery.of(
+              c,
+            ).copyWith(textScaler: TextScaler.linear(scale)),
+            child: child!,
+          ),
+          home: Scaffold(
+            body: TodayPage(
+              data: FamilyToday(now: now, kids: [kid(name, 0)], week: const []),
+            ),
+          ),
+        ),
+      );
+      await t.pumpAndSettle();
+      expect(t.takeException(), isNull);
+    }
+
+    await show('Lena', 1);
+    expect(
+      t.getTopLeft(find.text('Beispielschule · 7X')).dy,
+      lessThan(t.getBottomLeft(find.text('Lena')).dy),
+    );
+    await show('Maximiliane-Sophie-Charlotte', 2);
+    expect(
+      t.getTopLeft(find.text('Beispielschule · 7X')).dy,
+      greaterThanOrEqualTo(
+        t.getBottomLeft(find.text('Maximiliane-Sophie-Charlotte')).dy,
+      ),
+    );
+  });
 }
