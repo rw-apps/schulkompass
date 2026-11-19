@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:liblanis/liblanis.dart';
 import 'package:lanis/fork/kid_name.dart';
+import 'package:lanis/fork/notify/consent_reminder.dart';
 import 'package:lanis/fork/login_guard.dart';
 import 'package:lanis/fork/notify/notify_keys.dart';
 import 'package:lanis/fork/notify/notify_launch.dart';
@@ -276,6 +277,18 @@ Future<void> callbackDispatcher({bool inApp = false}) async {
         backgroundLogger.w(
           'Privacy policy not accepted, aborting background fetch',
         );
+        // Fork: einmal daran erinnern (consent_reminder.dart, Prüfbefund
+        // 19.11.26) – nicht im Lauf der geöffneten App ([inApp]): Die zeigt
+        // dann gerade selbst den Zustimmungsbildschirm.
+        if (!inApp)
+          try {
+            final accounts = await container.read(accountsProvider.future);
+            await remindPrivacyConsent(
+              sharedPolicy,
+              hasAccounts: accounts.isNotEmpty,
+              channelId: notificationChannelId,
+            );
+          } catch (_) {}
         return;
       }
 

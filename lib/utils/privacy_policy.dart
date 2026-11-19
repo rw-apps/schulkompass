@@ -8,7 +8,11 @@ import 'package:lanis/fork_identity.dart';
 // werden einmal neu gefragt, weil ein neuer Empfänger dazukommt.
 // 04.11.26: Datenschutzhinweis vollständig neu (Verantwortlicher,
 // Rechtsgrundlagen, Speicherdauer, Rechte) – Nutzer stimmen einmal neu zu.
-const privacyPolicyPublishedAt = '2026-11-04';
+// 19.11.26: Die App fragt selbst einmal am Tag bei GitHub nach neuen
+// Versionen (fork/update_check.dart) – neuer Empfänger, daher wie in
+// PRIVACY.md Abschnitt 10 zugesagt einmal neu fragen. Merkpunkt: Bei
+// Verteilung über Google Play Hinweis erneut prüfen und neu datieren.
+const privacyPolicyPublishedAt = '2026-11-19';
 
 /// Canonical privacy policy URL (About + login + gate screen).
 const privacyPolicyUrl = forkPrivacyPolicyUrl;

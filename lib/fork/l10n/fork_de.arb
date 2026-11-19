@@ -2296,5 +2296,15 @@
   "@subFiles": {"placeholders": {"n": {"type": "int"}}},
   "subSubmit": "Abgeben",
   "hintSubmissionUntil": "Abgabe bis {time}",
-  "@hintSubmissionUntil": {"placeholders": {"time": {"type": "String"}}}
+  "@hintSubmissionUntil": {"placeholders": {"time": {"type": "String"}}},
+  "updateTitle": "Neue Version verfügbar",
+  "updateText": "Version {latest} ist da, du nutzt {installed}. „Aktualisieren“ lädt sie herunter; danach die Datei antippen und installieren.",
+  "@updateText": {"placeholders": {"latest": {"type": "String"}, "installed": {"type": "String"}}},
+  "updateAction": "Aktualisieren",
+  "updateLater": "Später",
+  "updateCheckSetting": "Nach neuen Versionen suchen",
+  "updateCheckSettingHint": "Einmal am Tag bei GitHub nachsehen (GitHub sieht dabei deine IP-Adresse).",
+  "updateText32": "Version {latest} ist da, du nutzt {installed}. „Aktualisieren“ öffnet die Download-Seite; dort die Datei mit „armeabi-v7a“ im Namen wählen.",
+  "@updateText32": {"placeholders": {"latest": {"type": "String"}, "installed": {"type": "String"}}},
+  "consentReminder": "Bitte öffne die App und bestätige den aktualisierten Datenschutzhinweis – bis dahin gibt es keine Benachrichtigungen."
 }

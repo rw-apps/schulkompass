@@ -1,3 +1,4 @@
+import 'dart:io' show Platform;
 import 'dart:async';
 import 'dart:math' as math;
 
@@ -26,6 +27,10 @@ import 'class_prompt_card.dart';
 import 'auto_report_prompt.dart';
 import '../../demo/demo_entry.dart';
 import 'hint_card.dart';
+import 'update_card.dart';
+import '../../notify/consent_reminder.dart' show clearPrivacyReminder;
+import '../../update_check.dart';
+import '../../error_log.dart';
 import '../portal_link.dart';
 import 'login_failure_card.dart';
 import '../mensa/meal_cancel.dart';
@@ -182,11 +187,35 @@ class _LiveTodayPageState extends State<LiveTodayPage> {
     _tick = Timer.periodic(const Duration(seconds: 30), (_) {
       if (mounted) setState(() {});
     });
+    // Neue Version (update_check.dart): nur außerhalb der Demo – dort darf
+    // keine Anfrage das Gerät verlassen (demo_mode.dart; Prüfbefund
+    // 19.11.26). Heute ist erst nach der Datenschutz-Zustimmung erreichbar
+    // (auth_redirect.dart).
+    UpdateCheck.instance.addListener(_onUpdate);
+    // Heute ist erst nach der Zustimmung erreichbar: eine Erinnerung daran
+    // (consent_reminder.dart) ist damit erledigt.
+    clearPrivacyReminder();
+    // Nur Android: Die Karte bietet eine APK an.
+    if (!demoActive && Platform.isAndroid) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || demoActive) return;
+        UpdateCheck.instance.attach(
+          ProviderScope.containerOf(
+            context,
+          ).read(sharedOverAccountSettingsProvider),
+        );
+      });
+    }
+  }
+
+  void _onUpdate() {
+    if (mounted) setState(() {});
   }
 
   @override
   void dispose() {
     _tick?.cancel();
+    UpdateCheck.instance.removeListener(_onUpdate);
     super.dispose();
   }
 
@@ -411,6 +440,13 @@ class _LiveTodayPageState extends State<LiveTodayPage> {
         final page = TodayPage(
           notices: [
             ?demoNotice(context),
+            // Neue Version (update_check.dart, Wunsch 19.11.26). Nur in der
+            // Liste, wenn sie etwas zeigt: Jeder Eintrag bekommt oben
+            // Abstand (TodayPage), eine leere Karte gäbe 8 px Leerraum
+            // (Prüfbefund 19.11.26).
+            if (!demoActive &&
+                UpdateCheck.instance.offer(ErrorLog.instance.version) != null)
+              const UpdateCard(),
             ?stale,
             ?missing,
             // Zustimmung zum automatischen Melden (auto_report_prompt.dart).

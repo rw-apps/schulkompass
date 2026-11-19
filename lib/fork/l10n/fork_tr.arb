@@ -899,5 +899,13 @@
   "subTitle": "Teslim “{name}”",
   "subFiles": "{n, plural, =1{1 dosya teslim edildi} other{{n} dosya teslim edildi}}",
   "subSubmit": "Teslim et",
-  "hintSubmissionUntil": "Teslim {time} saatine kadar"
+  "hintSubmissionUntil": "Teslim {time} saatine kadar",
+  "updateTitle": "Yeni sürüm mevcut",
+  "updateText": "Sürüm {latest} çıktı, sen {installed} kullanıyorsun. “Güncelle” onu indirir; sonra dosyaya dokunup yükle.",
+  "updateAction": "Güncelle",
+  "updateLater": "Sonra",
+  "updateCheckSetting": "Yeni sürümleri ara",
+  "updateCheckSettingHint": "Günde bir kez GitHub'a sor (GitHub IP adresini görür).",
+  "updateText32": "Sürüm {latest} çıktı, sen {installed} kullanıyorsun. “Güncelle” indirme sayfasını açar; orada adında “armeabi-v7a” olan dosyayı seç.",
+  "consentReminder": "Lütfen uygulamayı aç ve güncellenen gizlilik bildirimini onayla – o zamana kadar bildirim gelmez."
 }

@@ -1,5 +1,12 @@
 ## Schulkompass (rw-apps, bis 9472 „Schulportal“) – Änderungen gegenüber Lanis-Mobile
 
+**4.1.0+9518** – Hinweis auf neue Versionen
+
+- **Neue Version verfügbar:** Die App fragt etwa einmal am Tag beim Öffnen bei GitHub nach der neuesten Version. Ist eine neuere da, steht oben auf Heute ein Hinweis mit „Aktualisieren“ (lädt die neue Version im Browser herunter) und „Später“ (7 Tage Ruhe). Abschaltbar unter „Über die App“ → „Nach neuen Versionen suchen“.
+- **32-Bit-Geräte:** Dort öffnet „Aktualisieren“ die Download-Seite und nennt die passende Datei („armeabi-v7a“).
+- **Datenschutzhinweis (Stand 19.11.2026):** Abschnitte 2 und 4 nennen die tägliche Abfrage bei GitHub mit Rechtsgrundlage. Weil damit ein Empfänger dazukommt, fragt die App einmal neu nach der Zustimmung. Bis dahin ruht der Hintergrundabruf; eine einmalige Benachrichtigung erinnert daran, die App zu öffnen.
+- Im Demo-Modus fragt die App nie bei GitHub nach.
+
 **4.1.0+9517** – Offene Abgaben in Unterricht und auf Heute
 
 - **Abgaben sichtbar:** Die App liest zusätzlich die Seite „Abgaben“ aus „mein Unterricht“ (nur Schülerkonten, nicht im Hintergrund). Offene Abgaben stehen in „Unterricht“ ganz oben unter „Offene Hausaufgaben“ – gelb hervorgehoben, mit Frist, Stand („noch nicht abgegeben“ / „N Dateien abgegeben“) und Knopf „Abgeben“, der direkt die Abgabeseite öffnet; danach liest die App neu. Auch in „Alle“, mit Kind.

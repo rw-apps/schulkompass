@@ -12,6 +12,8 @@ import 'package:lanis/view/settings/subsettings/debug_export.dart';
 import '../../error_log.dart';
 import '../../l10n/l10n.dart';
 import '../../report_relay.dart';
+import '../../update_check.dart';
+import '../../demo/demo_mode.dart' show demoActive;
 import '../../report_terms.dart' show TermLog;
 import '../today/auto_report_prompt.dart' show reportOs;
 import '../kit.dart';
@@ -203,6 +205,25 @@ class _AboutSettingsPageState extends State<AboutSettingsPage> {
                       flushErrorReports(_settings!, os: reportOs());
                     }
                   }),
+                ),
+              ),
+            // Fork (19.11.26): Hinweis auf neue Versionen (update_check.dart)
+            // – abschaltbar, weil die App dafür selbst GitHub fragt.
+            if (_settings != null)
+              SettingsRow(
+                icon: Icons.system_update_outlined,
+                label: t.updateCheckSetting,
+                detail: t.updateCheckSettingHint,
+                chevron: false,
+                trailing: Switch(
+                  value: updateCheckEnabled(_settings!),
+                  onChanged: (v) => setState(
+                    () => UpdateCheck.instance.setEnabled(
+                      _settings!,
+                      v,
+                      fetch: !demoActive,
+                    ),
+                  ),
                 ),
               ),
             // Fork (26.10.26): Seitenaufbau ohne Namen und Noten – damit die

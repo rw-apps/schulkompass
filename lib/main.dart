@@ -9,6 +9,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:lanis/fork/update_check.dart';
 import 'package:lanis/fork/demo/demo_mode.dart';
 import 'package:lanis/fork/l10n/l10n.dart' show ForkL10n;
 import 'package:liblanis/liblanis.dart' show LanisClient;
@@ -116,6 +117,9 @@ void _run(List<Override> overrides) => runApp(
 /// Hintergrunddienst bleibt unberührt.
 Future<void> _relaunch({DemoChoice? demo}) async {
   LanisClient.reset();
+  // Hält Einstellungen der alten (gleich geschlossenen) Datenbank –
+  // update_check.dart, Prüfbefund 19.11.26.
+  UpdateCheck.instance.reset();
   if (demo == null) leaveDemo();
   final overrides = demo == null
       ? await bootstrapLanisClient()

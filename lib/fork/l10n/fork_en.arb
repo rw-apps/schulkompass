@@ -899,5 +899,13 @@
   "subTitle": "Submission “{name}”",
   "subFiles": "{n, plural, =1{1 file submitted} other{{n} files submitted}}",
   "subSubmit": "Submit",
-  "hintSubmissionUntil": "Submission by {time}"
+  "hintSubmissionUntil": "Submission by {time}",
+  "updateTitle": "New version available",
+  "updateText": "Version {latest} is out, you're on {installed}. “Update” downloads it; then open the file and install it.",
+  "updateAction": "Update",
+  "updateLater": "Later",
+  "updateCheckSetting": "Check for new versions",
+  "updateCheckSettingHint": "Ask GitHub once a day (GitHub sees your IP address).",
+  "updateText32": "Version {latest} is out, you're on {installed}. “Update” opens the download page; pick the file with “armeabi-v7a” in its name.",
+  "consentReminder": "Please open the app and confirm the updated privacy notice – until then there are no notifications."
 }

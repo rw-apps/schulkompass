@@ -1,6 +1,6 @@
 # Datenschutzhinweis – App „Schulkompass“
 
-Stand: 08.11.2026
+Stand: 19.11.2026
 
 ## 1. Wer verantwortlich ist
 
@@ -13,7 +13,7 @@ Für die Daten **im Schulportal selbst** (Noten, Nachrichten, Stundenpläne usw.
 
 ## 2. Der Grundsatz: Alles bleibt auf deinem Gerät
 
-Die App hat **keinen eigenen Server**. Sie verbindet sich direkt mit dem Schulportal und, wenn du es einrichtest, mit der Bestellseite deines Caterers. Der Verantwortliche erhält von dir nur dann etwas, wenn du einem Fehlerbericht zugestimmt hast (Abschnitt 5).
+Die App hat **keinen eigenen Server**. Sie verbindet sich direkt mit dem Schulportal, mit der Bestellseite deines Caterers (wenn du sie einrichtest) und etwa einmal am Tag mit GitHub, um nach einer neuen Version zu fragen (Abschnitt 4). Der Verantwortliche erhält von dir nur dann etwas, wenn du einem Fehlerbericht zugestimmt hast (Abschnitt 5).
 
 ## 3. Was auf deinem Gerät gespeichert wird
 
@@ -33,7 +33,7 @@ Passwörter liegen im geschützten Schlüsselspeicher von Android (Keystore). Be
 
 - **Schulportal Hessen** (`*.schulportal.hessen.de`, auch das Moodle deiner Schule): Anmeldung und Inhalte. Vor der Anmeldung lädt die App die öffentliche Schulliste (`startcache.schulportal.hessen.de`).
 - **Bestellseite deines Caterers** – nur wenn du unter „Essen und Caterer“ eine Adresse eingetragen hast. Die Seite läuft in einer eingebetteten Ansicht; dabei gelten die Datenschutzbestimmungen des Caterers.
-- **GitHub** (GitHub Inc., USA): nur wenn du in der App selbst einen Link antippst (Neuigkeiten, Quellcode, Fehler melden als Issue, dieser Hinweis). Er öffnet sich dann im Browser; die App selbst baut keine Verbindung zu GitHub auf.
+- **GitHub** (GitHub Inc., USA): Etwa einmal am Tag, wenn du die App öffnest, fragt sie bei GitHub nach, ob es eine neue Version gibt, und zeigt dann einen Hinweis. Gesendet wird dabei nichts außer der Anfrage selbst; GitHub erfährt technisch bedingt deine IP-Adresse. Rechtsgrundlage ist das berechtigte Interesse des Verantwortlichen, dass du Fehlerbehebungen und Sicherheitskorrekturen erhältst (Art. 6 Abs. 1 lit. f DSGVO). Widersprechen kannst du jederzeit, indem du unter „Über die App“ → „Nach neuen Versionen suchen“ abschaltest. Außerdem öffnen sich Links, die du in der App selbst antippst (Neuigkeiten, Quellcode, Fehler melden als Issue, neue Version herunterladen, dieser Hinweis), im Browser.
 - **Cloudflare** (Cloudflare Inc., USA; `*.workers.dev`): nur für Fehlerberichte mit deiner Zustimmung (Abschnitt 5).
 - **Termine abonnieren:** Die Abo-Adresse stellt das Schulportal bereit. Dein Kalenderdienst (z. B. Google Kalender) ruft die Termine dann selbst beim Portal ab; die App ist daran nicht beteiligt.
 
