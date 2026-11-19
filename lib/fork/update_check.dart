@@ -146,7 +146,8 @@ class UpdateCheck extends ChangeNotifier {
     return l;
   }
 
-  @visibleForTesting
+  /// Vergessen, woran die Prüfung hing – beim Wechsel der Datenbank
+  /// (main.dart _relaunch) und in Tests.
   void reset() {
     _settings = null;
     _running = false;
