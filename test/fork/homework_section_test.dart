@@ -212,7 +212,9 @@ void main() {
     expect(find.text('Abgeben'), findsNothing);
     await t.tap(find.text('Ändern'));
     expect(submitted, 2);
+    // Elternkonto: Karte bleibt sichtbar, nur ohne „Ändern“.
     await show(canSubmit: false, files: 2);
+    expect(find.text('Abgabe „Poster“'), findsOneWidget);
     expect(find.text('Ändern'), findsNothing);
   });
 }

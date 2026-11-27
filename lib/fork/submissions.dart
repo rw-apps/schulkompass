@@ -175,7 +175,7 @@ typedef SubmissionItem = ({
 /// (Rückmeldung 27.11.26): Das Portal führt eine Abgabe bis zur Frist als
 /// „Abgabe aktuell möglich“, auch wenn die Datei schon da ist; sie zählte
 /// deshalb weiter als offene Aufgabe. Unterricht zeigt sie unter „Erledigt“
-/// (homework_section.dart SubEntry.handedIn).
+/// (homework_section.dart SubEntry.handedIn), bis die Frist vorbei ist.
 List<SubmissionItem> openSubmissionsOf(
   List<Lesson> lessons, {
   required String Function(Lesson l) subjectOf,

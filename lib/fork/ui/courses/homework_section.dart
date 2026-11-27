@@ -103,7 +103,10 @@ class HomeworkSection extends StatefulWidget {
   /// Erledigt-Knopf entfällt: Erledigt ist sie, sobald das Portal die Datei
   /// zählt. Grenze: Verlangt die Lehrkraft mehrere Dateien, erkennt die App
   /// das nicht – ab der ersten gilt die Abgabe als erledigt; „Ändern“ führt
-  /// bis zur Frist zur Abgabeseite.
+  /// bis zur Frist zur Abgabeseite. Nach Fristende (oder wenn das Portal
+  /// sie nicht mehr als möglich führt) fällt sie ganz heraus
+  /// (openSubmissionsOf) – „Erledigt (n)“ wird dann um eins kleiner; das
+  /// Archiv (onShowAll) kennt nur Hausaufgaben.
   final List<SubEntry> submissions;
 
   /// Abgelaufene, nicht abgehakte (homeworkLists.expired): eigener Link
@@ -631,6 +634,8 @@ class _SubmissionCard extends StatelessWidget {
                 children: [
                   Expanded(
                     child: Text(
+                      // Oben stehen nur Abgaben ohne Datei (SubEntry
+                      // .handedIn); der zweite Zweig bleibt als Reserve.
                       e.files == 0 ? t.uploadNotYet : t.subFiles(e.files),
                       style: k.meta,
                       maxLines: 1,
@@ -704,7 +709,7 @@ class _HandedInCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Padding(
-                    padding: const EdgeInsets.only(top: 2),
+                    padding: const EdgeInsets.only(top: Sp.xxs),
                     child: Icon(
                       Icons.upload_file_outlined,
                       size: Sz.iconSmall,

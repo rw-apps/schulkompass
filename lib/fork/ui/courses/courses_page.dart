@@ -81,7 +81,8 @@ class CoursesPage extends StatefulWidget {
     this.submissions = const [],
   });
 
-  /// Offene Abgaben über den Hausaufgaben (HomeworkSection.submissions).
+  /// Noch mögliche Abgaben; ohne Datei über den Hausaufgaben, mit Datei
+  /// unter „Erledigt“ (HomeworkSection.submissions).
   final List<SubEntry> submissions;
 
   /// „Abwesenheiten“ öffnen; [course] = nur dieses Fach, null = alle.
@@ -616,7 +617,8 @@ class AllCoursesView extends StatelessWidget {
   /// Wie [CoursesPage.notices].
   final List<Widget> notices;
 
-  /// Offene Abgaben aller Kinder, mit Kind (HomeworkSection.submissions).
+  /// Noch mögliche Abgaben aller Kinder, mit Kind (HomeworkSection
+  /// .submissions; mit Datei unter „Erledigt“).
   final List<SubEntry> submissions;
 
   final List<AllHomework> homework;

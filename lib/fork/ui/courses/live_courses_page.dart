@@ -188,12 +188,14 @@ class LiveCoursesPage extends ConsumerWidget {
   }
 }
 
-/// Offene Abgaben des Kontos [s] als Karten (submissions.dart).
+/// Noch mögliche Abgaben des Kontos [s] als Karten (submissions.dart), auch
+/// solche mit hochgeladener Datei – HomeworkSection stellt diese unter
+/// „Erledigt“ (SubEntry.handedIn, Rückmeldung 27.11.26).
 ///
 /// „Abgeben“ nur im Schülerkonto und nur für Adressen aus „Mein Unterricht“
 /// (isLessonsUploadUrl, Sicherheitsprüfung 17.10.26) – wie die Kursseite.
-/// Danach liest die App neu (s.refresh), damit „N Dateien abgegeben“ bzw.
-/// das Verschwinden der Karte stimmt. [kid] und [member] nur in „Alle“.
+/// Danach liest die App neu (s.refresh), damit die Karte nach dem Hochladen
+/// unter „Erledigt“ wandert. [kid] und [member] nur in „Alle“.
 List<SubEntry> liveSubmissionEntries(
   BuildContext context,
   LiveSnapshot s, {
