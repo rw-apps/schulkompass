@@ -1,5 +1,11 @@
 ## Schulkompass (rw-apps, bis 9472 „Schulportal“) – Änderungen gegenüber Lanis-Mobile
 
+**4.1.0+9519** – Abgegebene Abgaben unter „Erledigt“
+
+- **Abgabe mit Datei gilt als erledigt:** Sobald mindestens eine Datei hochgeladen ist, steht die Abgabe in „Unterricht“ nicht mehr bei den offenen Hausaufgaben, sondern unter „Erledigt“ – mit Fach, „N Dateien abgegeben“, Frist und „Ändern“ (öffnet bis zur Frist die Abgabeseite). Vorher führte das Portal sie bis zur Frist als „Abgabe aktuell möglich“, und die App zählte sie weiter als offen.
+- **Zahlen:** Die Marke am Reiter Unterricht und „Aufgaben“ auf Heute zählen hochgeladene Abgaben nicht mehr mit.
+- **Grenze:** Verlangt die Lehrkraft mehrere Dateien, erkennt die App das nicht – ab der ersten Datei gilt die Abgabe als erledigt.
+
 **4.1.0+9518** – Hinweis auf neue Versionen
 
 - **Neue Version verfügbar:** Die App fragt etwa einmal am Tag beim Öffnen bei GitHub nach der neuesten Version. Ist eine neuere da, steht oben auf Heute ein Hinweis mit „Aktualisieren“ (lädt die neue Version im Browser herunter) und „Später“ (7 Tage Ruhe). Abschaltbar unter „Über die App“ → „Nach neuen Versionen suchen“.
