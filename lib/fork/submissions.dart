@@ -169,15 +169,25 @@ typedef SubmissionItem = ({
 
 /// Offene Abgaben aller [lessons], früheste Frist zuerst. Nur solche, die
 /// noch möglich sind und deren Frist nicht vorbei ist ([now]).
+///
+/// [handedIn] false lässt Abgaben mit schon hochgeladener Datei weg – für
+/// Heute und das Abzeichen (homework_due.dart liveOpenSubmissions). Ursache
+/// (Rückmeldung 27.11.26): Das Portal führt eine Abgabe bis zur Frist als
+/// „Abgabe aktuell möglich“, auch wenn die Datei schon da ist; sie zählte
+/// deshalb weiter als offene Aufgabe. Unterricht zeigt sie unter „Erledigt“
+/// (homework_section.dart SubEntry.handedIn).
 List<SubmissionItem> openSubmissionsOf(
   List<Lesson> lessons, {
   required String Function(Lesson l) subjectOf,
   required DateTime now,
+  bool handedIn = true,
 }) {
   final out = <SubmissionItem>[
     for (final l in lessons)
       for (final s in submissionsOfLesson[l] ?? const <OpenSubmission>[])
-        if (s.open && (s.until == null || s.until!.isAfter(now)))
+        if (s.open &&
+            (handedIn || s.files == 0) &&
+            (s.until == null || s.until!.isAfter(now)))
           (courseId: l.courseID, subject: subjectOf(l), submission: s),
   ];
   out.sort((a, b) {

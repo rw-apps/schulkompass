@@ -47,6 +47,10 @@ class SubEntry {
 
   /// Schon abgegebene Dateien.
   final int files;
+
+  /// Schon etwas hochgeladen: steht unter „Erledigt“ statt oben
+  /// ([HomeworkSection.submissions]).
+  bool get handedIn => files > 0;
   final KidTag? kid;
 
   /// Abgabeseite öffnen; null = nur Anzeige (Elternkonto, Vorschau).
@@ -87,10 +91,19 @@ class HomeworkSection extends StatefulWidget {
     this.submissions = const [],
   });
 
-  /// Offene Abgaben, oben vor den Hausaufgaben (früheste Frist zuerst).
-  /// Ohne „Erledigt“-Knopf: Erledigt ist eine Abgabe erst, wenn das Portal
-  /// die Datei zählt – dann fällt sie beim nächsten Abruf aus der Liste
-  /// (Abgabe nicht mehr möglich) oder zeigt „N Dateien abgegeben“.
+  /// Abgaben, die noch möglich sind (früheste Frist zuerst). Ohne Datei
+  /// oben vor den Hausaufgaben; mit mindestens einer Datei
+  /// ([SubEntry.handedIn]) unter „Erledigt“, solange das Portal sie noch
+  /// als möglich führt.
+  ///
+  /// Ursache (Rückmeldung 27.11.26 mit Bild): Eine schon hochgeladene
+  /// Abgabe stand weiter unter „Offene Hausaufgaben“ und zählte im Abzeichen
+  /// mit, obwohl die Kursseite „abgegeben: 1“ zeigte – das Portal führt die
+  /// Abgabe bis zur Frist als „Abgabe aktuell möglich“. Ein eigener
+  /// Erledigt-Knopf entfällt: Erledigt ist sie, sobald das Portal die Datei
+  /// zählt. Grenze: Verlangt die Lehrkraft mehrere Dateien, erkennt die App
+  /// das nicht – ab der ersten gilt die Abgabe als erledigt; „Ändern“ führt
+  /// bis zur Frist zur Abgabeseite.
   final List<SubEntry> submissions;
 
   /// Abgelaufene, nicht abgehakte (homeworkLists.expired): eigener Link
@@ -238,15 +251,23 @@ class _HomeworkSectionState extends State<HomeworkSection> {
     final done = widget.done;
     final total = widget.doneTotal ?? done.length;
     final shown = done.take(HomeworkSection.shownDone).toList();
+    final pending = [
+      for (final e in widget.submissions)
+        if (!e.handedIn) e,
+    ];
+    final handedIn = [
+      for (final e in widget.submissions)
+        if (e.handedIn) e,
+    ];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        for (final e in widget.submissions)
+        for (final e in pending)
           Padding(
             padding: const EdgeInsets.only(bottom: Sp.s),
             child: _SubmissionCard(entry: e, now: widget.now),
           ),
-        if (open.isEmpty && widget.submissions.isEmpty)
+        if (open.isEmpty && pending.isEmpty)
           Padding(
             padding: const EdgeInsets.only(left: Sp.xs, bottom: Sp.s),
             child: Text(widget.emptyText, style: k.meta),
@@ -267,15 +288,20 @@ class _HomeworkSectionState extends State<HomeworkSection> {
             ),
             () => _finishTick(e),
           ),
-        if (total > 0)
+        if (total + handedIn.length > 0)
           _DoneToggle(
-            count: total,
+            count: total + handedIn.length,
             open: _expanded,
             flash: _doneFlash,
             onTap: () => setState(() => _expanded = !_expanded),
           ),
         if (_expanded) ...[
           const SizedBox(height: Sp.s),
+          for (final e in handedIn)
+            Padding(
+              padding: const EdgeInsets.only(bottom: Sp.s),
+              child: _HandedInCard(entry: e, now: widget.now),
+            ),
           for (final e in shown)
             _leaving(
               _doneStage,
@@ -621,6 +647,97 @@ class _SubmissionCard extends StatelessWidget {
                       active: false,
                       onPressed: e.onSubmit,
                     ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Abgabe mit hochgeladener Datei unter „Erledigt“ (Rückmeldung 27.11.26,
+/// [HomeworkSection.submissions]): gebaut wie [_DoneCard] – Name blass
+/// (nicht gestrichen: bis zur Frist lässt sich noch etwas ändern), darunter
+/// Fach · „1 Datei abgegeben“ · Frist, rechts „Ändern“ (zur Abgabeseite,
+/// nur Schülerkonto wie „Abgeben“).
+class _HandedInCard extends StatelessWidget {
+  const _HandedInCard({required this.entry, this.now});
+
+  final SubEntry entry;
+  final DateTime? now;
+
+  @override
+  Widget build(BuildContext context) {
+    final k = Kit.of(context);
+    final t = context.t;
+    final e = entry;
+    final until = e.until;
+    // Frist mit festen Leerzeichen: bricht als Ganzes um, sonst stand die
+    // Uhrzeit allein in der nächsten Zeile (Entwurf 27.11.26).
+    final meta = [
+      e.subject,
+      t.subFiles(e.files),
+      if (until != null)
+        switch (dayDiff(now ?? DateTime.now(), until)) {
+          0 => t.subUntilToday(formatTime(until)),
+          1 => t.subUntilTomorrow(formatTime(until)),
+          _ => t.subUntilOn(
+            formatDate(t, t.dateShort, until),
+            formatTime(until),
+          ),
+        }.replaceAll(' ', '\u00a0'),
+    ].join(' · ');
+    return Material(
+      color: k.p.card,
+      borderRadius: BorderRadius.circular(Rad.signal),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(Rad.signal),
+        onTap: e.onOpen,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(Sp.l, Sp.m, Sp.m, Sp.m),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(top: 2),
+                    child: Icon(
+                      Icons.upload_file_outlined,
+                      size: Sz.iconSmall,
+                      color: k.p.muted,
+                    ),
+                  ),
+                  const SizedBox(width: Sp.xs),
+                  Expanded(
+                    child: Text(
+                      t.subTitle(e.name),
+                      style: k.body.copyWith(color: k.p.muted),
+                    ),
+                  ),
+                  if (e.onSubmit != null) ...[
+                    const SizedBox(width: Sp.s),
+                    _CardAction(
+                      icon: Icons.edit_outlined,
+                      label: t.changeAction,
+                      outlined: false,
+                      color: k.p.onNavSelected,
+                      fill: k.p.card,
+                      active: false,
+                      onPressed: e.onSubmit,
+                    ),
+                  ],
+                ],
+              ),
+              Wrap(
+                spacing: Sp.s,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  Text(meta, style: k.meta),
+                  if (e.kid != null) KidLine(kid: e.kid!),
                 ],
               ),
             ],

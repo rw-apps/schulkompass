@@ -85,9 +85,11 @@ List<HomeworkItem> liveOpenHomeworkItems(LiveSnapshot s) => homeworkLists(
   dueOf: liveHomeworkDue(s),
 ).open;
 
-/// Offene Abgaben des Kontos für Heute (Hinweis, Knopf „n Aufgaben“) –
-/// dieselbe Regel wie die Liste in Unterricht (openSubmissionsOf); Fach wie
-/// dort (courseTitle). Wunsch 15.11.26.
+/// Offene Abgaben des Kontos für Heute (Hinweis, Knopf „n Aufgaben“) und
+/// das Abzeichen an Unterricht – dieselbe Regel wie die Liste in Unterricht
+/// (openSubmissionsOf); Fach wie dort (courseTitle). Wunsch 15.11.26.
+/// Ohne Abgaben mit schon hochgeladener Datei (handedIn: false, Ursache
+/// dort): Die stehen in Unterricht unter „Erledigt“.
 List<({String subject, String name, DateTime? until})> liveOpenSubmissions(
   LiveSnapshot s,
 ) => [
@@ -95,6 +97,7 @@ List<({String subject, String name, DateTime? until})> liveOpenSubmissions(
     s.lessons.content ?? const <Lesson>[],
     subjectOf: (l) => courseTitle(l.name),
     now: DateTime.now(),
+    handedIn: false,
   ))
     (subject: o.subject, name: o.submission.name, until: o.submission.until),
 ];

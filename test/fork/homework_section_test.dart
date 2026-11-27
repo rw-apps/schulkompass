@@ -195,8 +195,24 @@ void main() {
     expect(find.text('noch nicht abgegeben'), findsOneWidget);
     await t.tap(find.text('Abgeben'));
     expect(submitted, 1);
-    await show(canSubmit: false, files: 2);
+    // Rückmeldung 27.11.26: Mit hochgeladener Datei nicht mehr offen,
+    // sondern unter „Erledigt“ – „Ändern“ führt weiter zur Abgabeseite.
+    await show(files: 2);
+    expect(find.text('Abgabe „Poster“'), findsNothing);
+    expect(find.text('leer'), findsOneWidget);
+    await t.tap(find.text('Erledigt (1)'));
+    await t.pumpAndSettle();
+    expect(find.text('Abgabe „Poster“'), findsOneWidget);
+    expect(
+      find.text(
+        'Beispielfach · 2 Dateien abgegeben · bis\u00a0morgen\u00a010:15',
+      ),
+      findsOneWidget,
+    );
     expect(find.text('Abgeben'), findsNothing);
-    expect(find.text('2 Dateien abgegeben'), findsOneWidget);
+    await t.tap(find.text('Ändern'));
+    expect(submitted, 2);
+    await show(canSubmit: false, files: 2);
+    expect(find.text('Ändern'), findsNothing);
   });
 }

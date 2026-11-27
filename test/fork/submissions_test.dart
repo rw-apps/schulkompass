@@ -84,4 +84,30 @@ void main() {
     // Kurs fehlt in der Übersicht: gezählt, nicht angehängt.
     expect(attachSubmissions([_l('1', 'Y')], page.items), 3);
   });
+
+  // Rückmeldung 27.11.26: Datei hochgeladen, Abgabe laut Portal noch
+  // möglich – für Heute und das Abzeichen nicht mehr offen.
+  test('hochgeladen: nur mit handedIn, nicht für Heute', () {
+    final lessons = [_l('1001', 'Beispielfach')];
+    OpenSubmission sub(String name, int files) => OpenSubmission(
+      courseId: '1001',
+      name: name,
+      url: Uri.parse('https://example.org/'),
+      until: DateTime(2026, 12, 1, 9, 50),
+      files: files,
+    );
+    attachSubmissions(lessons, [sub('Poster', 1), sub('Bericht', 0)]);
+    final now = DateTime(2026, 11, 27, 8);
+    List<String> names({required bool handedIn}) => [
+      for (final o in openSubmissionsOf(
+        lessons,
+        subjectOf: (l) => l.name,
+        now: now,
+        handedIn: handedIn,
+      ))
+        o.submission.name,
+    ];
+    expect(names(handedIn: true), ['Poster', 'Bericht']);
+    expect(names(handedIn: false), ['Bericht']);
+  });
 }
